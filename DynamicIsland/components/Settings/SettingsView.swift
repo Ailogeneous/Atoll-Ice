@@ -1709,9 +1709,17 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 struct TimerSettings: View {
     @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
     @Default(.enableTimerFeature) var enableTimerFeature
-    @AppStorage("customTimerDuration") private var customTimerDuration: Double = 600 // 10 minutes default
+    @Default(.timerPresets) private var timerPresets
+    @Default(.timerIconColorMode) private var colorMode
+    @Default(.timerSolidColor) private var solidColor
+    @Default(.timerShowsCountdown) private var showsCountdown
+    @Default(.timerShowsProgress) private var showsProgress
+    @Default(.timerProgressStyle) private var progressStyle
+    @AppStorage("customTimerDuration") private var customTimerDuration: Double = 600
+    @State private var customHours: Int = 0
     @State private var customMinutes: Int = 10
     @State private var customSeconds: Int = 0
+    @State private var showingResetConfirmation = false
     
     var body: some View {
         Form {
@@ -1719,92 +1727,121 @@ struct TimerSettings: View {
                 Defaults.Toggle("Enable timer feature", key: .enableTimerFeature)
                 
                 if enableTimerFeature {
-                    Toggle(
-                        "Enable timer live activity",
-                        isOn: $coordinator.timerLiveActivityEnabled
-                    )
-                    .animation(.easeInOut, value: coordinator.timerLiveActivityEnabled)
+                    Toggle("Enable timer live activity", isOn: $coordinator.timerLiveActivityEnabled)
+                        .animation(.easeInOut, value: coordinator.timerLiveActivityEnabled)
                 }
             } header: {
                 Text("Timer Feature")
             } footer: {
-                Text("Enable or disable the timer functionality in the Dynamic Island. The live activity toggle controls whether timer progress is shown in the expanded view.")
+                Text("Control timer availability and whether progress appears as a live activity while the notch is closed.")
             }
             
             if enableTimerFeature {
                 Section {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Custom Timer Duration")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Default Custom Timer")
                             .font(.headline)
                         
-                        HStack(spacing: 20) {
-                            VStack(alignment: .center, spacing: 8) {
-                                Text("Minutes")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                                
-                                Picker(selection: $customMinutes, label: Text("Minutes")) {
-                                    ForEach(0...59, id: \.self) { minute in
-                                        Text("\(minute)").tag(minute)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                .frame(width: 100)
-                            }
-                            
-                            VStack(alignment: .center, spacing: 8) {
-                                Text("Seconds")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                                
-                                Picker(selection: $customSeconds, label: Text("Seconds")) {
-                                    ForEach(0...59, id: \.self) { second in
-                                        Text("\(second)").tag(second)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                .frame(width: 100)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
+                        TimerDurationStepperRow(title: "Hours", value: $customHours, range: 0...23)
+                        TimerDurationStepperRow(title: "Minutes", value: $customMinutes, range: 0...59)
+                        TimerDurationStepperRow(title: "Seconds", value: $customSeconds, range: 0...59)
                         
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("Current custom timer:")
-                                    .foregroundStyle(.secondary)
-                                Text(customTimerDisplayText)
-                                    .foregroundStyle(.primary)
-                                    .fontWeight(.medium)
-                                Spacer()
-                            }
-                            
-                            HStack {
-                                Spacer()
-                                Button("Update Timer") {
-                                    customTimerDuration = Double(customMinutes * 60 + customSeconds)
-                                }
-                                .disabled(customMinutes == 0 && customSeconds == 0)
-                                .buttonStyle(.borderedProminent)
-                            }
+                        HStack {
+                            Text("Current default:")
+                                .foregroundStyle(.secondary)
+                            Text(customDurationDisplay)
+                                .font(.system(.body, design: .monospaced))
+                                .fontWeight(.medium)
+                            Spacer()
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 4)
+                    .onChange(of: customHours) { _, _ in updateCustomDuration() }
+                    .onChange(of: customMinutes) { _, _ in updateCustomDuration() }
+                    .onChange(of: customSeconds) { _, _ in updateCustomDuration() }
                 } header: {
                     Text("Custom Timer")
                 } footer: {
-                    Text("Set a custom duration for the timer. This will be used when you press the 'Custom' button in the timer interface.")
+                    Text("This duration powers the \"Custom\" option inside the timer popover for quick access.")
                 }
                 
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
+                    Picker("Timer tint", selection: $colorMode) {
+                        ForEach(TimerIconColorMode.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    if colorMode == .solid {
+                        ColorPicker("Solid colour", selection: $solidColor, supportsOpacity: false)
+                    }
+
+                    Toggle("Show countdown", isOn: $showsCountdown)
+                    Toggle("Show progress", isOn: $showsProgress)
+
+                    Picker("Progress style", selection: $progressStyle) {
+                        ForEach(TimerProgressStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(!showsProgress)
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("Configure how the timer looks inside the closed notch. Progress can render as a ring around the icon or as horizontal bars.")
+                }
+                
+                Section {
+                    if timerPresets.isEmpty {
+                        Text("No presets configured. Add a preset to make it appear in the timer popover.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 4)
+                    } else {
+                        ForEach(timerPresets.indices, id: \.self) { index in
+                            TimerPresetEditorRow(
+                                preset: $timerPresets[index],
+                                isFirst: index == timerPresets.startIndex,
+                                isLast: index == timerPresets.index(before: timerPresets.endIndex),
+                                moveUp: { movePresetUp(index) },
+                                moveDown: { movePresetDown(index) },
+                                remove: { removePreset(index) }
+                            )
+                        }
+                    }
+                    
+                    HStack {
+                        Button(action: addPreset) {
+                            Label("Add Preset", systemImage: "plus")
+                        }
+                        .buttonStyle(.bordered)
+                        
+                        Spacer()
+                        
+                        Button(role: .destructive, action: { showingResetConfirmation = true }) {
+                            Label("Restore Defaults", systemImage: "arrow.counterclockwise")
+                        }
+                        .buttonStyle(.bordered)
+                        .confirmationDialog("Restore default timer presets?", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
+                            Button("Restore", role: .destructive, action: resetPresets)
+                        }
+                    }
+                } header: {
+                    Text("Timer Presets")
+                } footer: {
+                    Text("Presets show up inside the timer popover with the configured name, duration, and accent colour. Reorder them to change the display order.")
+                }
+                
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Text("Timer Sound")
                                 .font(.system(size: 16, weight: .medium))
                             Spacer()
-                            Button("Choose File") {
-                                selectCustomTimerSound()
-                            }
-                            .buttonStyle(.bordered)
+                            Button("Choose File", action: selectCustomTimerSound)
+                                .buttonStyle(.bordered)
                         }
                         
                         if let customTimerSoundPath = UserDefaults.standard.string(forKey: "customTimerSoundPath") {
@@ -1826,30 +1863,68 @@ struct TimerSettings: View {
                 } header: {
                     Text("Timer Sound")
                 } footer: {
-                    Text("Choose a custom sound file that will play when the timer completes. Supported formats: MP3, M4A, WAV, AIFF.")
+                    Text("Select a custom sound to play when a timer ends. Supported formats include MP3, M4A, WAV, and AIFF.")
                 }
             }
         }
         .navigationTitle("Timer")
-        .onAppear {
-            let totalMinutes = Int(customTimerDuration) / 60
-            customMinutes = totalMinutes
-            customSeconds = Int(customTimerDuration) % 60
+        .onAppear { syncCustomDuration() }
+        .onChange(of: customTimerDuration) { _, newValue in syncCustomDuration(newValue) }
+    }
+    
+    private var customDurationDisplay: String {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = customTimerDuration >= 3600 ? [.hour, .minute, .second] : [.minute, .second]
+        formatter.zeroFormattingBehavior = [.pad]
+        return formatter.string(from: customTimerDuration) ?? "0:00"
+    }
+    
+    private func syncCustomDuration(_ value: Double? = nil) {
+        let baseValue = value ?? customTimerDuration
+        let components = TimerPreset.components(for: baseValue)
+        customHours = components.hours
+        customMinutes = components.minutes
+        customSeconds = components.seconds
+    }
+    
+    private func updateCustomDuration() {
+        let duration = TimeInterval(customHours * 3600 + customMinutes * 60 + customSeconds)
+        customTimerDuration = duration
+    }
+    
+    private func addPreset() {
+        let nextIndex = timerPresets.count + 1
+        let defaultColor = Defaults[.accentColor]
+        let newPreset = TimerPreset(name: "Preset \(nextIndex)", duration: 5 * 60, color: defaultColor)
+        withAnimation(.smooth) {
+            timerPresets.append(newPreset)
         }
     }
     
-    private var customTimerDisplayText: String {
-        let totalMinutes = Int(customTimerDuration) / 60
-        let seconds = Int(customTimerDuration) % 60
-        let hours = totalMinutes / 60
-        let minutes = totalMinutes % 60
-        
-        if hours > 0 {
-            return "\(hours):\(String(format: "%02d", minutes)):\(String(format: "%02d", seconds))"
-        } else if minutes > 0 {
-            return "\(minutes):\(String(format: "%02d", seconds))"
-        } else {
-            return "\(seconds)s"
+    private func movePresetUp(_ index: Int) {
+        guard index > timerPresets.startIndex else { return }
+        withAnimation(.smooth) {
+            timerPresets.swapAt(index, index - 1)
+        }
+    }
+    
+    private func movePresetDown(_ index: Int) {
+        guard index < timerPresets.index(before: timerPresets.endIndex) else { return }
+        withAnimation(.smooth) {
+            timerPresets.swapAt(index, index + 1)
+        }
+    }
+    
+    private func removePreset(_ index: Int) {
+        guard timerPresets.indices.contains(index) else { return }
+        withAnimation(.smooth) {
+            timerPresets.remove(at: index)
+        }
+    }
+    
+    private func resetPresets() {
+        withAnimation(.smooth) {
+            timerPresets = TimerPreset.defaultPresets
         }
     }
     
@@ -1866,6 +1941,146 @@ struct TimerSettings: View {
                 UserDefaults.standard.set(url.path, forKey: "customTimerSoundPath")
             }
         }
+    }
+}
+
+private struct TimerDurationStepperRow: View {
+    let title: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    
+    var body: some View {
+        Stepper(value: $value, in: range) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("\(value)")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+            }
+        }
+    }
+}
+
+private struct TimerPresetEditorRow: View {
+    @Binding var preset: TimerPreset
+    let isFirst: Bool
+    let isLast: Bool
+    let moveUp: () -> Void
+    let moveDown: () -> Void
+    let remove: () -> Void
+    
+    private var components: TimerPreset.DurationComponents {
+        TimerPreset.components(for: preset.duration)
+    }
+    
+    private var hoursBinding: Binding<Int> {
+        Binding(
+            get: { components.hours },
+            set: { updateDuration(hours: $0) }
+        )
+    }
+    
+    private var minutesBinding: Binding<Int> {
+        Binding(
+            get: { components.minutes },
+            set: { updateDuration(minutes: $0) }
+        )
+    }
+    
+    private var secondsBinding: Binding<Int> {
+        Binding(
+            get: { components.seconds },
+            set: { updateDuration(seconds: $0) }
+        )
+    }
+    
+    private var colorBinding: Binding<Color> {
+        Binding(
+            get: { preset.color },
+            set: { preset.updateColor($0) }
+        )
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(preset.color.gradient)
+                    .frame(width: 20, height: 20)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    )
+                
+                TextField("Preset name", text: $preset.name)
+                    .textFieldStyle(.roundedBorder)
+                
+                Spacer()
+                
+                Text(preset.formattedDuration)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+            
+            HStack(spacing: 16) {
+                TimerPresetComponentControl(title: "Hours", value: hoursBinding, range: 0...23)
+                TimerPresetComponentControl(title: "Minutes", value: minutesBinding, range: 0...59)
+                TimerPresetComponentControl(title: "Seconds", value: secondsBinding, range: 0...59)
+            }
+            
+            ColorPicker("Accent colour", selection: colorBinding, supportsOpacity: false)
+                .frame(maxWidth: 240, alignment: .leading)
+            
+            HStack(spacing: 12) {
+                Button(action: moveUp) {
+                    Label("Move Up", systemImage: "chevron.up")
+                }
+                .buttonStyle(.bordered)
+                .disabled(isFirst)
+                
+                Button(action: moveDown) {
+                    Label("Move Down", systemImage: "chevron.down")
+                }
+                .buttonStyle(.bordered)
+                .disabled(isLast)
+                
+                Spacer()
+                
+                Button(role: .destructive, action: remove) {
+                    Label("Delete", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.system(size: 12, weight: .medium))
+        }
+        .padding(.vertical, 6)
+    }
+    
+    private func updateDuration(hours: Int? = nil, minutes: Int? = nil, seconds: Int? = nil) {
+        var values = components
+        if let hours { values.hours = hours }
+        if let minutes { values.minutes = minutes }
+        if let seconds { values.seconds = seconds }
+        preset.duration = TimerPreset.duration(from: values)
+    }
+}
+
+private struct TimerPresetComponentControl: View {
+    let title: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    
+    var body: some View {
+        Stepper(value: $value, in: range) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("\(value)")
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+            }
+        }
+        .frame(width: 110, alignment: .leading)
     }
 }
 

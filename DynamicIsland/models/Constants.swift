@@ -196,6 +196,27 @@ enum ProgressBarStyle: String, CaseIterable, Identifiable, Defaults.Serializable
     var id: String { self.rawValue }
 }
 
+enum TimerIconColorMode: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case adaptive = "Adaptive"
+    case solid = "Solid"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .adaptive: return "Adaptive gradient"
+        case .solid: return "Solid colour"
+        }
+    }
+}
+
+enum TimerProgressStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case bar = "Bar"
+    case ring = "Ring"
+    
+    var id: String { rawValue }
+}
+
 // AI Model types for screen assistant
 enum AIModelProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
     case gemini = "Gemini"
@@ -407,6 +428,12 @@ extension Defaults.Keys {
     
     // MARK: Timer Feature
     static let enableTimerFeature = Key<Bool>("enableTimerFeature", default: true)
+    static let timerPresets = Key<[TimerPreset]>("timerPresets", default: TimerPreset.defaultPresets)
+    static let timerIconColorMode = Key<TimerIconColorMode>("timerIconColorMode", default: .adaptive)
+    static let timerSolidColor = Key<Color>("timerSolidColor", default: .blue)
+    static let timerShowsCountdown = Key<Bool>("timerShowsCountdown", default: true)
+    static let timerShowsProgress = Key<Bool>("timerShowsProgress", default: true)
+    static let timerProgressStyle = Key<TimerProgressStyle>("timerProgressStyle", default: .bar)
     
     // MARK: ColorPicker Feature
     static let enableColorPickerFeature = Key<Bool>("enableColorPickerFeature", default: true)

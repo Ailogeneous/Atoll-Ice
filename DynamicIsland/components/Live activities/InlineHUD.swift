@@ -34,26 +34,36 @@ struct InlineHUD: View {
 
         let baseInfoWidth: CGFloat = {
             if type == .bluetoothAudio {
-                return showBluetoothDeviceNameMarquee ? 100 : 52
+                return showBluetoothDeviceNameMarquee ? 140 : 88
             }
             return 100
         }()
-        let infoWidth = baseInfoWidth - (hoverAnimation ? 0 : 12) + gestureProgress / 2
+        let infoWidth: CGFloat = {
+            var width = baseInfoWidth + gestureProgress / 2
+            if !hoverAnimation { width -= 8 }
+            let minimum: CGFloat = type == .bluetoothAudio ? (showBluetoothDeviceNameMarquee ? 120 : 82) : 88
+            return max(width, minimum)
+        }()
         let baseTrailingWidth: CGFloat = {
             if type == .bluetoothAudio {
                 if !hasBatteryLevel {
-                    return showBluetoothDeviceNameMarquee ? 100 : 70
+                    return showBluetoothDeviceNameMarquee ? 118 : 88
                 }
 
                 if useCircularIndicator {
-                    return showBluetoothBatteryPercentageText ? 100 : 70
+                    return showBluetoothBatteryPercentageText ? 120 : 96
                 } else {
-                    return showBluetoothBatteryPercentageText ? 112 : 82
+                    return showBluetoothBatteryPercentageText ? 136 : 108
                 }
             }
             return 100
         }()
-        let trailingWidth = baseTrailingWidth - (hoverAnimation ? 0 : 12) + gestureProgress / 2
+        let trailingWidth: CGFloat = {
+            var width = baseTrailingWidth + gestureProgress / 2
+            if !hoverAnimation { width -= 8 }
+            let minimum: CGFloat = type == .bluetoothAudio ? (showBluetoothBatteryPercentageText ? 110 : 92) : 90
+            return max(width, minimum)
+        }()
 
         return HStack {
             HStack(spacing: 5) {

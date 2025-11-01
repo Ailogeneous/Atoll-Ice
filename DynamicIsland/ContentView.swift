@@ -630,11 +630,6 @@ struct ContentView: View {
 
     // MARK: - Private Methods
     private func doOpen() {
-        // Switch to timer tab if timer is active
-        if timerManager.isTimerActive {
-            coordinator.currentView = .timer
-        }
-        
         withAnimation(.bouncy.speed(1.2)) {
             vm.open()
         }
@@ -754,6 +749,7 @@ struct ContentView: View {
          vm.isClipboardPopoverActive || 
          vm.isColorPickerPopoverActive || 
          vm.isStatsPopoverActive ||
+         vm.isTimerPopoverActive ||
          vm.isMediaOutputPopoverActive
     }
     

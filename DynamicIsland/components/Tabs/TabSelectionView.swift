@@ -17,7 +17,6 @@ struct TabModel: Identifiable {
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-    @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.enableStatsFeature) var enableStatsFeature
     @Default(.enableColorPickerFeature) var enableColorPickerFeature
     @Namespace var animation
@@ -28,11 +27,6 @@ struct TabSelectionView: View {
         tabsArray.append(TabModel(label: "Home", icon: "house.fill", view: .home))
         
         tabsArray.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))
-        
-        // Timer tab only shown when timer feature is enabled
-        if Defaults[.enableTimerFeature] {
-            tabsArray.append(TabModel(label: "Timer", icon: "timer", view: .timer))
-        }
         
         // Stats tab only shown when stats feature is enabled
         if Defaults[.enableStatsFeature] {

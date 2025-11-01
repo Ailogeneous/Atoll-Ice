@@ -10,6 +10,7 @@ import Combine
 import SwiftUI
 import AVFoundation
 import AppKit
+import Defaults
 
 class TimerManager: ObservableObject {
     // MARK: - Properties
@@ -24,6 +25,7 @@ class TimerManager: ObservableObject {
     @Published var isFinished: Bool = false
     @Published var isOvertime: Bool = false // Timer has gone past 0 and is counting negative
     @Published var lastUpdated: Date = .distantPast
+    @Published var activePresetId: UUID?
     
     // Timer progress (0.0 to 1.0, or >1.0 for overtime)
     var progress: Double {
@@ -124,7 +126,7 @@ class TimerManager: ObservableObject {
     }
     
     // MARK: - Timer Methods
-    func startTimer(duration: TimeInterval, name: String = "Timer") {
+    func startTimer(duration: TimeInterval, name: String = "Timer", preset: TimerPreset? = nil) {
         // Stop any existing timer
         timerInstance?.invalidate()
         
@@ -140,8 +142,8 @@ class TimerManager: ObservableObject {
         elapsedTime = 0
         isPaused = false
         lastUpdated = Date()
-        
-        triggerTimerSneakPeek()
+
+        activePresetId = preset?.id
         
         // Start countdown timer
         timerInstance = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -250,8 +252,15 @@ class TimerManager: ObservableObject {
         isPaused = false
         isFinished = false
         isOvertime = false
+        activePresetId = nil
     }
-    
+
+    // MARK: - Derived State
+    var activePreset: TimerPreset? {
+        guard let presetId = activePresetId else { return nil }
+        return Defaults[.timerPresets].first { $0.id == presetId }
+    }
+
     private func scheduleSmoothClose() {
         // Wait 3 seconds then smoothly close the live activity
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
@@ -294,21 +303,6 @@ class TimerManager: ObservableObject {
         } catch {
             // Fallback to system sound if there's an error playing the custom sound
             NSSound.beep()
-        }
-    }
-    
-    private func triggerTimerSneakPeek() {
-        let coordinator = DynamicIslandViewCoordinator.shared
-        
-        DispatchQueue.main.async {
-            coordinator.sneakPeek.show = true
-            coordinator.sneakPeek.type = .timer
-            coordinator.sneakPeek.value = CGFloat(self.progress) // Use timer progress (0.0 to 1.0)
-            
-            // Hide sneak peek after delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                coordinator.sneakPeek.show = false
-            }
         }
     }
     

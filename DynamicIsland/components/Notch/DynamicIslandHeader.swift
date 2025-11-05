@@ -15,8 +15,11 @@ struct DynamicIslandHeader: View {
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var clipboardManager = ClipboardManager.shared
     @ObservedObject var tvm = TrayDrop.shared
+    @ObservedObject var timerManager = TimerManager.shared
     @State private var showClipboardPopover = false
     @State private var showColorPickerPopover = false
+    @State private var showTimerPopover = false
+    @Default(.enableTimerFeature) var enableTimerFeature
     
     var body: some View {
         HStack(spacing: 0) {
@@ -141,6 +144,36 @@ struct DynamicIslandHeader: View {
                         }
                     }
                     
+                    if Defaults[.enableTimerFeature] {
+                        Button(action: {
+                            withAnimation(.smooth) {
+                                showTimerPopover.toggle()
+                            }
+                        }) {
+                            Capsule()
+                                .fill(.black)
+                                .frame(width: 30, height: 30)
+                                .overlay {
+                                    Image(systemName: "timer")
+                                        .foregroundColor(.white)
+                                        .padding()
+                                        .imageScale(.medium)
+                                }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .popover(isPresented: $showTimerPopover, arrowEdge: .bottom) {
+                            TimerPopover()
+                        }
+                        .onChange(of: showTimerPopover) { isActive in
+                            vm.isTimerPopoverActive = isActive
+                            if !isActive {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    vm.shouldRecheckHover.toggle()
+                                }
+                            }
+                        }
+                    }
+                    
                     if Defaults[.settingsIconInNotch] {
                         Button(action: {
                             SettingsWindowController.shared.showWindow()
@@ -202,6 +235,12 @@ struct DynamicIslandHeader: View {
             // Handle keyboard shortcut for popover mode
             if Defaults[.enableClipboardManager] && Defaults[.clipboardDisplayMode] == .popover {
                 showClipboardPopover.toggle()
+            }
+        }
+        .onChange(of: enableTimerFeature) { _, newValue in
+            if !newValue {
+                showTimerPopover = false
+                vm.isTimerPopoverActive = false
             }
         }
     }

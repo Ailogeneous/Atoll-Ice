@@ -2,7 +2,26 @@
   <img src=".github/assets/atoll-logo.png" alt="Atoll logo" width="120">
 </p>
 
-> **Project rename:** DynamicIsland is now called **Atoll**. Visit the new repository at [github.com/Ebullioscopic/Atoll](https://github.com/Ebullioscopic/Atoll).
+<p align="center">
+  <a href="https://github.com/Ebullioscopic/Atoll/stargazers">
+    <img src="https://img.shields.io/github/stars/Ebullioscopic/Atoll?style=social" alt="GitHub stars"/>
+  </a>
+  <a href="https://github.com/Ebullioscopic/Atoll/network/members">
+    <img src="https://img.shields.io/github/forks/Ebullioscopic/Atoll?style=social" alt="GitHub forks"/>
+  </a>
+  <a href="https://github.com/Ebullioscopic/Atoll/releases">
+    <img src="https://img.shields.io/github/downloads/Ebullioscopic/Atoll/total?label=Downloads" alt="GitHub downloads"/>
+  </a>
+  <a href="https://discord.gg/zvjB4tJBkt">
+    <img src="https://img.shields.io/discord/1120176554840510494?label=Discord&logo=discord&color=7289da" alt="Discord server"/>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://discord.gg/zvjB4tJBkt">Join our Discord community</a>
+</p>
+
+**Project rename:** DynamicIsland is now called **Atoll**. Visit the new repository at [github.com/Ebullioscopic/Atoll](https://github.com/Ebullioscopic/Atoll).
 
 # Atoll
 
@@ -57,6 +76,16 @@ The application provides a comprehensive interface for monitoring system perform
   <img src=".github/assets/atoll-clipboard.png" alt="Clipboard manager" width="320">
 </p>
 
+### LockScreen Widgets
+- **Weather**
+- **Media Player**
+- **Device Charging status**
+- **Bluetooth Peripheral Battery status**
+
+<p align="center">
+  <img src=".github/assets/lockscreen.gif" alt="Lockscreen demo" width="720">
+</p>
+
 ### Layout and customisation
 - **Minimalistic mode** reducing the notch interface width from 640px to 420px, preserving essential music controls, HUDs, and timer functionality while removing secondary features for users prioritising visual simplicity.
 - **Per-feature toggles** enabling granular control over music controls, individual stats monitoring categories (CPU, memory, GPU, network, disk), clipboard manager display, colour picker, screen assistant, timers, and other modules.
@@ -66,6 +95,16 @@ The application provides a comprehensive interface for monitoring system perform
 - **Mirror feature** providing quick camera preview access directly from the notch interface when camera permissions are granted.
 - **Profile-driven onboarding** that preconfigures the entire experience based on user selection from Developer, Designer, Light Use, or Student profiles, with multi-select support for combined feature sets.
 - **Keyboard shortcut remapping** allowing users to customise hotkeys for toggling the notch, opening panels, activating the colour picker, starting timers, and launching utility tools.
+
+### Circular widgets (lock screen)
+- **Circular / Gauge styles**: Lock screen widgets now include a dedicated circular mode that uses full circular gauges for charging, Bluetooth battery, AQI, and temperature. Gauges rely on the system accessory styles to match platform appearance and respect the monochrome tint preference.
+- **Inline vs circular**: Inline mode keeps icon + text on a single baseline (no gauges). Circular mode increases widget sizing to match iOS-like reference visuals and adds top padding so the widget sits visually aligned with the lock screen clock.
+- **AQI & provider handling**: AQI is shown only when the Open Meteo provider is active. A provider toggle in Settings selects between Open Meteo and wttr; AQI is disabled for wttr.
+- **Battery & charging behaviour**: Charging state hides the standalone battery gauge and shows charging-specific accessory circular capacity. Bluetooth circular badge displays only the icon with a surrounding progress ring; battery percentages display actual values (e.g., 100%) and adopt system colouring when appropriate.
+
+<p align="center">
+  <img src=".github/assets/CircularLockScreenWidgets.png" alt="Circular lock screen widgets" width="640">
+</p>
 
 ## Requirements
 - **macOS Sonoma 14.0** or later, optimised for macOS Sequoia 15.0 and subsequent releases.
@@ -129,6 +168,16 @@ The application provides a comprehensive interface for monitoring system perform
 - Start, pause, or reset timers from the Timer tab or menu bar shortcuts.
 - Timers continue running as live activities even when the notch is closed, with notifications at completion.
 - Manage multiple concurrent timers and view remaining time for all active timers at a glance.
+
+- Timer controls live in a right-side popover alongside other notch icons and are also available from the menu bar. Timers run as live activities when the notch is closed: the timer icon remains neutral when idle and adopts the configured tint while running.
+
+- Progress and display options: choose circular ring or linear bar progress, toggle countdown text on/off, and allow the ring size to adapt to title width to avoid overlap with the notch.
+
+- Settings: timer tint (gradient vs solid), progress style (circular or bar), and countdown visibility.
+
+<p align="center">
+  <img src=".github/assets/timer.gif" alt="Timer controls and live activity" width="640">
+</p>
 
 ### Customisation
 - Open Settings from the menu bar icon to adjust features, appearance, behaviour, keyboard shortcuts, and privacy permissions.
@@ -265,57 +314,6 @@ This operation clears UserDefaults, removes application support files and caches
 - Search Console.app for process name "DynamicIsland" to filter relevant log entries.
 - Report persistent issues with Console logs attached at the project's GitHub Issues page.
 
-## Contributing
-
-Contributions are welcome from developers, designers, and documentation writers. Follow these guidelines to ensure smooth collaboration:
-
-### For developers
-1. **Fork the repository** and clone your fork locally:
-   ```bash
-   git clone https://github.com/your-username/Atoll.git
-   cd Atoll
-   ```
-2. **Create a feature branch** from main with a descriptive name:
-   ```bash
-   git switch -c feature/your-feature-name
-   ```
-3. **Follow existing architecture**: Maintain the SwiftUI structure, leverage Combine for reactive data flow, and avoid introducing unnecessary dependencies.
-4. **Code style**: Follow Swift API Design Guidelines, use meaningful variable names, and keep functions focused on single responsibilities.
-5. **Testing**: Add unit tests for new functionality where practical, particularly for data models and utility functions.
-6. **Documentation**: Update inline documentation for public APIs and add explanatory comments for complex logic.
-7. **Commit changes** with clear, concise commit messages:
-   ```bash
-   git add .
-   git commit -m "Add feature: brief description of changes"
-   ```
-8. **Push to your fork** and submit a pull request:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-### Pull request guidelines
-- Provide a clear description of the changes, motivation, and any related issues.
-- Include testing notes explaining how to verify the changes.
-- Attach screenshots or screen recordings for UI changes.
-- Ensure the code builds without errors or warnings.
-- Respond to review feedback promptly and update the PR as needed.
-
-### For designers
-- Contribute UI/UX improvements, mockups, and design refinements.
-- Submit icon designs, animation concepts, or visual asset enhancements.
-- Provide design rationale and maintain consistency with macOS Human Interface Guidelines.
-
-### For documentation
-- Improve user guides, API documentation, and troubleshooting sections.
-- Translate documentation into additional languages.
-- Clarify setup instructions and add missing usage examples.
-
-### Code review process
-- All pull requests require review from project maintainers before merging.
-- Automated testing must pass via continuous integration workflows.
-- Changes should not significantly decrease test coverage without justification.
-- Breaking changes require major version updates following semantic versioning.
-
 ## License
 Atoll is released under the GPL v3 License. Refer to [LICENSE](LICENSE) for the full terms.
 
@@ -329,7 +327,15 @@ Atoll builds upon the work of several open-source projects and draws inspiration
 
 - [**Stats**](https://github.com/exelban/stats) - source implementation for CPU temperature monitoring via SMC (System Management Controller) access, frequency sampling through IOReport bindings, and per-core CPU utilisation tracking. The system metrics collection architecture derives from Stats project readers.
 
+## Contributors
 
+<a href="https://github.com/Ebullioscopic/Atoll/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Ebullioscopic/Atoll" />
+</a>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Ebullioscopic/Atoll&type=timeline&legend=top-left)](https://www.star-history.com/#Ebullioscopic/Atoll&type=timeline&legend=top-left)
 
 ## Updating Existing Clones
 If you previously cloned DynamicIsland, update the remote to track the Atoll repository:
@@ -337,3 +343,5 @@ If you previously cloned DynamicIsland, update the remote to track the Atoll rep
 ```bash
 git remote set-url origin https://github.com/Ebullioscopic/Atoll.git
 ```
+
+A heartfelt thanks to [TheBoredTeam](https://github.com/TheBoredTeam) for being supportive and being totally awesome, Atoll would not have been possible without Boring.Notch

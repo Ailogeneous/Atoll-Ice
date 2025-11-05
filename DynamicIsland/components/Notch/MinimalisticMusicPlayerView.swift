@@ -11,35 +11,45 @@ import Defaults
 struct MinimalisticMusicPlayerView: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     let albumArtNamespace: Namespace.ID
+    @Default(.showMediaOutputControl) var showMediaOutputControl
 
     var body: some View {
         VStack(spacing: 0) {
             // Header area with album art (matching DynamicIslandHeader height of 24pt)
-            HStack(alignment: .center, spacing: 10) {
-                MinimalisticAlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
-                    .frame(width: 50, height: 50)
-                
-                // Song info aligned to bottom of album art
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(MusicManager.shared.songTitle)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                    
-                    Text(MusicManager.shared.artistName)
-                        .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: MusicManager.shared.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
-                        .lineLimit(1)
-                }
-                
-                Spacer()
-                
-                // Visualizer aligned to bottom
-                if useMusicVisualizer {
-                    visualizer
+            GeometryReader { headerGeo in
+                let albumArtWidth: CGFloat = 50
+                let spacing: CGFloat = 10
+                let visualizerWidth: CGFloat = useMusicVisualizer ? 24 : 0
+                let textWidth = max(0, headerGeo.size.width - albumArtWidth - spacing - (useMusicVisualizer ? (visualizerWidth + spacing) : 0))
+                HStack(alignment: .center, spacing: spacing) {
+                    MinimalisticAlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+                        .frame(width: albumArtWidth, height: albumArtWidth)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        if !musicManager.songTitle.isEmpty {
+                            MarqueeText(
+                                $musicManager.songTitle,
+                                font: .system(size: 12, weight: .semibold),
+                                nsFont: .subheadline,
+                                textColor: .white,
+                                frameWidth: textWidth
+                            )
+                        }
+
+                        Text(musicManager.artistName)
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
+                            .lineLimit(1)
+                    }
+                    .frame(width: textWidth, alignment: .leading)
+
+                    if useMusicVisualizer {
+                        visualizer
+                            .frame(width: visualizerWidth)
+                    }
                 }
             }
-            .frame(height: 50) // Fixed height to accommodate album art
+            .frame(height: 50)
             
             // Compact progress bar
             progressBar
@@ -182,8 +192,12 @@ struct MinimalisticMusicPlayerView: View {
             }
             
             if Defaults[.showShuffleAndRepeat] {
-                controlButton(icon: repeatIcon, isActive: musicManager.repeatMode != .off) {
-                    Task { await musicManager.toggleRepeat() }
+                if showMediaOutputControl {
+                    MinimalisticMediaOutputButton()
+                } else {
+                    controlButton(icon: repeatIcon, isActive: musicManager.repeatMode != .off) {
+                        Task { await musicManager.toggleRepeat() }
+                    }
                 }
             }
         }
@@ -216,7 +230,61 @@ struct MinimalisticMusicPlayerView: View {
             action: action
         )
     }
-    
+    private struct MinimalisticMediaOutputButton: View {
+        @ObservedObject private var routeManager = AudioRouteManager.shared
+        @StateObject private var volumeModel = MediaOutputVolumeViewModel()
+        @EnvironmentObject private var vm: DynamicIslandViewModel
+        @State private var isPopoverPresented = false
+        @State private var isHoveringPopover = false
+
+        var body: some View {
+            MinimalisticSquircircleButton(
+                icon: routeManager.activeDevice?.iconName ?? "speaker.wave.2",
+                fontSize: 18,
+                fontWeight: .medium,
+                frameSize: CGSize(width: 40, height: 40),
+                cornerRadius: 16,
+                foregroundColor: .white.opacity(0.85)
+            ) {
+                isPopoverPresented.toggle()
+                if isPopoverPresented {
+                    routeManager.refreshDevices()
+                }
+            }
+            .accessibilityLabel("Media output")
+            .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+                MediaOutputSelectorPopover(
+                    routeManager: routeManager,
+                    volumeModel: volumeModel,
+                    onHoverChanged: { hovering in
+                        isHoveringPopover = hovering
+                        updateActivity()
+                    }
+                ) {
+                    isPopoverPresented = false
+                    isHoveringPopover = false
+                    updateActivity()
+                }
+            }
+            .onChange(of: isPopoverPresented) { _, presented in
+                if !presented {
+                    isHoveringPopover = false
+                }
+                updateActivity()
+            }
+            .onAppear {
+                routeManager.refreshDevices()
+            }
+            .onDisappear {
+                vm.isMediaOutputPopoverActive = false
+            }
+        }
+
+        private func updateActivity() {
+            vm.isMediaOutputPopoverActive = isPopoverPresented && isHoveringPopover
+        }
+    }
+
     private var repeatIcon: String {
         switch musicManager.repeatMode {
         case .off: return "repeat"

@@ -80,7 +80,9 @@ final class LockScreenWeatherPanelManager {
         let originX = screenFrame.midX - (size.width / 2)
         let verticalOffset = screenFrame.height * 0.15
         let maxY = screenFrame.maxY - size.height - 48
-        let originY = min(maxY, screenFrame.midY + verticalOffset)
-        return NSRect(x: originX, y: originY, width: size.width, height: size.height)
+        let baseY = min(maxY, screenFrame.midY + verticalOffset)
+        let loweredY = baseY - 36
+        let clampedY = max(screenFrame.minY + 80, loweredY)
+        return NSRect(x: originX, y: clampedY, width: size.width, height: size.height)
     }
 }

@@ -70,7 +70,7 @@ struct NotchTimerView: View {
                 // Timer icon in center
                 Image(systemName: "timer")
                     .font(.system(size: 32, weight: .medium))
-                    .foregroundStyle(timerManager.currentColor)
+                    .foregroundStyle(openIconColor)
                     .scaleEffect(timerManager.isRunning && timerManager.isTimerActive ? 1.1 : 1.0)
                     .animation(
                         timerManager.isRunning && timerManager.isTimerActive ? 
@@ -284,6 +284,13 @@ struct NotchTimerView: View {
                 NSCursor.pop()
             }
         }
+    }
+}
+
+private extension NotchTimerView {
+    var openIconColor: Color {
+        guard timerManager.isTimerActive && timerManager.isRunning else { return .white.opacity(0.9) }
+        return timerManager.currentColor
     }
 }
 

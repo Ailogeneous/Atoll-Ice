@@ -64,15 +64,20 @@ class CalendarManager: ObservableObject {
 
     func checkCalendarAuthorization() async {
         let status = EKEventStore.authorizationStatus(for: .event)
+        let reminderStatus = EKEventStore.authorizationStatus(for: .reminder)
         DispatchQueue.main.async {
             print("📅 Current calendar authorization status: \(status)")
             self.calendarAuthorizationStatus = status
+            self.reminderAuthorizationStatus = reminderStatus
         }
 
         switch status {
         case .notDetermined:
             let granted = await calendarService.requestAccess()
-            self.calendarAuthorizationStatus = granted ? .fullAccess : .denied
+            let newEventStatus = EKEventStore.authorizationStatus(for: .event)
+            let newReminderStatus = EKEventStore.authorizationStatus(for: .reminder)
+            self.calendarAuthorizationStatus = newEventStatus
+            self.reminderAuthorizationStatus = newReminderStatus
             if granted {
                 await reloadCalendarAndReminderLists()
                 events = await calendarService.events(

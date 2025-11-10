@@ -953,6 +953,9 @@ struct Media: View {
 struct CalendarSettings: View {
     @ObservedObject private var calendarManager = CalendarManager.shared
     @Default(.showCalendar) var showCalendar: Bool
+    @Default(.enableReminderLiveActivity) var enableReminderLiveActivity
+    @Default(.reminderPresentationStyle) var reminderPresentationStyle
+    @Default(.reminderLeadTime) var reminderLeadTime
 
     var body: some View {
         Form {
@@ -997,6 +1000,34 @@ struct CalendarSettings: View {
                 
                 Defaults.Toggle("Show calendar", key: .showCalendar)
                 
+                Section(header: Text("Reminder Live Activity")) {
+                    Defaults.Toggle("Enable reminder live activity", key: .enableReminderLiveActivity)
+
+                    Picker("Countdown style", selection: $reminderPresentationStyle) {
+                        ForEach(ReminderPresentationStyle.allCases) { style in
+                            Text(style.displayName).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(!enableReminderLiveActivity)
+
+                    HStack {
+                        Text("Notify before")
+                        Slider(
+                            value: Binding(
+                                get: { Double(reminderLeadTime) },
+                                set: { reminderLeadTime = Int($0) }
+                            ),
+                            in: 1...60,
+                            step: 1
+                        )
+                        .disabled(!enableReminderLiveActivity)
+                        Text("\(reminderLeadTime) min")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 60, alignment: .trailing)
+                    }
+                }
+
                 Section(header: Text("Select Calendars")) {
                     List {
                         ForEach(calendarManager.allCalendars, id: \.id) { calendar in

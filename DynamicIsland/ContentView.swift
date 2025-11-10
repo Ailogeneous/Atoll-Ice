@@ -21,6 +21,7 @@ struct ContentView: View {
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var timerManager = TimerManager.shared
+    @ObservedObject var reminderManager = ReminderLiveActivityManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var statsManager = StatsManager.shared
     @ObservedObject var recordingManager = ScreenRecordingManager.shared
@@ -34,6 +35,7 @@ struct ContentView: View {
     @Default(.showGpuGraph) var showGpuGraph
     @Default(.showNetworkGraph) var showNetworkGraph
     @Default(.showDiskGraph) var showDiskGraph
+    @Default(.enableReminderLiveActivity) var enableReminderLiveActivity
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
@@ -404,13 +406,15 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
-                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .volume || vm.notchState == .closed) {
+                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .volume || vm.notchState == .closed) {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed && !lockScreenManager.isLocked {
                           MusicLiveActivity()
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .timer) && vm.notchState == .closed && timerManager.isTimerActive && coordinator.timerLiveActivityEnabled && !vm.hideOnClosed {
                           TimerLiveActivity()
+                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .reminder) && vm.notchState == .closed && reminderManager.isActive && enableReminderLiveActivity && !vm.hideOnClosed {
+                          ReminderLiveActivity()
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .recording) && vm.notchState == .closed && (recordingManager.isRecording || !recordingManager.isRecorderIdle) && Defaults[.enableScreenRecordingDetection] && !vm.hideOnClosed {
                           RecordingLiveActivity()
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .doNotDisturb) && vm.notchState == .closed && doNotDisturbManager.isDoNotDisturbActive && Defaults[.enableDoNotDisturbDetection] && Defaults[.showDoNotDisturbIndicator] && !vm.hideOnClosed && !lockScreenManager.isLocked {

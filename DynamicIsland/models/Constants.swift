@@ -217,6 +217,22 @@ enum TimerProgressStyle: String, CaseIterable, Identifiable, Defaults.Serializab
     var id: String { rawValue }
 }
 
+enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case ringCountdown = "Ring"
+    case digital = "Digital"
+    case minutes = "Minutes"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .ringCountdown: return "Ring"
+        case .digital: return "Digital"
+        case .minutes: return "Minutes"
+        }
+    }
+}
+
 // AI Model types for screen assistant
 enum AIModelProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
     case gemini = "Gemini"
@@ -442,6 +458,11 @@ extension Defaults.Keys {
     static let timerShowsLabel = Key<Bool>("timerShowsLabel", default: true)
     static let timerShowsProgress = Key<Bool>("timerShowsProgress", default: true)
     static let timerProgressStyle = Key<TimerProgressStyle>("timerProgressStyle", default: .bar)
+    
+    // MARK: Reminder Live Activity
+    static let enableReminderLiveActivity = Key<Bool>("enableReminderLiveActivity", default: true)
+    static let reminderPresentationStyle = Key<ReminderPresentationStyle>("reminderPresentationStyle", default: .ringCountdown)
+    static let reminderLeadTime = Key<Int>("reminderLeadTime", default: 5)
     static let timerControlWindowEnabled = Key<Bool>("timerControlWindowEnabled", default: true)
     
     // MARK: ColorPicker Feature

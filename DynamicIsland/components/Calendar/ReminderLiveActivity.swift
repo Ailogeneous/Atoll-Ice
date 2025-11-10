@@ -66,17 +66,11 @@ struct ReminderLiveActivity: View {
         let diameter = iconDiameter
         let accent = accentColor(for: reminder)
 
-        return ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 2)
-            Circle()
-                .fill(accent.opacity(0.12))
-            Image(systemName: glyphName(for: reminder.event))
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(accent)
-        }
-        .frame(width: diameter, height: diameter)
-        .frame(width: iconDiameter, height: notchContentHeight, alignment: .center)
+        return Image(systemName: glyphName(for: reminder.event))
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(accent)
+            .frame(width: diameter, height: diameter)
+            .frame(width: iconDiameter, height: notchContentHeight, alignment: .center)
     }
 
     @ViewBuilder
@@ -166,7 +160,7 @@ struct ReminderLiveActivity: View {
     }
 
     private var leftWingWidth: CGFloat {
-        wingPadding + iconDiameter
+    wingPadding + iconDiameter
     }
 
     private func rightWingWidth(for reminder: ReminderLiveActivityManager.ReminderEntry, now: Date) -> CGFloat {

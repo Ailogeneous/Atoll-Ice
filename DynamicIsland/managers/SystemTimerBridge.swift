@@ -523,6 +523,10 @@ final class SystemTimerBridge {
         if message.contains("started timer:") {
             handleTimerStartedMessage(message)
         }
+
+        if message.contains("Timer stopped") {
+            handleTimerStoppedMessage(message)
+        }
     }
 
     private func handleScheduledTimersMessage(_ message: String) {
@@ -658,6 +662,16 @@ final class SystemTimerBridge {
         guard let identifier = captureFirstMatch(pattern: "started timer:\\s*([A-Fa-f0-9\\-]+)", in: message) else { return }
         logDebug("Timer started for ID: \(identifier)")
         setLogIdentifier(identifier)
+    }
+
+    private func handleTimerStoppedMessage(_ message: String) {
+        guard logIdentifier != nil else {
+            logDebug("Timer stopped event received without active identifier; ignoring")
+            return
+        }
+
+        logDebug("Timer stopped event received; clearing external timer state")
+        clearLogState(triggerSmoothClose: true)
     }
 
     private func applyLogDrivenUpdate(remaining: TimeInterval, isPaused: Bool, nameOverride: String? = nil, durationOverride: TimeInterval? = nil) {

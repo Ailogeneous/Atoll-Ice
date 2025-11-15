@@ -50,6 +50,13 @@ final class SystemTimerBridge {
         let paused: Bool
     }
 
+    private struct LogTimerEntry {
+        let identifier: String
+        let state: String?
+        let title: String?
+        let duration: Double?
+    }
+
     private let domain = "com.apple.mobiletimerd" as CFString
     private let preferencesPath = (NSHomeDirectory() as NSString)
         .appendingPathComponent("Library/Preferences/com.apple.mobiletimerd.plist")
@@ -59,6 +66,7 @@ final class SystemTimerBridge {
     private var initialTotalDuration: TimeInterval?
     private var latestRemaining: TimeInterval?
     private var latestPaused: Bool = false
+    private var latestUpdateTimestamp: Date?
 
     private var logProcess: Process?
     private var logPipe: Pipe?
@@ -164,6 +172,7 @@ final class SystemTimerBridge {
             self.metadata = nil
             self.latestRemaining = nil
             self.latestPaused = false
+            self.latestUpdateTimestamp = nil
             self.logPreferredName = nil
             self.logPreferredDuration = nil
             self.logIdentifier = nil
@@ -415,6 +424,8 @@ final class SystemTimerBridge {
 
         logDebug("Applying timer update (remaining: \(remaining), paused: \(paused))")
 
+        latestUpdateTimestamp = Date()
+
         let durationFromMetadata = logPreferredDuration ?? metadata?.duration ?? 0
         if let metadata, metadata.state == .running || metadata.state == .paused {
             if durationFromMetadata > 0, (initialTotalDuration ?? 0) < durationFromMetadata {
@@ -515,16 +526,50 @@ final class SystemTimerBridge {
     }
 
     private func handleScheduledTimersMessage(_ message: String) {
-        guard let identifier = captureFirstMatch(pattern: "TimerID:\\s*([A-F0-9\\-]+)", in: message) else {
-            logDebug("Scheduled timers message without identifier; clearing state")
-            clearLogState(triggerSmoothClose: true)
+        let entries = parseLogTimerEntries(from: message)
+        guard !entries.isEmpty else {
+            logDebug("Scheduled timers event without timer entries; preserving state")
             return
         }
 
-        logDebug("Scheduled timers message for ID: \(identifier)")
-        setLogIdentifier(identifier)
+        let normalizedCurrentId = logIdentifier?.uppercased()
 
-        if let title = captureFirstMatch(pattern: "Title:\\s*([^,]+)", in: message) {
+        let selectedEntry: LogTimerEntry?
+
+        if let currentId = normalizedCurrentId,
+           let current = entries.first(where: { $0.identifier == currentId }) {
+            selectedEntry = current
+        } else if let active = entries.first(where: { ($0.state == "running" || $0.state == "paused") }) {
+            selectedEntry = active
+        } else if normalizedCurrentId == nil,
+                  let fired = entries.first(where: { $0.state == "fired" }) {
+            selectedEntry = fired
+        } else {
+            selectedEntry = nil
+        }
+
+        guard let entry = selectedEntry else {
+            logDebug("Scheduled timers event did not reference an active timer; keeping existing state")
+            return
+        }
+
+        if let state = entry.state {
+            logDebug("Scheduled timers entry for ID \(entry.identifier) with state \(state)")
+        }
+
+        if normalizedCurrentId == nil {
+            if let state = entry.state, state == "running" || state == "paused" || state == "fired" {
+                setLogIdentifier(entry.identifier)
+            }
+        } else if let currentId = normalizedCurrentId, currentId != entry.identifier {
+            if let state = entry.state, state == "running" || state == "paused" {
+                setLogIdentifier(entry.identifier)
+            } else {
+                logDebug("Ignoring timer entry for ID \(entry.identifier) because state is \(entry.state ?? "unknown")")
+            }
+        }
+
+        if let title = entry.title {
             let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty, trimmed != "(null)" {
                 logPreferredName = trimmed
@@ -532,8 +577,7 @@ final class SystemTimerBridge {
             }
         }
 
-        if let durationString = captureFirstMatch(pattern: "duration:([0-9]+(?:\\.[0-9]+)?)", in: message),
-           let duration = Double(durationString) {
+        if let duration = entry.duration {
             if let existing = logPreferredDuration {
                 logPreferredDuration = max(existing, duration)
             } else {
@@ -547,31 +591,33 @@ final class SystemTimerBridge {
             logDebug("Recorded duration from log: \(duration)")
         }
 
-        if let stateString = captureFirstMatch(pattern: "state:([A-Za-z]+)", in: message) {
-            let normalized = stateString.lowercased()
-            logDebug("Timer state from log: \(normalized)")
-            switch normalized {
-            case "paused":
+        guard let state = entry.state else { return }
+
+        switch state {
+        case "paused":
+            if let remaining = latestRemaining {
+                applyLogDrivenUpdate(remaining: remaining, isPaused: true)
+            } else {
                 latestPaused = true
-                if let remaining = latestRemaining {
-                    applyLogDrivenUpdate(remaining: remaining, isPaused: true)
-                }
-            case "running":
-                latestPaused = false
-                if let remaining = latestRemaining {
-                    applyLogDrivenUpdate(remaining: remaining, isPaused: false)
-                }
-            case "fired":
-                latestPaused = false
-                applyLogDrivenUpdate(remaining: 0, isPaused: false)
-                return
-            case "stopped":
-                latestPaused = false
-                clearLogState(triggerSmoothClose: true)
-                return
-            default:
-                break
             }
+        case "running":
+            if let remaining = latestRemaining {
+                applyLogDrivenUpdate(remaining: remaining, isPaused: false)
+            } else {
+                latestPaused = false
+            }
+        case "fired":
+            latestPaused = false
+            applyLogDrivenUpdate(remaining: 0, isPaused: false)
+        case "stopped":
+            latestPaused = false
+            if entry.identifier == normalizedCurrentId {
+                clearLogState(triggerSmoothClose: true)
+            } else {
+                logDebug("Ignoring stopped state for unrelated timer ID: \(entry.identifier)")
+            }
+        default:
+            break
         }
     }
 
@@ -601,14 +647,15 @@ final class SystemTimerBridge {
         logDebug("Next timer changed token: \(trimmed)")
 
         if trimmed.lowercased().contains("null") {
-            clearLogState(triggerSmoothClose: true)
-        } else {
-            setLogIdentifier(trimmed)
+            logDebug("Next timer null marker received; retaining current identifier")
+            return
         }
+
+        setLogIdentifier(trimmed)
     }
 
     private func handleTimerStartedMessage(_ message: String) {
-        guard let identifier = captureFirstMatch(pattern: "started timer:\\s*([A-F0-9\\-]+)", in: message) else { return }
+        guard let identifier = captureFirstMatch(pattern: "started timer:\\s*([A-Fa-f0-9\\-]+)", in: message) else { return }
         logDebug("Timer started for ID: \(identifier)")
         setLogIdentifier(identifier)
     }
@@ -632,9 +679,22 @@ final class SystemTimerBridge {
             logDebug("Applying duration override: \(durationOverride)")
         }
 
-        latestPaused = isPaused
+        let previousRemaining = latestRemaining
+        var resolvedPaused = isPaused
+
+        if resolvedPaused {
+            if let previous = previousRemaining, remaining < previous - 0.75 {
+                logDebug("Remaining dropped from \(previous) to \(remaining) despite paused state; treating as running")
+                resolvedPaused = false
+            } else if metadata?.state == .running {
+                logDebug("Metadata reports running; overriding paused state from log")
+                resolvedPaused = false
+            }
+        }
+
+        latestPaused = resolvedPaused
         latestRemaining = remaining
-        logDebug("Log-driven update (remaining: \(remaining), paused: \(isPaused))")
+        logDebug("Log-driven update (remaining: \(remaining), paused: \(resolvedPaused), rawPaused: \(isPaused))")
 
         if let duration = logPreferredDuration, (initialTotalDuration ?? 0) < duration {
             initialTotalDuration = duration
@@ -644,11 +704,13 @@ final class SystemTimerBridge {
             initialTotalDuration = remaining
         }
 
-        applyTimerUpdate(remaining: remaining, paused: isPaused)
+        applyTimerUpdate(remaining: remaining, paused: resolvedPaused)
     }
 
     private func setLogIdentifier(_ identifier: String) {
-        let cleaned = identifier.trimmingCharacters(in: CharacterSet(charactersIn: " <>"))
+        let cleaned = identifier
+            .trimmingCharacters(in: CharacterSet(charactersIn: " <>"))
+            .uppercased()
         guard !cleaned.isEmpty else { return }
 
         if logIdentifier != cleaned {
@@ -672,6 +734,7 @@ final class SystemTimerBridge {
         initialTotalDuration = nil
         latestRemaining = nil
         latestPaused = false
+        latestUpdateTimestamp = nil
         logDidCompleteActiveTimer = false
 
         guard triggerSmoothClose else { return }
@@ -693,8 +756,8 @@ final class SystemTimerBridge {
         }
     }
 
-    private func captureFirstMatch(pattern: String, in text: String) -> String? {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+    private func captureFirstMatch(pattern: String, in text: String, options: NSRegularExpression.Options = []) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return nil }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         guard let match = regex.firstMatch(in: text, options: [], range: range),
               match.numberOfRanges >= 2,
@@ -703,6 +766,38 @@ final class SystemTimerBridge {
         }
 
         return String(text[swiftRange])
+    }
+
+    private func parseLogTimerEntries(from message: String) -> [LogTimerEntry] {
+        guard let regex = try? NSRegularExpression(pattern: "<MT(?:Mutable)?Timer:[^>]+>", options: []) else {
+            return []
+        }
+
+        let range = NSRange(message.startIndex..<message.endIndex, in: message)
+        let matches = regex.matches(in: message, options: [], range: range)
+
+        var entries: [LogTimerEntry] = []
+
+        for match in matches {
+            guard let swiftRange = Range(match.range, in: message) else { continue }
+            let entryString = String(message[swiftRange])
+            guard let rawIdentifier = captureFirstMatch(pattern: "TimerID:\\s*([A-Fa-f0-9\\-]+)", in: entryString) else { continue }
+
+            let identifier = rawIdentifier.uppercased()
+            let state = captureFirstMatch(pattern: "state:([A-Za-z]+)", in: entryString)?.lowercased()
+            let title = captureFirstMatch(pattern: "Title:\\s*([^,]+)", in: entryString)
+            let durationString = captureFirstMatch(pattern: "duration:([0-9]+(?:\\.[0-9]+)?)", in: entryString)
+            let duration = durationString.flatMap(Double.init)
+
+            entries.append(LogTimerEntry(
+                identifier: identifier,
+                state: state,
+                title: title,
+                duration: duration
+            ))
+        }
+
+        return entries
     }
 
     private func refreshMetadata() {
@@ -935,4 +1030,5 @@ final class SystemTimerBridge {
             debugPrint("[SystemTimerBridge] Accessibility permission is required to mirror Clock timers. Grant access in System Settings → Privacy & Security → Accessibility.")
         }
     }
+
 }

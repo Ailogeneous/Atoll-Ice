@@ -78,9 +78,9 @@ struct MinimalisticMusicPlayerView: View {
         }
         .padding(.horizontal, 12)
         .padding(.top, -15)
-        .padding(.bottom, shouldShowReminderList ? ReminderLiveActivityManager.listBottomPadding : ReminderLiveActivityManager.baselineMinimalisticBottomPadding)
+        .padding(.bottom, ReminderLiveActivityManager.baselineMinimalisticBottomPadding)
         .frame(maxWidth: .infinity)
-        .frame(height: calculateDynamicHeight(), alignment: .center)
+        .frame(height: calculateDynamicHeight(), alignment: .top)
     }
 
     // MARK: - TypingLyricView
@@ -172,12 +172,12 @@ struct MinimalisticMusicPlayerView: View {
 
         // Add reminder list height if showing
         if shouldShowReminderList {
-            height += reminderListHeight + ReminderLiveActivityManager.listTopPadding
+            height += reminderListHeight
         }
 
         // Add padding
         height += 15 // top padding
-        height += shouldShowReminderList ? ReminderLiveActivityManager.listBottomPadding : ReminderLiveActivityManager.baselineMinimalisticBottomPadding
+        height += ReminderLiveActivityManager.baselineMinimalisticBottomPadding
 
         return height
     }

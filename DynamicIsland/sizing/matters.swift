@@ -30,8 +30,6 @@ var minimalisticOpenNotchSize: CGSize {
     if reminderCount > 0 {
         let reminderHeight = ReminderLiveActivityManager.additionalHeight(forRowCount: reminderCount)
         size.height += reminderHeight
-        size.height += ReminderLiveActivityManager.listTopPadding
-        size.height += ReminderLiveActivityManager.listBottomPadding - ReminderLiveActivityManager.baselineMinimalisticBottomPadding
     }
 
     return size

@@ -15,6 +15,7 @@ struct LockScreenMusicPanel: View {
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject private var routeManager = AudioRouteManager.shared
     @StateObject private var volumeModel = MediaOutputVolumeViewModel()
+    @ObservedObject private var animator: LockScreenPanelAnimator
     @State private var sliderValue: Double = 0
     @State private var dragging: Bool = false
     @State private var isActive = true
@@ -30,6 +31,10 @@ struct LockScreenMusicPanel: View {
     @Default(.musicAuxLeftControl) private var leftAuxControl
     @Default(.musicAuxRightControl) private var rightAuxControl
     @Default(.enableLyrics) private var enableLyrics
+
+    init(animator: LockScreenPanelAnimator) {
+        _animator = ObservedObject(wrappedValue: animator)
+    }
     
     private let collapsedPanelCornerRadius: CGFloat = 28
     private let expandedPanelCornerRadius: CGFloat = 52
@@ -100,6 +105,9 @@ struct LockScreenMusicPanel: View {
                     updatePanelSize()
                 }
             }
+            .scaleEffect(animator.isPresented ? 1 : 0.9, anchor: .center)
+            .opacity(animator.isPresented ? 1 : 0)
+            .animation(.spring(response: 0.52, dampingFraction: 0.8), value: animator.isPresented)
     }
 
     @ViewBuilder

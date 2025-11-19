@@ -12,6 +12,11 @@ import Defaults
 import QuartzCore
 
 @MainActor
+final class LockScreenPanelAnimator: ObservableObject {
+    @Published var isPresented: Bool = false
+}
+
+@MainActor
 class LockScreenPanelManager {
     static let shared = LockScreenPanelManager()
 
@@ -21,6 +26,8 @@ class LockScreenPanelManager {
     private let collapsedPanelCornerRadius: CGFloat = 28
     private let expandedPanelCornerRadius: CGFloat = 52
     private(set) var latestFrame: NSRect?
+    private let panelAnimator = LockScreenPanelAnimator()
+    private var hideTask: Task<Void, Never>?
 
     private init() {
         print("[\(timestamp())] LockScreenPanelManager: initialized")
@@ -81,7 +88,10 @@ class LockScreenPanelManager {
 
         window.setFrame(targetFrame, display: true)
         latestFrame = targetFrame
-        let hosting = NSHostingView(rootView: LockScreenMusicPanel())
+        hideTask?.cancel()
+        panelAnimator.isPresented = false
+
+        let hosting = NSHostingView(rootView: LockScreenMusicPanel(animator: panelAnimator))
         hosting.frame = NSRect(origin: .zero, size: targetFrame.size)
         window.contentView = hosting
 
@@ -99,6 +109,11 @@ class LockScreenPanelManager {
 
         // Keep the window alive and simply order it out on unlock to avoid SkyLight crashes.
         window.orderFrontRegardless()
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.panelAnimator.isPresented = true
+        }
 
         print("[\(timestamp())] LockScreenPanelManager: panel visible")
     }
@@ -142,16 +157,24 @@ class LockScreenPanelManager {
     func hidePanel() {
         print("[\(timestamp())] LockScreenPanelManager: hidePanel")
 
+        panelAnimator.isPresented = false
+        hideTask?.cancel()
+
         guard let window = panelWindow else {
             print("LockScreenPanelManager: no panel to hide")
+            latestFrame = nil
             return
         }
 
-        window.orderOut(nil)
-        window.contentView = nil
-
-        latestFrame = nil
-
-        print("[\(timestamp())] LockScreenPanelManager: panel hidden")
+        hideTask = Task { [weak self, weak window] in
+            try? await Task.sleep(for: .milliseconds(360))
+            guard let self else { return }
+            await MainActor.run {
+                window?.orderOut(nil)
+                window?.contentView = nil
+                self.latestFrame = nil
+                print("[\(self.timestamp())] LockScreenPanelManager: panel hidden")
+            }
+        }
     }
 }

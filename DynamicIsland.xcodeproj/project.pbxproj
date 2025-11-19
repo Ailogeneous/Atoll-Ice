@@ -412,6 +412,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Atoll;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_MetalCaptureEnabled = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Dynamic Island uses AppleScripts to control Spotify and Apple Music";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Dynamic Island needs Bluetooth access to detect when audio devices connect and display their battery status in the HUD.";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Show calender events inside the notch";
@@ -479,6 +480,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Atoll;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_MetalCaptureEnabled = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Dynamic Island uses AppleScripts to control Spotify and Apple Music";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Dynamic Island needs Bluetooth access to detect when audio devices connect and display their battery status in the HUD.";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Show calender events inside the notch";

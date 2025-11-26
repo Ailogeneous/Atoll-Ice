@@ -11,6 +11,7 @@ import Combine
 import AppKit
 import Defaults
 import SwiftUI
+import AVFoundation
 
 enum LockScreenAnimationTimings {
     static let lockExpand: TimeInterval = 0.45
@@ -80,6 +81,7 @@ class LockScreenManager: ObservableObject {
     
     @objc private func screenLocked() {
         print("[\(timestamp())] LockScreenManager: 🔒 Screen LOCKED event received")
+        LockSoundPlayer.shared.playLockChime()
         
         // Update state SYNCHRONOUSLY without Task/await to avoid any delay
         lastUpdated = Date()
@@ -120,6 +122,7 @@ class LockScreenManager: ObservableObject {
     
     @objc private func screenUnlocked() {
         print("[\(timestamp())] LockScreenManager: 🔓 Screen UNLOCKED event received")
+        LockSoundPlayer.shared.playUnlockChime()
         
         // Hide panel window immediately and synchronously
         print("[\(timestamp())] LockScreenManager: 🚪 Hiding panel window")
@@ -188,5 +191,68 @@ extension LockScreenManager {
     /// Check if monitoring is available (for settings UI)
     var isMonitoringAvailable: Bool {
         return true // Always available on macOS
+    }
+}
+
+// MARK: - Lock Sound Playback
+
+@MainActor
+final class LockSoundPlayer {
+    static let shared = LockSoundPlayer()
+    private let throttleInterval: TimeInterval = 0.25
+    private var players: [SoundType: AVAudioPlayer] = [:]
+    private var lastPlaybackDates: [SoundType: Date] = [:]
+
+    private init() {}
+
+    func playLockChime() {
+        play(.lock)
+    }
+
+    func playUnlockChime() {
+        play(.unlock)
+    }
+
+    private func play(_ type: SoundType) {
+        guard Defaults[.enableLockSounds] else { return }
+        guard shouldPlay(type) else { return }
+        guard let player = resolvePlayer(for: type) else { return }
+
+        player.currentTime = 0
+        player.play()
+        lastPlaybackDates[type] = Date()
+    }
+
+    private func shouldPlay(_ type: SoundType) -> Bool {
+        guard let last = lastPlaybackDates[type] else { return true }
+        return Date().timeIntervalSince(last) >= throttleInterval
+    }
+
+    private func resolvePlayer(for type: SoundType) -> AVAudioPlayer? {
+        if let cached = players[type] {
+            return cached
+        }
+
+        guard let url = Bundle.main.url(forResource: type.resourceName, withExtension: "mp3") else {
+            Logger.log("Missing \(type.resourceName).mp3 in bundle", category: .warning)
+            return nil
+        }
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.prepareToPlay()
+            players[type] = player
+            return player
+        } catch {
+            Logger.log("Failed to initialize lock sound player for \(type.resourceName): \(error.localizedDescription)", category: .error)
+            return nil
+        }
+    }
+
+    private enum SoundType: String {
+        case lock
+        case unlock
+
+        var resourceName: String { rawValue }
     }
 }

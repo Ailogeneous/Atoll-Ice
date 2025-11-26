@@ -7,7 +7,6 @@
 
 import AppKit
 import SwiftUI
-import Defaults
 import Sparkle
 
 class SettingsWindowController: NSWindowController {
@@ -65,9 +64,7 @@ class SettingsWindowController: NSWindowController {
         // Handle window closing
         window.delegate = self
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(window, scope: .panelsOnly)
     }
     
     func showWindow() {
@@ -108,26 +105,9 @@ class SettingsWindowController: NSWindowController {
         NSApp.setActivationPolicy(.accessory)
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            window?.sharingType = .none
-            print("🙈 SettingsWindow: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            window?.sharingType = .readOnly
-            print("👁️ SettingsWindow: Visible in screen capture and recordings")
+    deinit {
+        if let window = window {
+            ScreenCaptureVisibilityManager.shared.unregister(window)
         }
     }
 }

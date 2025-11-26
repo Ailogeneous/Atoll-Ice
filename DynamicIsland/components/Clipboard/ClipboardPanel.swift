@@ -7,7 +7,16 @@
 
 import AppKit
 import SwiftUI
-import Defaults
+
+private func applyClipboardCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
 
 class ClipboardPanel: NSPanel {
     
@@ -51,10 +60,8 @@ class ClipboardPanel: NSPanel {
             .stationary,
             .fullScreenAuxiliary  // Float above full-screen apps
         ]
-        
-        // Apply screenshot protection
-        updateScreenshotProtection()
-        setupScreenshotProtectionObserver()
+
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         // Accept mouse moved events for proper hover behavior
         acceptsMouseMovedEvents = true
@@ -66,6 +73,7 @@ class ClipboardPanel: NSPanel {
         }
         
         let hostingView = NSHostingView(rootView: contentView)
+        applyClipboardCornerMask(hostingView, radius: 12)
         self.contentView = hostingView
         
         // Set initial size
@@ -140,28 +148,6 @@ class ClipboardPanel: NSPanel {
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
     }
     
-    private func setupScreenshotProtectionObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenshotProtection()
-            }
-        }
-    }
-    
-    private func updateScreenshotProtection() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Exclude from screenshots and screen recordings
-            self.sharingType = .none
-            print("🙈 ClipboardPanel: Protected from screenshots and screen recordings")
-        } else {
-            // Allow normal screenshot inclusion
-            self.sharingType = .readOnly
-            print("👁️ ClipboardPanel: Visible in screenshots and screen recordings")
-        }
-    }
 }
 
 struct ClipboardPanelView: View {

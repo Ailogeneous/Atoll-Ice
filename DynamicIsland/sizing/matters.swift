@@ -17,6 +17,10 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 let openNotchSize: CGSize = .init(width: 640, height: 190)
 private let minimalisticBaseOpenNotchSize: CGSize = .init(width: 420, height: 180)
 private let minimalisticLyricsExtraHeight: CGFloat = 40
+let statsSecondRowContentHeight: CGFloat = 120
+let statsGridSpacingHeight: CGFloat = 12
+let notchShadowPaddingStandard: CGFloat = 18
+let notchShadowPaddingMinimalistic: CGFloat = 12
 
 @MainActor
 var minimalisticOpenNotchSize: CGSize {
@@ -36,6 +40,46 @@ var minimalisticOpenNotchSize: CGSize {
 }
 let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
 let minimalisticCornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 35, bottom: 35), closed: cornerRadiusInsets.closed)
+
+func statsAdjustedNotchSize(
+    from baseSize: CGSize,
+    isStatsTabActive: Bool,
+    secondRowProgress: CGFloat
+) -> CGSize {
+    guard isStatsTabActive, Defaults[.enableStatsFeature] else {
+        return baseSize
+    }
+
+    let enabledGraphsCount = [
+        Defaults[.showCpuGraph],
+        Defaults[.showMemoryGraph],
+        Defaults[.showGpuGraph],
+        Defaults[.showNetworkGraph],
+        Defaults[.showDiskGraph]
+    ].filter { $0 }.count
+
+    guard enabledGraphsCount >= 4 else {
+        return baseSize
+    }
+
+    let clampedProgress = max(0, min(secondRowProgress, 1))
+    guard clampedProgress > 0 else {
+        return baseSize
+    }
+
+    var adjustedSize = baseSize
+    let extraHeight = (statsSecondRowContentHeight + statsGridSpacingHeight) * clampedProgress
+    adjustedSize.height += extraHeight
+    return adjustedSize
+}
+
+func notchShadowPaddingValue(isMinimalistic: Bool) -> CGFloat {
+    isMinimalistic ? notchShadowPaddingMinimalistic : notchShadowPaddingStandard
+}
+
+func addShadowPadding(to size: CGSize, isMinimalistic: Bool) -> CGSize {
+    CGSize(width: size.width, height: size.height + notchShadowPaddingValue(isMinimalistic: isMinimalistic))
+}
 
 enum MusicPlayerImageSizes {
     static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 13.0, closed: 4.0)

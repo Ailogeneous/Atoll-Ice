@@ -60,9 +60,12 @@ class ClipboardWindowManager: ObservableObject {
         window.contentView = hostingView
         
         // Handle window closing
-        window.delegate = WindowDelegate { [weak self] in
+        window.delegate = WindowDelegate { [weak self] window in
+            ScreenCaptureVisibilityManager.shared.unregister(window)
             self?.clipboardWindow = nil
         }
+
+        ScreenCaptureVisibilityManager.shared.register(window, scope: .panelsOnly)
         
         self.clipboardWindow = window
         window.makeKeyAndOrderFront(nil)
@@ -88,21 +91,17 @@ class ClipboardWindowManager: ObservableObject {
 }
 
 private class WindowDelegate: NSObject, NSWindowDelegate {
-    private let onClose: () -> Void
-    
-    init(onClose: @escaping () -> Void) {
+    private let onClose: (NSWindow) -> Void
+
+    init(onClose: @escaping (NSWindow) -> Void) {
         self.onClose = onClose
         super.init()
     }
-    
-    func windowWillClose(_ notification: Notification) {
-        onClose()
-    }
-    
+
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         // Hide instead of close when user clicks close button
         sender.orderOut(nil)
-        onClose()
+        onClose(sender)
         return false
     }
 }

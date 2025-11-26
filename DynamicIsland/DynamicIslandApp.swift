@@ -276,33 +276,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return CGSize(width: inlineSneakPeekWidth, height: vm.effectiveClosedNotchHeight)
         }
         
-        // Use minimalistic or normal size based on settings
-        var baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
-        
-        // Only apply dynamic sizing when on stats tab and stats are enabled
-        guard coordinator.currentView == .stats && Defaults[.enableStatsFeature] else {
-            return baseSize
-        }
-        
-        let enabledGraphsCount = [
-            Defaults[.showCpuGraph],
-            Defaults[.showMemoryGraph], 
-            Defaults[.showGpuGraph],
-            Defaults[.showNetworkGraph],
-            Defaults[.showDiskGraph]
-        ].filter { $0 }.count
-        
-        // Calculate height based on layout: 1-3 graphs = single row, 4+ graphs = two rows
-        var requiredHeight = baseSize.height
-        
-        if enabledGraphsCount >= 4 {
-            // Two rows needed - add height for second row plus spacing
-            let extraHeight: CGFloat = 120 + 12 // Graph height + spacing
-            requiredHeight = baseSize.height + extraHeight
-        }
-        
-        // Width stays constant - no horizontal expansion
-        return CGSize(width: baseSize.width, height: requiredHeight)
+        // Use minimalistic or normal size based on settings, then adjust for stats layout
+        let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
+        let adjustedContentSize = statsAdjustedNotchSize(
+            from: baseSize,
+            isStatsTabActive: coordinator.currentView == .stats,
+            secondRowProgress: coordinator.statsSecondRowExpansion
+        )
+        return addShadowPadding(
+            to: adjustedContentSize,
+            isMinimalistic: Defaults[.enableMinimalisticUI]
+        )
     }
 
     func ensureWindowSize(_ size: CGSize, animated: Bool, force: Bool = false) {
@@ -780,6 +764,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             ))
             window.isRestorable = false
             window.identifier = NSUserInterfaceItemIdentifier("OnboardingWindow")
+
+            ScreenCaptureVisibilityManager.shared.register(window, scope: .panelsOnly)
 
             onboardingWindowController = NSWindowController(window: window)
         }

@@ -232,7 +232,7 @@ struct GeneralSettings: View {
                     NotificationCenter.default.post(name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
                 }
                 .disabled(showOnAllDisplays)
-                Defaults.Toggle("Hide panels from screenshots & screen recordings", key: .hidePanelsFromScreenCapture)
+                Defaults.Toggle("Hide Dynamic Island during screenshots & recordings", key: .hideDynamicIslandFromScreenCapture)
             } header: {
                 Text("System features")
             }
@@ -356,6 +356,7 @@ struct GeneralSettings: View {
             
             Section {
                 Defaults.Toggle("Enable Lock Screen Live Activity", key: .enableLockScreenLiveActivity)
+                Defaults.Toggle("Play lock/unlock sounds", key: .enableLockSounds)
                 if #available(macOS 26.0, *) {
                     Picker("Lock screen material", selection: $lockScreenGlassStyle) {
                         ForEach(LockScreenGlassStyle.allCases) { style in

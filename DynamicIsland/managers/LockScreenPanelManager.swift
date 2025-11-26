@@ -81,6 +81,8 @@ class LockScreenPanelManager {
             newWindow.isMovable = false
             newWindow.hasShadow = false
 
+            ScreenCaptureVisibilityManager.shared.register(newWindow, scope: .entireInterface)
+
             panelWindow = newWindow
             window = newWindow
             hasDelegated = false

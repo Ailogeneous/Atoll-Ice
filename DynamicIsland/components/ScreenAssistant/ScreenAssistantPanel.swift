@@ -57,9 +57,7 @@ class ScreenAssistantPanel: NSPanel {
             .fullScreenAuxiliary
         ]
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         // Set minimal size since this is just a wrapper
         setContentSize(CGSize(width: 1, height: 1))
@@ -77,27 +75,8 @@ class ScreenAssistantPanel: NSPanel {
         super.close()
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            self.sharingType = .none
-            print("🙈 ScreenAssistantPanel: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            self.sharingType = .readOnly
-            print("👁️ ScreenAssistantPanel: Visible in screen capture and recordings")
-        }
+    deinit {
+        ScreenCaptureVisibilityManager.shared.unregister(self)
     }
 }
 

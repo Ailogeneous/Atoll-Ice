@@ -38,6 +38,8 @@ class DynamicIslandWindow: NSPanel {
         isReleasedWhenClosed = false
         level = .mainMenu + 3
         hasShadow = false
+
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .entireInterface)
     }
     
     override var canBecomeKey: Bool {

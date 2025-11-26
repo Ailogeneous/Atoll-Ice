@@ -48,7 +48,16 @@ struct ExpandedItem {
 class DynamicIslandViewCoordinator: ObservableObject {
     static let shared = DynamicIslandViewCoordinator()
     
-    @Published var currentView: NotchViews = .home
+    @Published var currentView: NotchViews = .home {
+        didSet {
+            handleStatsTabTransition(from: oldValue, to: currentView)
+        }
+    }
+    
+    @Published var statsSecondRowExpansion: CGFloat = 1
+    private var statsSecondRowWorkItem: DispatchWorkItem?
+    private let statsSecondRowRevealDelay: TimeInterval = 0.5
+    private let statsSecondRowAnimationDuration: TimeInterval = 0.3
     
     
     @AppStorage("firstLaunch") var firstLaunch: Bool = true
@@ -90,6 +99,27 @@ class DynamicIslandViewCoordinator: ObservableObject {
     
     private init() {
         selectedScreen = preferredScreen
+    }
+
+    private func handleStatsTabTransition(from oldValue: NotchViews, to newValue: NotchViews) {
+        guard oldValue != newValue else { return }
+        statsSecondRowWorkItem?.cancel()
+        if newValue == .stats && Defaults[.enableStatsFeature] {
+            statsSecondRowExpansion = 0
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                withAnimation(.easeInOut(duration: self.statsSecondRowAnimationDuration)) {
+                    self.statsSecondRowExpansion = 1
+                }
+                self.statsSecondRowWorkItem = nil
+            }
+            statsSecondRowWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + statsSecondRowRevealDelay, execute: workItem)
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                statsSecondRowExpansion = 0
+            }
+        }
     }
     
     func toggleSneakPeek(status: Bool, type: SneakContentType, duration: TimeInterval = 1.5, value: CGFloat = 0, icon: String = "") {

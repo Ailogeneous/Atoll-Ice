@@ -8,6 +8,16 @@ import AppKit
 import SwiftUI
 import Defaults
 
+private func applyModelSelectionCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
+
 // MARK: - Model Selection Panel
 class ModelSelectionPanel: NSPanel {
     
@@ -58,9 +68,7 @@ class ModelSelectionPanel: NSPanel {
             .fullScreenAuxiliary
         ]
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         acceptsMouseMovedEvents = true
     }
@@ -68,6 +76,7 @@ class ModelSelectionPanel: NSPanel {
     private func setupContentView() {
         let contentView = ModelSelectionView()
         let hostingView = NSHostingView(rootView: contentView)
+        applyModelSelectionCornerMask(hostingView, radius: 16)
         self.contentView = hostingView
         
         // Set size for model selection panel
@@ -89,27 +98,8 @@ class ModelSelectionPanel: NSPanel {
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            self.sharingType = .none
-            print("🙈 ModelSelectionPanel: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            self.sharingType = .readOnly
-            print("👁️ ModelSelectionPanel: Visible in screen capture and recordings")
-        }
+    deinit {
+        ScreenCaptureVisibilityManager.shared.unregister(self)
     }
 }
 

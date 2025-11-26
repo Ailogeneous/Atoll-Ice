@@ -145,6 +145,8 @@ final class TimerControlWindowManager {
         window.isMovable = false
         window.alphaValue = 0
 
+        ScreenCaptureVisibilityManager.shared.register(window, scope: .entireInterface)
+
         self.window = window
         self.hasDelegated = false
         return window

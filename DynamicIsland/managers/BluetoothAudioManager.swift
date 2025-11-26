@@ -40,6 +40,10 @@ class BluetoothAudioManager: ObservableObject {
     private var missingBatteryLog: Set<String> = []
     private var lastBatteryStatusUpdate: Date?
     private let batteryStatusUpdateInterval: TimeInterval = 20
+    private let pmsetFetchQueue = DispatchQueue(label: "com.dynamicisland.bluetooth.pmset", qos: .utility)
+    private var isPmsetRefreshInFlight = false
+    private var lastPmsetRefreshDate: Date?
+    private let pmsetRefreshCooldown: TimeInterval = 5
     
     // MARK: - Initialization
     private init() {
@@ -423,7 +427,7 @@ class BluetoothAudioManager: ObservableObject {
         triggerLiveBatteryRefreshIfNeeded()
     }
 
-    private func applyConnectedDeviceBatteryLevels() {
+    private func applyConnectedDeviceBatteryLevels(triggerPmsetFallback: Bool = true) {
         guard !connectedDevices.isEmpty else {
             lastConnectedDevice = nil
             return
@@ -446,6 +450,11 @@ class BluetoothAudioManager: ObservableObject {
         if let last = updatedDevices.last {
             lastConnectedDevice = last
         }
+
+        if triggerPmsetFallback,
+           updatedDevices.contains(where: { $0.batteryLevel == nil }) {
+            requestPmsetFallback(reason: "missing battery after refresh")
+        }
     }
 
     private func bestBatteryLevel(for device: BluetoothAudioDevice) -> Int? {
@@ -454,6 +463,44 @@ class BluetoothAudioManager: ObservableObject {
             ?? batteryLevelFromDefaults(forAddress: device.address)
             ?? batteryLevelFromDefaults(forName: device.name)
             ?? device.batteryLevel
+    }
+
+    private func requestPmsetFallback(reason: String) {
+        guard connectedDevices.contains(where: { $0.batteryLevel == nil }) else { return }
+        guard !isPmsetRefreshInFlight else { return }
+
+        let now = Date()
+        if let lastPmsetRefreshDate,
+           now.timeIntervalSince(lastPmsetRefreshDate) < pmsetRefreshCooldown {
+            return
+        }
+
+        isPmsetRefreshInFlight = true
+        print("🎧 [BluetoothAudioManager] 🔄 Triggering pmset fallback (\(reason))")
+        pmsetFetchQueue.async { [weak self] in
+            guard let self else { return }
+            let entries = self.collectPmsetAccessoryBatteryEntries()
+            DispatchQueue.main.async {
+                self.handlePmsetFallbackResults(entries)
+            }
+        }
+    }
+
+    private func handlePmsetFallbackResults(_ entries: [PmsetAccessoryBatteryEntry]) {
+        isPmsetRefreshInFlight = false
+        lastPmsetRefreshDate = Date()
+        guard !entries.isEmpty else { return }
+
+        var updatedNames = batteryStatusByName
+        let newlyFilled = mergePmsetEntries(entries, into: &updatedNames, logNewEntries: true)
+        guard !newlyFilled.isEmpty else { return }
+
+        batteryStatusByName = updatedNames
+        applyConnectedDeviceBatteryLevels(triggerPmsetFallback: false)
+
+        if let level = hudBatteryLevelCandidate() {
+            updateActiveBluetoothHUDBattery(with: level)
+        }
     }
 
     private func triggerLiveBatteryRefreshIfNeeded() {
@@ -534,10 +581,8 @@ class BluetoothAudioManager: ObservableObject {
         guard didUpdate else { return }
 
         applyConnectedDeviceBatteryLevels()
-        if let lastLevel = lastConnectedDevice?.batteryLevel {
-            updateActiveBluetoothHUDBattery(with: lastLevel)
-        } else if let fallbackLevel = connectedDevices.last(where: { $0.batteryLevel != nil })?.batteryLevel {
-            updateActiveBluetoothHUDBattery(with: fallbackLevel)
+        if let level = hudBatteryLevelCandidate() {
+            updateActiveBluetoothHUDBattery(with: level)
         }
     }
 
@@ -548,6 +593,11 @@ class BluetoothAudioManager: ObservableObject {
                   self.coordinator.sneakPeek.type == .bluetoothAudio else { return }
             self.coordinator.sneakPeek.value = CGFloat(level) / 100.0
         }
+    }
+
+    private func hudBatteryLevelCandidate() -> Int? {
+        lastConnectedDevice?.batteryLevel
+            ?? connectedDevices.last(where: { $0.batteryLevel != nil })?.batteryLevel
     }
 
     private func coreBluetoothCacheSnapshot() -> CoreBluetoothCacheSnapshot {
@@ -626,6 +676,46 @@ class BluetoothAudioManager: ObservableObject {
         static let empty = CoreBluetoothCacheSnapshot(byAddress: [:], byName: [:], namesByUUID: [:])
     }
 
+    private struct PmsetAccessoryBatteryEntry {
+        let displayName: String
+        let normalizedName: String
+        let level: Int
+    }
+
+    @discardableResult
+    private func mergePmsetEntries(
+        _ entries: [PmsetAccessoryBatteryEntry],
+        into names: inout [String: Int],
+        logNewEntries: Bool
+    ) -> [PmsetAccessoryBatteryEntry] {
+        guard !entries.isEmpty else { return [] }
+
+        var newlyFilled: [PmsetAccessoryBatteryEntry] = []
+
+        for entry in entries {
+            let clamped = clampBatteryPercentage(entry.level)
+            let previous = names[entry.normalizedName]
+
+            if previous == nil {
+                newlyFilled.append(entry)
+                names[entry.normalizedName] = clamped
+                continue
+            }
+
+            if let previous, clamped > previous {
+                names[entry.normalizedName] = clamped
+            }
+        }
+
+        if logNewEntries {
+            for entry in newlyFilled {
+                print("🎧 [BluetoothAudioManager] ℹ️ pmset reported \(entry.level)% for \(entry.displayName)")
+            }
+        }
+
+        return newlyFilled
+    }
+
     private func batteryLevelFromDefaults(forAddress address: String?) -> Int? {
         guard let address, !address.isEmpty else { return nil }
         guard let preferences = UserDefaults(suiteName: bluetoothPreferencesSuite) else { return nil }
@@ -700,6 +790,9 @@ class BluetoothAudioManager: ObservableObject {
         let profiler = collectSystemProfilerBatteryLevels()
         mergeBatteryLevels(into: &combinedAddressPercentages, from: profiler.addresses)
         mergeBatteryLevels(into: &combinedNamePercentages, from: profiler.names)
+
+        let pmsetEntries = collectPmsetAccessoryBatteryEntries()
+        mergePmsetEntries(pmsetEntries, into: &combinedNamePercentages, logNewEntries: true)
 
         var statuses: [String: String] = [:]
         for (key, value) in combinedAddressPercentages {
@@ -865,6 +958,71 @@ class BluetoothAudioManager: ObservableObject {
         }
 
         return (addressPercentages, namePercentages)
+    }
+
+    private func collectPmsetAccessoryBatteryEntries() -> [PmsetAccessoryBatteryEntry] {
+        let process = Process()
+        process.launchPath = "/usr/bin/pmset"
+        process.arguments = ["-g", "accps"]
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+        } catch {
+            return []
+        }
+
+        let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            return []
+        }
+
+        guard !data.isEmpty, let output = String(data: data, encoding: .utf8) else {
+            return []
+        }
+
+        guard let regex = try? NSRegularExpression(
+            pattern: #"^\s*-\s*(.+?)\s*(?:\(.+?\))?\s+(\d+)\s*%"#,
+            options: [.anchorsMatchLines]
+        ) else {
+            return []
+        }
+
+        var entries: [PmsetAccessoryBatteryEntry] = []
+        let nsOutput = output as NSString
+        let range = NSRange(location: 0, length: nsOutput.length)
+
+        regex.enumerateMatches(in: output, options: [], range: range) { match, _, _ in
+            guard let match, match.numberOfRanges >= 3 else { return }
+
+            let rawName = nsOutput
+                .substring(with: match.range(at: 1))
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let percentString = nsOutput.substring(with: match.range(at: 2))
+
+            guard !rawName.isEmpty, let level = Int(percentString) else { return }
+
+            let normalizedName = normalizeProductName(rawName)
+            guard !normalizedName.isEmpty else { return }
+            if normalizedName.hasPrefix("internalbattery") {
+                return
+            }
+
+            entries.append(
+                PmsetAccessoryBatteryEntry(
+                    displayName: rawName,
+                    normalizedName: normalizedName,
+                    level: level
+                )
+            )
+        }
+
+        return entries
     }
 
     private func identifiersFromDeviceCachePayload(_ payload: [String: Any]) -> [String] {

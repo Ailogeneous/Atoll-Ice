@@ -126,6 +126,20 @@ struct ContentView: View {
         }
         return cornerRadiusInsets
     }
+    
+    private var currentShadowPadding: CGFloat {
+        notchShadowPaddingValue(isMinimalistic: enableMinimalisticUI)
+    }
+
+    private var currentNotchShape: NotchShape {
+        let topRadius = (vm.notchState == .open && Defaults[.cornerRadiusScaling])
+            ? activeCornerRadiusInsets.opened.top
+            : activeCornerRadiusInsets.closed.top
+        let bottomRadius = (vm.notchState == .open && Defaults[.cornerRadiusScaling])
+            ? activeCornerRadiusInsets.opened.bottom
+            : activeCornerRadiusInsets.closed.bottom
+        return NotchShape(topCornerRadius: topRadius, bottomCornerRadius: bottomRadius)
+    }
 
     var body: some View {
         let interactionsEnabled = !lockScreenManager.isLocked
@@ -139,16 +153,20 @@ struct ContentView: View {
                 )
                 .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
                 .background(.black)
-                .mask {
-                    ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
-                    ? NotchShape(topCornerRadius: activeCornerRadiusInsets.opened.top, bottomCornerRadius: activeCornerRadiusInsets.opened.bottom)
-                        .drawingGroup()
-                    : NotchShape(topCornerRadius: activeCornerRadiusInsets.closed.top, bottomCornerRadius: activeCornerRadiusInsets.closed.bottom)
-                        .drawingGroup()
-                }
-                .padding(.bottom, vm.notchState == .open && Defaults[.extendHoverArea] ? 0 : (vm.effectiveClosedNotchHeight == 0)
-                    ? zeroHeightHoverPadding
-                    : 0
+                .clipShape(currentNotchShape)
+                .compositingGroup()
+                .shadow(
+                    color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
+                        ? .black.opacity(0.6)
+                        : .clear,
+                    radius: Defaults[.cornerRadiusScaling] ? 10 : 5
+                )
+                .padding(.bottom,
+                    currentShadowPadding + (
+                        vm.notchState == .open && Defaults[.extendHoverArea]
+                            ? 0
+                            : (vm.effectiveClosedNotchHeight == 0 ? zeroHeightHoverPadding : 0)
+                    )
                 )
 
             mainLayout
@@ -280,7 +298,11 @@ struct ContentView: View {
 //                    .keyboardShortcut("E", modifiers: .command)
                 }
         }
-    .frame(maxWidth: dynamicNotchSize.width, maxHeight: dynamicNotchSize.height, alignment: .top)
+    .frame(
+        maxWidth: dynamicNotchSize.width,
+        maxHeight: dynamicNotchSize.height + currentShadowPadding,
+        alignment: .top
+    )
     .animation(dynamicNotchResizeAnimation, value: dynamicNotchSize)
         .animation(.easeInOut(duration: 0.4), value: coordinator.currentView)
         .environmentObject(privacyManager)
@@ -291,7 +313,6 @@ struct ContentView: View {
                 vm.shouldRecheckHover.toggle()
             }
         }
-        .shadow(color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow]) ? .black.opacity(0.6) : .clear, radius: Defaults[.cornerRadiusScaling] ? 10 : 5)
         .background(dragDetector)
         .environmentObject(vm)
         .environmentObject(webcamManager)

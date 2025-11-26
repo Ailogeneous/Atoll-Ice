@@ -67,6 +67,7 @@ struct NotchStatsView: View {
     @State private var statsHoverGraceActive = false
     @State private var statsHoverGraceWorkItem: DispatchWorkItem?
     @EnvironmentObject var vm: DynamicIslandViewModel
+    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
 
     var availableGraphs: [GraphData] {
         var graphs: [GraphData] = []
@@ -148,18 +149,35 @@ struct NotchStatsView: View {
                 }
             }
         } else if graphCount == 4 {
-            // 4 graphs: 2x2 grid
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                spacing: 12
-            ) {
-                ForEach(0..<graphCount, id: \.self) { index in
-                    graphViewForIndex(index)
+            // 4 graphs: second row scales from zero height on tab open
+            VStack(spacing: 0) {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                    spacing: 12
+                ) {
+                    ForEach(0..<2, id: \.self) { index in
+                        graphViewForIndex(index)
+                    }
+                }
+
+                StatsCollapsibleRow(
+                    expansion: coordinator.statsSecondRowExpansion,
+                    height: statsSecondRowContentHeight + statsGridSpacingHeight
+                ) {
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                        spacing: 12
+                    ) {
+                        ForEach(2..<graphCount, id: \.self) { index in
+                            graphViewForIndex(index)
+                        }
+                    }
+                    .padding(.top, statsGridSpacingHeight)
                 }
             }
         } else {
             // 5 graphs: First row 3 graphs, second row 2 graphs (half-width each)
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 // First row: 3 graphs
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3),
@@ -169,15 +187,20 @@ struct NotchStatsView: View {
                         graphViewForIndex(index)
                     }
                 }
-
                 // Second row: 2 graphs (half-width each)
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                    spacing: 8
+                StatsCollapsibleRow(
+                    expansion: coordinator.statsSecondRowExpansion,
+                    height: statsSecondRowContentHeight + statsGridSpacingHeight
                 ) {
-                    ForEach(3..<graphCount, id: \.self) { index in
-                        graphViewForIndex(index)
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                        spacing: 8
+                    ) {
+                        ForEach(3..<graphCount, id: \.self) { index in
+                            graphViewForIndex(index)
+                        }
                     }
+                    .padding(.top, statsGridSpacingHeight)
                 }
             }
         }
@@ -438,8 +461,53 @@ struct NotchStatsView: View {
         .onChange(of: isHoveringDiskPopover) { _, _ in
             updateStatsPopoverState()
         }
+        .onChange(of: coordinator.statsSecondRowExpansion) { _, newValue in
+            let shouldHold = availableGraphs.count >= 4 && newValue < 0.999
+            if shouldHold {
+                isResizingForStats = true
+            } else {
+                DispatchQueue.main.async {
+                    isResizingForStats = false
+                }
+            }
+        }
     }
 
+
+private struct StatsCollapsibleRow<Content: View>: View {
+    let expansion: CGFloat
+    let height: CGFloat
+    let content: () -> Content
+    private let minVisibleHeight: CGFloat = 0.5
+
+    init(expansion: CGFloat, height: CGFloat, @ViewBuilder content: @escaping () -> Content) {
+        self.expansion = expansion
+        self.height = height
+        self.content = content
+    }
+
+    var body: some View {
+        let clamped = max(0, min(expansion, 1))
+        let targetHeight = clamped == 0 ? 0 : max(height * clamped, minVisibleHeight)
+
+        return Group {
+            if targetHeight == 0 {
+                Color.clear.frame(height: 0)
+            } else {
+                content()
+                    .frame(height: height, alignment: .top)
+                    .clipped()
+                    .mask(
+                        Rectangle()
+                            .frame(height: targetHeight)
+                            .frame(maxWidth: .infinity, alignment: .top)
+                    )
+                    .frame(height: targetHeight, alignment: .top)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: clamped)
+    }
+}
     private func activateStatsHoverGrace(duration: TimeInterval = 0.45) {
         statsHoverGraceWorkItem?.cancel()
         statsHoverGraceActive = true

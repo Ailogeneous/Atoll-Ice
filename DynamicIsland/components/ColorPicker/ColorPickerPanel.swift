@@ -9,6 +9,16 @@ import SwiftUI
 import Cocoa
 import Defaults
 
+private func applyColorPickerCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
+
 class ColorPickerPanelManager: ObservableObject {
     static let shared = ColorPickerPanelManager()
     
@@ -93,9 +103,7 @@ class ColorPickerPanel: NSPanel {
             .fullScreenAuxiliary  // Float above full-screen apps
         ]
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         // Accept mouse moved events for proper hover behavior
         acceptsMouseMovedEvents = true
@@ -105,6 +113,7 @@ class ColorPickerPanel: NSPanel {
         }
         
         let hostingView = NSHostingView(rootView: panelView)
+        applyColorPickerCornerMask(hostingView, radius: 12)
         contentView = hostingView
         
         // Set initial size
@@ -161,27 +170,8 @@ class ColorPickerPanel: NSPanel {
         saveCurrentPosition()
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            self.sharingType = .none
-            print("🙈 ColorPickerPanel: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            self.sharingType = .readOnly
-            print("👁️ ColorPickerPanel: Visible in screen capture and recordings")
-        }
+    deinit {
+        ScreenCaptureVisibilityManager.shared.unregister(self)
     }
 }
 

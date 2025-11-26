@@ -84,7 +84,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                     self.notchSize = updatedTarget
                 }
                 if let delegate = AppDelegate.shared {
-                    delegate.ensureWindowSize(updatedTarget, animated: true, force: false)
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                        animated: true,
+                        force: false
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -106,7 +110,32 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                     self.notchSize = updatedTarget
                 }
                 if let delegate = AppDelegate.shared {
-                    delegate.ensureWindowSize(updatedTarget, animated: true, force: false)
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                        animated: true,
+                        force: false
+                    )
+                }
+            }
+            .store(in: &cancellables)
+
+        coordinator.$statsSecondRowExpansion
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                guard self.notchState == .open else { return }
+                let updatedTarget = self.calculateDynamicNotchSize()
+                guard self.notchSize != updatedTarget else { return }
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.notchSize = updatedTarget
+                }
+                if let delegate = AppDelegate.shared {
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                        animated: false,
+                        force: false
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -167,7 +196,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
 
         let applyWindowResize: () -> Void = {
             guard let delegate = AppDelegate.shared else { return }
-            delegate.ensureWindowSize(targetSize, animated: false, force: true)
+            delegate.ensureWindowSize(
+                addShadowPadding(to: targetSize, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                animated: false,
+                force: true
+            )
         }
 
         if Thread.isMainThread {
@@ -187,28 +220,12 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     
     private func calculateDynamicNotchSize() -> CGSize {
         // Use minimalistic size if minimalistic UI is enabled
-        var baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
-
-        // Only apply dynamic sizing when on stats tab and stats are enabled
-        guard DynamicIslandViewCoordinator.shared.currentView == .stats && Defaults[.enableStatsFeature] else {
-            return baseSize
-        }
-
-        let enabledGraphsCount = [
-            Defaults[.showCpuGraph],
-            Defaults[.showMemoryGraph],
-            Defaults[.showGpuGraph],
-            Defaults[.showNetworkGraph],
-            Defaults[.showDiskGraph]
-        ].filter { $0 }.count
-
-        // If 4+ graphs are enabled, increase width
-        if enabledGraphsCount >= 4 {
-            let extraWidth: CGFloat = CGFloat(enabledGraphsCount - 3) * 120
-            return CGSize(width: baseSize.width + extraWidth, height: baseSize.height)
-        }
-
-        return baseSize
+        let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
+        return statsAdjustedNotchSize(
+            from: baseSize,
+            isStatsTabActive: DynamicIslandViewCoordinator.shared.currentView == .stats,
+            secondRowProgress: coordinator.statsSecondRowExpansion
+        )
     }
 
     func close() {

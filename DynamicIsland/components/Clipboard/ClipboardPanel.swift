@@ -8,6 +8,16 @@
 import AppKit
 import SwiftUI
 
+private func applyClipboardCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
+
 class ClipboardPanel: NSPanel {
     
     init() {
@@ -63,6 +73,7 @@ class ClipboardPanel: NSPanel {
         }
         
         let hostingView = NSHostingView(rootView: contentView)
+        applyClipboardCornerMask(hostingView, radius: 12)
         self.contentView = hostingView
         
         // Set initial size

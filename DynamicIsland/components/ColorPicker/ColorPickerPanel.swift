@@ -9,6 +9,16 @@ import SwiftUI
 import Cocoa
 import Defaults
 
+private func applyColorPickerCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
+
 class ColorPickerPanelManager: ObservableObject {
     static let shared = ColorPickerPanelManager()
     
@@ -103,6 +113,7 @@ class ColorPickerPanel: NSPanel {
         }
         
         let hostingView = NSHostingView(rootView: panelView)
+        applyColorPickerCornerMask(hostingView, radius: 12)
         contentView = hostingView
         
         // Set initial size

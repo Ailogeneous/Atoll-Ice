@@ -8,6 +8,16 @@ import AppKit
 import SwiftUI
 import Defaults
 
+private func applyChatPanelCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
+
 // MARK: - Chat Messages Panel (Left Side)
 class ChatMessagesPanel: NSPanel {
     
@@ -55,6 +65,7 @@ class ChatMessagesPanel: NSPanel {
     private func setupContentView() {
         let contentView = ChatMessagesView()
         let hostingView = NSHostingView(rootView: contentView)
+        applyChatPanelCornerMask(hostingView, radius: 16)
         self.contentView = hostingView
         
         // Set size for chat messages panel (wider and taller)
@@ -139,6 +150,7 @@ class ChatInputPanel: NSPanel {
     private func setupContentView() {
         let contentView = ChatInputView()
         let hostingView = NSHostingView(rootView: contentView)
+        applyChatPanelCornerMask(hostingView, radius: 16)
         self.contentView = hostingView
         
         // Set compact size for single-line input panel

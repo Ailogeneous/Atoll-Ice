@@ -8,6 +8,16 @@ import AppKit
 import SwiftUI
 import Defaults
 
+private func applyModelSelectionCornerMask(_ view: NSView, radius: CGFloat) {
+    view.wantsLayer = true
+    view.layer?.masksToBounds = true
+    view.layer?.cornerRadius = radius
+    view.layer?.backgroundColor = NSColor.clear.cgColor
+    if #available(macOS 13.0, *) {
+        view.layer?.cornerCurve = .continuous
+    }
+}
+
 // MARK: - Model Selection Panel
 class ModelSelectionPanel: NSPanel {
     
@@ -66,6 +76,7 @@ class ModelSelectionPanel: NSPanel {
     private func setupContentView() {
         let contentView = ModelSelectionView()
         let hostingView = NSHostingView(rootView: contentView)
+        applyModelSelectionCornerMask(hostingView, radius: 16)
         self.contentView = hostingView
         
         // Set size for model selection panel

@@ -401,6 +401,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
 
+        TimerManager.shared.$activeSource
+            .combineLatest(TimerManager.shared.$isTimerActive)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.debouncedUpdateWindowSize()
+            }
+            .store(in: &cancellables)
+
         Defaults.publisher(.enableShortcuts, options: []).sink { change in
             KeyboardShortcuts.isEnabled = change.newValue
         }.store(in: &cancellables)

@@ -119,6 +119,14 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
 
+        TimerManager.shared.$activeSource
+            .combineLatest(TimerManager.shared.$isTimerActive)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _, _ in
+                self?.handleMinimalisticTimerHeightChange()
+            }
+            .store(in: &cancellables)
+
         coordinator.$statsSecondRowExpansion
             .removeDuplicates()
             .receive(on: RunLoop.main)
@@ -139,6 +147,23 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func handleMinimalisticTimerHeightChange() {
+        guard Defaults[.enableMinimalisticUI] else { return }
+        guard notchState == .open else { return }
+        let updatedTarget = calculateDynamicNotchSize()
+        guard notchSize != updatedTarget else { return }
+        withAnimation(.smooth) {
+            notchSize = updatedTarget
+        }
+        if let delegate = AppDelegate.shared {
+            delegate.ensureWindowSize(
+                addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                animated: true,
+                force: false
+            )
+        }
     }
     
     private func setupDetectorObserver() {

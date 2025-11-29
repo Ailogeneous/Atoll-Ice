@@ -17,6 +17,9 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 let openNotchSize: CGSize = .init(width: 640, height: 190)
 private let minimalisticBaseOpenNotchSize: CGSize = .init(width: 420, height: 180)
 private let minimalisticLyricsExtraHeight: CGFloat = 40
+let minimalisticTimerCountdownTopPadding: CGFloat = 12
+let minimalisticTimerCountdownContentHeight: CGFloat = 82
+let minimalisticTimerCountdownBlockHeight: CGFloat = minimalisticTimerCountdownTopPadding + minimalisticTimerCountdownContentHeight
 let statsSecondRowContentHeight: CGFloat = 120
 let statsGridSpacingHeight: CGFloat = 12
 let notchShadowPaddingStandard: CGFloat = 18
@@ -34,6 +37,10 @@ var minimalisticOpenNotchSize: CGSize {
     if reminderCount > 0 {
         let reminderHeight = ReminderLiveActivityManager.additionalHeight(forRowCount: reminderCount)
         size.height += reminderHeight
+    }
+
+    if DynamicIslandViewCoordinator.shared.timerLiveActivityEnabled && TimerManager.shared.isExternalTimerActive {
+        size.height += minimalisticTimerCountdownBlockHeight
     }
 
     return size

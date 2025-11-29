@@ -21,8 +21,11 @@ struct MinimalisticMusicPlayerView: View {
     @Default(.musicAuxRightControl) private var rightAuxControl
     @Default(.musicSkipBehavior) private var musicSkipBehavior
     @ObservedObject private var reminderManager = ReminderLiveActivityManager.shared
+    @ObservedObject private var timerManager = TimerManager.shared
+    @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
     @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
     @Default(.enableLyrics) private var enableLyrics
+    @Default(.timerPresets) private var timerPresets
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,6 +79,8 @@ struct MinimalisticMusicPlayerView: View {
                     .padding(.top, 10)
             }
 
+            timerCountdownSection
+
             reminderList
         }
         .padding(.horizontal, 12)
@@ -83,6 +88,7 @@ struct MinimalisticMusicPlayerView: View {
         .padding(.bottom, ReminderLiveActivityManager.baselineMinimalisticBottomPadding)
         .frame(maxWidth: .infinity)
         .frame(height: calculateDynamicHeight(), alignment: .top)
+        .animation(.smooth(duration: 0.3), value: dynamicHeightSignature)
     }
 
     // MARK: - TypingLyricView
@@ -156,6 +162,37 @@ struct MinimalisticMusicPlayerView: View {
         ReminderLiveActivityManager.additionalHeight(forRowCount: reminderEntries.count)
     }
 
+    private var shouldShowTimerCountdown: Bool {
+        coordinator.timerLiveActivityEnabled && timerManager.isExternalTimerActive
+    }
+
+    private var timerCountdownColor: Color {
+        let baseColor: Color
+        if let presetId = timerManager.activePresetId,
+           let preset = timerPresets.first(where: { $0.id == presetId }) {
+            baseColor = preset.color
+        } else {
+            baseColor = timerManager.timerColor
+        }
+        return baseColor.ensureMinimumBrightness(factor: 0.75)
+    }
+
+    private var timerCountdownText: String {
+        timerManager.formattedRemainingTime()
+    }
+
+    private var timerDisplayName: String {
+        let trimmed = timerManager.timerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Timer" : trimmed
+    }
+
+    private var dynamicHeightSignature: Int {
+        var signature = reminderEntries.count * 10
+        if enableLyrics { signature += 1 }
+        if shouldShowTimerCountdown { signature += 100 }
+        return signature
+    }
+
     private func calculateDynamicHeight() -> CGFloat {
         var height: CGFloat = 50 // Base height for header
 
@@ -172,6 +209,10 @@ struct MinimalisticMusicPlayerView: View {
             height += lyricsTopPadding + lyricsEstimatedHeight
         }
 
+        if shouldShowTimerCountdown {
+            height += minimalisticTimerCountdownBlockHeight
+        }
+
         // Add reminder list height if showing
         if shouldShowReminderList {
             height += reminderListHeight
@@ -182,6 +223,60 @@ struct MinimalisticMusicPlayerView: View {
         height += ReminderLiveActivityManager.baselineMinimalisticBottomPadding
 
         return height
+    }
+
+    private var timerCountdownSection: some View {
+        VStack(spacing: 0) {
+            if shouldShowTimerCountdown {
+                timerCountdownView
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(.top, shouldShowTimerCountdown ? minimalisticTimerCountdownTopPadding : 0)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: shouldShowTimerCountdown ? minimalisticTimerCountdownBlockHeight : 0, alignment: .top)
+        .animation(.smooth(duration: 0.25), value: shouldShowTimerCountdown)
+    }
+
+    private func displayFont(size: CGFloat) -> Font {
+        .custom("SF Pro Display", size: size)
+    }
+
+    private var timerCountdownView: some View {
+        GeometryReader { geometry in
+            let availableWidth = geometry.size.width
+            let preferredCountdownWidth = max(availableWidth * 0.42, 150)
+            let maxCountdownWidth = max(availableWidth - 60, 0)
+            let countdownWidth = min(preferredCountdownWidth, maxCountdownWidth)
+            let marqueeWidth = max(availableWidth - countdownWidth - 12, 0)
+
+            HStack(alignment: .lastTextBaseline, spacing: 12) {
+                MarqueeText(
+                    .init(get: { timerDisplayName }, set: { _ in }),
+                    font: .system(size: 16, weight: .semibold),
+                    nsFont: .title3,
+                    textColor: timerCountdownColor.opacity(0.85),
+                    frameWidth: max(marqueeWidth, 1)
+                )
+                .alignmentGuide(.lastTextBaseline) { dimensions in
+                    dimensions[VerticalAlignment.bottom]
+                }
+
+                Spacer(minLength: 8)
+
+                Text(timerCountdownText)
+                    .font(displayFont(size: 56))
+                    .monospacedDigit()
+                    .foregroundStyle(timerManager.isOvertime ? Color.red : timerCountdownColor)
+                    .contentTransition(.numericText())
+                    .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
+                    .lineLimit(1)
+                    .frame(width: countdownWidth, alignment: .trailing)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 4)
+        .frame(height: minimalisticTimerCountdownContentHeight, alignment: .top)
     }
 
     private var reminderList: some View {

@@ -536,7 +536,7 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .general, title: "Show on all displays", keywords: ["multi-display", "external monitor"], highlightID: SettingsTab.general.highlightID(for: "Show on all displays")),
             SettingsSearchEntry(tab: .general, title: "Show on a specific display", keywords: ["preferred screen", "display picker"], highlightID: SettingsTab.general.highlightID(for: "Show on a specific display")),
             SettingsSearchEntry(tab: .general, title: "Automatically switch displays", keywords: ["auto switch", "displays"], highlightID: SettingsTab.general.highlightID(for: "Automatically switch displays")),
-            SettingsSearchEntry(tab: .general, title: "Hide Dynamic Island during screenshots & recordings", keywords: ["privacy", "screenshot", "recording"], highlightID: SettingsTab.general.highlightID(for: "Hide Dynamic Island during screenshots & recordings")),
+            SettingsSearchEntry(tab: .general, title: "Hide Atoll during screenshots & recordings", keywords: ["privacy", "screenshot", "recording"], highlightID: SettingsTab.general.highlightID(for: "Hide Atoll during screenshots & recordings")),
             SettingsSearchEntry(tab: .general, title: "Enable Screen Recording Detection", keywords: ["screen recording", "indicator"], highlightID: SettingsTab.general.highlightID(for: "Enable Screen Recording Detection")),
             SettingsSearchEntry(tab: .general, title: "Show Recording Indicator", keywords: ["recording indicator", "red dot"], highlightID: SettingsTab.general.highlightID(for: "Show Recording Indicator")),
             SettingsSearchEntry(tab: .general, title: "Enable Focus Detection", keywords: ["focus", "do not disturb", "dnd"], highlightID: SettingsTab.general.highlightID(for: "Enable Focus Detection")),
@@ -839,8 +839,8 @@ struct GeneralSettings: View {
                 }
                 .disabled(showOnAllDisplays)
                 .settingsHighlight(id: highlightID("Automatically switch displays"))
-                Defaults.Toggle("Hide Dynamic Island during screenshots & recordings", key: .hideDynamicIslandFromScreenCapture)
-                    .settingsHighlight(id: highlightID("Hide Dynamic Island during screenshots & recordings"))
+                Defaults.Toggle("Hide Atoll during screenshots & recordings", key: .hideDynamicIslandFromScreenCapture)
+                    .settingsHighlight(id: highlightID("Hide Atoll during screenshots & recordings"))
             } header: {
                 Text("System features")
             }
@@ -1243,7 +1243,7 @@ struct HUD: View {
             } header: {
                 Text("General")
             } footer: {
-                Text("Replaces system HUD notifications with Dynamic Island displays.")
+                Text("Replaces system HUD notifications with Atoll displays.")
                     .foregroundStyle(.secondary)
                     .font(.caption)
             }
@@ -1280,7 +1280,7 @@ struct HUD: View {
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 } else {
-                    Text("Enable built-in system monitoring to replace macOS HUD notifications with Dynamic Island displays.")
+                    Text("Enable built-in system monitoring to replace macOS HUD notifications with Atoll displays.")
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }
@@ -2414,7 +2414,7 @@ struct LockScreenSettings: View {
             } header: {
                 Text("Live Activity & Feedback")
             } footer: {
-                Text("Controls whether Dynamic Island mirrors lock/unlock events with its own live activity and audible chimes.")
+                Text("Controls whether Atoll mirrors lock/unlock events with its own live activity and audible chimes.")
             }
 
             Section {
@@ -3003,7 +3003,7 @@ struct Shortcuts: View {
                 } header: {
                     Text("Navigation")
                 } footer: {
-                    Text("Toggle the Dynamic Island open or closed from anywhere.")
+                    Text("Toggle the Atoll open or closed from anywhere.")
                         .multilineTextAlignment(.trailing)
                         .foregroundStyle(.secondary)
                         .font(.caption)
@@ -3777,7 +3777,7 @@ struct StatsSettings: View {
                     Text("Graph Visibility")
                 } footer: {
                     if enabledGraphsCount >= 4 {
-                        Text("With \(enabledGraphsCount) graphs enabled, the Dynamic Island will expand horizontally to accommodate all graphs in a single row.")
+                        Text("With \(enabledGraphsCount) graphs enabled, the Atoll will expand horizontally to accommodate all graphs in a single row.")
                             .multilineTextAlignment(.trailing)
                             .foregroundStyle(.secondary)
                             .font(.caption)

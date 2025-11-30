@@ -2,7 +2,7 @@
 //  NotchTimerView.swift
 //  DynamicIsland
 //
-//  Timer tab interface for the Dynamic Island
+//  Timer tab interface for the Atoll
 //
 
 import SwiftUI

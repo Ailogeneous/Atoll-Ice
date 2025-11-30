@@ -3,7 +3,7 @@
 //  DynamicIsland
 //
 //  Created by AI Assistant on 11/10/2025.
-//  Manages custom idle animations (Lottie files) for the Dynamic Island
+//  Manages custom idle animations (Lottie files) for the Atoll
 //
 
 import Foundation

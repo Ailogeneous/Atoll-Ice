@@ -227,6 +227,7 @@ func applyProfileSettings(_ profiles: Set<String>) {
         Defaults[.enableTimerFeature] = true
         Defaults[.inlineHUD] = false
         Defaults[.enableScreenAssistant] = false
+        Defaults[.enableLyrics] = false
     }
     
     // Student Profile Settings

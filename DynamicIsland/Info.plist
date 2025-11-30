@@ -8,7 +8,7 @@
 		<true/>
 	</dict>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>Dynamic Island needs screen recording permission to capture screenshots for the AI assistant feature.</string>
+	<string>Atoll needs screen recording permission to capture screenshots for the AI assistant feature.</string>
 	<key>SUEnableDownloaderService</key>
 	<true/>
 	<key>SUEnableInstallerLauncherService</key>

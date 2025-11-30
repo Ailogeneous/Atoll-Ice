@@ -355,7 +355,7 @@ struct AnimationEditorView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Expand Notch with Animation")
                                         .font(.body)
-                                    Text("When enabled, the Dynamic Island will expand horizontally to match the animation size")
+                                    Text("When enabled, the Atoll will expand horizontally to match the animation size")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -443,7 +443,7 @@ struct AnimationEditorView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text("Blue dashed box shows actual size in Dynamic Island")
+                    Text("Blue dashed box shows actual size in Atoll")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

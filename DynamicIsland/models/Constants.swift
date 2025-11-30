@@ -418,7 +418,7 @@ extension Defaults.Keys {
     static let selectedIdleAnimation = Key<CustomIdleAnimation?>("selectedIdleAnimation", default: nil)
     static let animationTransformOverrides = Key<[String: AnimationTransformConfig]>("animationTransformOverrides", default: [:])
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
-    static let showCalendar = Key<Bool>("showCalendar", default: false)
+    static let showCalendar = Key<Bool>("showCalendar", default: true)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
     static let hideAllDayEvents = Key<Bool>("hideAllDayEvents", default: false)
     static let sliderColor = Key<SliderColorEnum>(
@@ -441,7 +441,7 @@ extension Defaults.Keys {
     static let sneakPeekStyles = Key<SneakPeekStyle>("sneakPeekStyles", default: .standard)
     static let enableFullscreenMediaDetection = Key<Bool>("enableFullscreenMediaDetection", default: true)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
-    static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
+    static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: true)
     static let showMediaOutputControl = Key<Bool>("showMediaOutputControl", default: false)
     static let musicAuxLeftControl = Key<MusicAuxiliaryControl>("musicAuxLeftControl", default: .shuffle)
     static let musicAuxRightControl = Key<MusicAuxiliaryControl>("musicAuxRightControl", default: .repeatMode)
@@ -459,10 +459,10 @@ extension Defaults.Keys {
     static let lockScreenWeatherShowsChargingPercentage = Key<Bool>("lockScreenWeatherShowsChargingPercentage", default: true)
     static let lockScreenWeatherShowsBluetooth = Key<Bool>("lockScreenWeatherShowsBluetooth", default: true)
     static let lockScreenWeatherShowsBatteryGauge = Key<Bool>("lockScreenWeatherShowsBatteryGauge", default: true)
-    static let lockScreenWeatherBatteryUsesLaptopSymbol = Key<Bool>("lockScreenWeatherBatteryUsesLaptopSymbol", default: false)
+    static let lockScreenWeatherBatteryUsesLaptopSymbol = Key<Bool>("lockScreenWeatherBatteryUsesLaptopSymbol", default: true)
     static let lockScreenWeatherWidgetStyle = Key<LockScreenWeatherWidgetStyle>("lockScreenWeatherWidgetStyle", default: .circular)
     static let lockScreenWeatherTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("lockScreenWeatherTemperatureUnit", default: .celsius)
-    static let lockScreenWeatherShowsAQI = Key<Bool>("lockScreenWeatherShowsAQI", default: false)
+    static let lockScreenWeatherShowsAQI = Key<Bool>("lockScreenWeatherShowsAQI", default: true)
     static let lockScreenWeatherAQIScale = Key<LockScreenWeatherAirQualityScale>("lockScreenWeatherAQIScale", default: .us)
     static let lockScreenWeatherUsesGaugeTint = Key<Bool>("lockScreenWeatherUsesGaugeTint", default: false)
     static let lockScreenWeatherProviderSource = Key<LockScreenWeatherProviderSource>("lockScreenWeatherProviderSource", default: .openMeteo)
@@ -471,9 +471,9 @@ extension Defaults.Keys {
     static let lockScreenTimerVerticalOffset = Key<Double>("lockScreenTimerVerticalOffset", default: 0)
     static let lockScreenGlassStyle = Key<LockScreenGlassStyle>("lockScreenGlassStyle", default: .liquid)
     static let lockScreenShowAppIcon = Key<Bool>("lockScreenShowAppIcon", default: false)
-    static let lockScreenPanelShowsBorder = Key<Bool>("lockScreenPanelShowsBorder", default: true)
+    static let lockScreenPanelShowsBorder = Key<Bool>("lockScreenPanelShowsBorder", default: false)
     static let lockScreenPanelUsesBlur = Key<Bool>("lockScreenPanelUsesBlur", default: true)
-    static let lockScreenTimerWidgetUsesBlur = Key<Bool>("lockScreenTimerWidgetUsesBlur", default: true)
+    static let lockScreenTimerWidgetUsesBlur = Key<Bool>("lockScreenTimerWidgetUsesBlur", default: false)
     static let lockScreenReminderChipStyle = Key<LockScreenReminderChipStyle>("lockScreenReminderChipStyle", default: .eventColor)
     
         // MARK: Battery
@@ -489,13 +489,13 @@ extension Defaults.Keys {
     static let selectedDownloadIconStyle = Key<DownloadIconStyle>("selectedDownloadIconStyle", default: DownloadIconStyle.onlyAppIcon)
     
         // MARK: HUD
-    static let inlineHUD = Key<Bool>("inlineHUD", default: false)
+    static let inlineHUD = Key<Bool>("inlineHUD", default: true)
     static let progressBarStyle = Key<ProgressBarStyle>("progressBarStyle", default: .hierarchical)
     // Legacy support - keeping for backward compatibility
     static let enableGradient = Key<Bool>("enableGradient", default: false)
     static let systemEventIndicatorShadow = Key<Bool>("systemEventIndicatorShadow", default: false)
     static let systemEventIndicatorUseAccent = Key<Bool>("systemEventIndicatorUseAccent", default: false)
-    static let showProgressPercentages = Key<Bool>("showProgressPercentages", default: false)
+    static let showProgressPercentages = Key<Bool>("showProgressPercentages", default: true)
     
         // MARK: Shelf
     static let dynamicShelf = Key<Bool>("dynamicShelf", default: true)
@@ -518,11 +518,11 @@ extension Defaults.Keys {
     // MARK: Bluetooth Audio Devices
     static let showBluetoothDeviceConnections = Key<Bool>("showBluetoothDeviceConnections", default: true)
     static let useColorCodedBatteryDisplay = Key<Bool>("useColorCodedBatteryDisplay", default: true)
-    static let useColorCodedVolumeDisplay = Key<Bool>("useColorCodedVolumeDisplay", default: false)
+    static let useColorCodedVolumeDisplay = Key<Bool>("useColorCodedVolumeDisplay", default: true)
     static let useSmoothColorGradient = Key<Bool>("useSmoothColorGradient", default: true)
     static let useCircularBluetoothBatteryIndicator = Key<Bool>("useCircularBluetoothBatteryIndicator", default: true)
-    static let showBluetoothBatteryPercentageText = Key<Bool>("showBluetoothBatteryPercentageText", default: true)
-    static let showBluetoothDeviceNameMarquee = Key<Bool>("showBluetoothDeviceNameMarquee", default: true)
+    static let showBluetoothBatteryPercentageText = Key<Bool>("showBluetoothBatteryPercentageText", default: false)
+    static let showBluetoothDeviceNameMarquee = Key<Bool>("showBluetoothDeviceNameMarquee", default: false)
     
     // MARK: Stats Feature
     static let enableStatsFeature = Key<Bool>("enableStatsFeature", default: false)
@@ -541,7 +541,7 @@ extension Defaults.Keys {
     static let timerIconColorMode = Key<TimerIconColorMode>("timerIconColorMode", default: .adaptive)
     static let timerSolidColor = Key<Color>("timerSolidColor", default: .blue)
     static let timerShowsCountdown = Key<Bool>("timerShowsCountdown", default: true)
-    static let timerShowsLabel = Key<Bool>("timerShowsLabel", default: true)
+    static let timerShowsLabel = Key<Bool>("timerShowsLabel", default: false)
     static let timerShowsProgress = Key<Bool>("timerShowsProgress", default: true)
     static let timerProgressStyle = Key<TimerProgressStyle>("timerProgressStyle", default: .bar)
     static let mirrorSystemTimer = Key<Bool>("mirrorSystemTimer", default: true)
@@ -550,7 +550,7 @@ extension Defaults.Keys {
     static let enableReminderLiveActivity = Key<Bool>("enableReminderLiveActivity", default: true)
     static let reminderPresentationStyle = Key<ReminderPresentationStyle>("reminderPresentationStyle", default: .ringCountdown)
     static let reminderLeadTime = Key<Int>("reminderLeadTime", default: 5)
-    static let reminderSneakPeekDuration = Key<Double>("reminderSneakPeekDuration", default: 10)
+    static let reminderSneakPeekDuration = Key<Double>("reminderSneakPeekDuration", default: 5)
     static let timerControlWindowEnabled = Key<Bool>("timerControlWindowEnabled", default: true)
     
     // MARK: ColorPicker Feature
@@ -581,7 +581,7 @@ extension Defaults.Keys {
     static let enableShortcuts = Key<Bool>("enableShortcuts", default: true)
     
     // MARK: System HUD Feature
-    static let enableSystemHUD = Key<Bool>("enableSystemHUD", default: false)
+    static let enableSystemHUD = Key<Bool>("enableSystemHUD", default: true)
     static let enableVolumeHUD = Key<Bool>("enableVolumeHUD", default: true)
     static let enableBrightnessHUD = Key<Bool>("enableBrightnessHUD", default: true)
     static let enableKeyboardBacklightHUD = Key<Bool>("enableKeyboardBacklightHUD", default: true)

@@ -2,7 +2,7 @@
 //  StatsManager.swift
 //  DynamicIsland
 //
-//  System performance monitoring for the Dynamic Island Stats feature
+//  System performance monitoring for the Atoll Stats feature
 //  Created by Hariharan Mudaliar
 
 import Foundation

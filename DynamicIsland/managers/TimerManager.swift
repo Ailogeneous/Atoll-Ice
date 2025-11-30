@@ -2,7 +2,7 @@
 //  TimerManager.swift
 //  DynamicIsland
 //
-//  Timer management for the Dynamic Island
+//  Timer management for the Atoll
 //
 
 import Foundation

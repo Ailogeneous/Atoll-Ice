@@ -234,13 +234,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
             DispatchQueue.main.async(execute: applyWindowResize)
         }
 
-        withAnimation(.bouncy) {
-            self.notchSize = targetSize
-            self.notchState = .open
-        }
-        
-    // Force music information update when notch is opened
-    MusicManager.shared.forceUpdate()
+        notchSize = targetSize
+        notchState = .open
+
+        // Force music information update when notch is opened
+        MusicManager.shared.forceUpdate()
     }
     
     private func calculateDynamicNotchSize() -> CGSize {
@@ -254,12 +252,10 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
     }
 
     func close() {
-        withAnimation(.smooth) { [weak self] in
-            guard let self = self else { return }
-            self.notchSize = getClosedNotchSize(screen: self.screen)
-            self.closedNotchSize = self.notchSize
-            self.notchState = .closed
-        }
+        let targetSize = getClosedNotchSize(screen: screen)
+        notchSize = targetSize
+        closedNotchSize = targetSize
+        notchState = .closed
 
         // Set the current view to shelf if it contains files and the user enables openShelfByDefault
         // Otherwise, if the user has not enabled openLastShelfByDefault, set the view to home

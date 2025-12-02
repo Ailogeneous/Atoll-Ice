@@ -147,6 +147,29 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        Defaults.publisher(.openNotchWidth, options: [])
+            .map { $0.newValue }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                guard self.notchState == .open else { return }
+                guard !Defaults[.enableMinimalisticUI] else { return }
+                let updatedTarget = self.calculateDynamicNotchSize()
+                guard self.notchSize != updatedTarget else { return }
+                withAnimation(.smooth) {
+                    self.notchSize = updatedTarget
+                }
+                if let delegate = AppDelegate.shared {
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: false),
+                        animated: true,
+                        force: false
+                    )
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func handleMinimalisticTimerHeightChange() {

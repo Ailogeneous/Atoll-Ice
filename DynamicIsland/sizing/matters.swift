@@ -14,7 +14,10 @@ import SwiftUI
 let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
-let openNotchSize: CGSize = .init(width: 640, height: 190)
+var openNotchSize: CGSize {
+    let width = Defaults[.openNotchWidth]
+    return .init(width: width, height: 190)
+}
 private let minimalisticBaseOpenNotchSize: CGSize = .init(width: 420, height: 180)
 private let minimalisticLyricsExtraHeight: CGFloat = 40
 let minimalisticTimerCountdownTopPadding: CGFloat = 12

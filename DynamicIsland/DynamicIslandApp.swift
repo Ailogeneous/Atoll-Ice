@@ -394,6 +394,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
 
+        Defaults.publisher(.openNotchWidth, options: []).sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
         ReminderLiveActivityManager.shared.$activeWindowReminders
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in

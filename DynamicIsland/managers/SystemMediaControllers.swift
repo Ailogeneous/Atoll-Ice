@@ -475,7 +475,9 @@ final class SystemBrightnessController {
     }
 
     func adjust(by delta: Float) {
-        setBrightness(currentBrightness + delta)
+        // Refresh baseline to avoid jumping if auto-brightness changed the level.
+        syncWithSystemBrightnessIfNeeded()
+        setBrightness(lastEmittedBrightness + delta)
     }
 
     func setBrightness(_ value: Float) {
@@ -504,8 +506,21 @@ final class SystemBrightnessController {
         emitBrightnessChange(value: brightness)
     }
 
+    private func syncWithSystemBrightnessIfNeeded() {
+        // Align our internal baseline with the actual system brightness so that
+        // subsequent adjustments apply deltas from the true value (important when
+        // auto-brightness has changed the level behind our back).
+        let systemLevel = currentBrightness
+        if abs(systemLevel - lastEmittedBrightness) > 0.001 {
+            emitBrightnessChange(value: systemLevel)
+        }
+    }
+
     private func beginBrightnessAnimation(to target: Float) {
         brightnessAnimationTimer?.invalidate()
+
+        // Refresh baseline from system in case auto-brightness adjusted it.
+        syncWithSystemBrightnessIfNeeded()
 
         let start = lastEmittedBrightness
         if abs(start - target) <= 0.0005 {

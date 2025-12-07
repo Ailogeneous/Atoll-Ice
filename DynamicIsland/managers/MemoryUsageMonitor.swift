@@ -6,7 +6,7 @@ import Darwin
 final class MemoryUsageMonitor {
     static let shared = MemoryUsageMonitor()
 
-    private let thresholdBytes: UInt64 = 300 * 1_024 * 1_024
+    private let thresholdBytes: UInt64 = 700 * 1_024 * 1_024
     private let pollInterval: TimeInterval = 8 // Clamp within 5-10 seconds to limit battery impact
     private let restartCooldown: TimeInterval = 300
     private let logSampleInterval: TimeInterval = 300

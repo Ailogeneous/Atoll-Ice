@@ -271,6 +271,17 @@ struct SettingsView: View {
                                         Capsule()
                                             .fill(Color.orange)
                                     )
+                            } else if tab == .downloads {
+                                Spacer()
+                                Text("BETA")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.blue)
+                                    )
                             }
                         }
                         .padding(.vertical, 4)

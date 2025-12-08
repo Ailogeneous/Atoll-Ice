@@ -94,6 +94,15 @@ Atoll turns the MacBook notch into a focused command surface for media, system i
   <img src=".github/assets/lockscreen-v1.2.gif" alt="Do Not Disturb" width="520">
 </p>
 
+## Live Activities
+
+- Media Playback
+- Focus Mode
+- Screen Recording
+- Microphone, Camera Privacy Indicators
+- Download progress `beta`
+- Low Battery status, Charging
+
 ## Overview
 - Media controls for Apple Music, Spotify, and more with inline previews.
 - Live system insight (CPU, GPU, memory, network, disk) with lightweight graphs.

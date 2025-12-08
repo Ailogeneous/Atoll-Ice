@@ -256,13 +256,10 @@ struct SettingsView: View {
                     .padding(.horizontal, 12)
 
                 List(filteredTabs, selection: selectionBinding) { tab in
-                    let isComingSoon = tab == .downloads
                     NavigationLink(value: tab) {
                         HStack(spacing: 10) {
                             sidebarIcon(for: tab)
-                                .opacity(isComingSoon ? 0.45 : 1)
                             Text(tab.title)
-                                .foregroundStyle(isComingSoon ? Color.secondary : Color.primary)
                             if tab == .osd {
                                 Spacer()
                                 Text("ALPHA")
@@ -274,16 +271,21 @@ struct SettingsView: View {
                                         Capsule()
                                             .fill(Color.orange)
                                     )
-                            } else if isComingSoon {
+                            } else if tab == .downloads {
                                 Spacer()
-                                comingSoonTag()
+                                Text("BETA")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.blue)
+                                    )
                             }
                         }
                         .padding(.vertical, 4)
                     }
-                    .tag(tab)
-                    .disabled(isComingSoon)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 10))
                 }
                 .listStyle(SidebarListStyle())
                 .frame(minWidth: 200)
@@ -310,7 +312,7 @@ struct SettingsView: View {
         .frame(width: 700)
         .onChange(of: searchText) { _, newValue in
             let matches = tabsMatchingSearch(newValue)
-            guard let firstMatch = matches.first(where: { $0 != .downloads }) else { return }
+            guard let firstMatch = matches.first else { return }
             if !matches.contains(resolvedSelection) {
                 selectedTab = firstMatch
             }
@@ -349,7 +351,6 @@ struct SettingsView: View {
         Binding(
             get: { resolvedSelection },
             set: { newValue in
-                guard newValue != .downloads else { return }
                 selectedTab = newValue
             }
         )
@@ -1079,78 +1080,107 @@ struct Downloads: View {
 
     var body: some View {
         Form {
-            warningBadge("We don't support downloads yet", "It will be supported later on.")
             Section {
-                Defaults.Toggle("Show download progress", key: .enableDownloadListener)
-                    .settingsHighlight(id: highlightID("Show download progress"))
-                    .disabled(true)
-                Defaults.Toggle("Enable Safari Downloads", key: .enableSafariDownloads)
-                    .settingsHighlight(id: highlightID("Enable Safari Downloads"))
-                    .disabled(!Defaults[.enableDownloadListener])
-                Picker("Download indicator style", selection: $selectedDownloadIndicatorStyle) {
-                    Text("Progress bar")
-                        .tag(DownloadIndicatorStyle.progress)
-                    Text("Percentage")
-                        .tag(DownloadIndicatorStyle.percentage)
+                Defaults.Toggle("Enable download detection", key: .enableDownloadListener)
+                    .settingsHighlight(id: highlightID("Enable download detection"))
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Download indicator style")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    
+                    HStack(spacing: 16) {
+                        DownloadStyleButton(
+                            style: .progress,
+                            isSelected: selectedDownloadIndicatorStyle == .progress,
+                            disabled: !Defaults[.enableDownloadListener]
+                        ) {
+                            selectedDownloadIndicatorStyle = .progress
+                        }
+                        
+                        DownloadStyleButton(
+                            style: .circle,
+                            isSelected: selectedDownloadIndicatorStyle == .circle,
+                            disabled: !Defaults[.enableDownloadListener]
+                        ) {
+                            selectedDownloadIndicatorStyle = .circle
+                        }
+                    }
                 }
                 .settingsHighlight(id: highlightID("Download indicator style"))
-                Picker("Download icon style", selection: $selectedDownloadIconStyle) {
-                    Text("Only app icon")
-                        .tag(DownloadIconStyle.onlyAppIcon)
-                    Text("Only download icon")
-                        .tag(DownloadIconStyle.onlyIcon)
-                    Text("Both")
-                        .tag(DownloadIconStyle.iconAndAppIcon)
-                }
-                .settingsHighlight(id: highlightID("Download icon style"))
-
             } header: {
-                HStack {
-                    Text("Download indicators")
-                    comingSoonTag()
-                }
-            }
-            Section {
-                List {
-                    ForEach([].indices, id: \.self) { index in
-                        Text("\(index)")
-                    }
-                }
-                .frame(minHeight: 96)
-                .overlay {
-                    if true {
-                        Text("No excluded apps")
-                            .foregroundStyle(Color(.secondaryLabelColor))
-                    }
-                }
-                .actionBar(padding: 0) {
-                    Group {
-                        Button {} label: {
-                            Image(systemName: "plus")
-                                .frame(width: 25, height: 16, alignment: .center)
-                                .contentShape(Rectangle())
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Divider()
-                        Button {} label: {
-                            Image(systemName: "minus")
-                                .frame(width: 20, height: 16, alignment: .center)
-                                .contentShape(Rectangle())
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            } header: {
-                HStack(spacing: 4) {
-                    Text("Exclude apps")
-                    comingSoonTag()
-                }
+                Text("Download Detection")
+            } footer: {
+                Text("Monitor your Downloads folder for Chromium-style downloads (.crdownload files) and show a live activity in the Dynamic Island while downloads are in progress.")
             }
         }
         .navigationTitle("Downloads")
-        .disabled(true)
-        .opacity(0.6)
+    }
+    
+    struct DownloadStyleButton: View {
+        let style: DownloadIndicatorStyle
+        let isSelected: Bool
+        let disabled: Bool
+        let action: () -> Void
+        
+        @State private var isHovering = false
+        
+        var body: some View {
+            VStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(backgroundColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(borderColor, lineWidth: isSelected ? 2 : 1)
+                        )
+                    
+                    if style == .progress {
+                        ProgressView()
+                            .progressViewStyle(.linear)
+                            .tint(.accentColor)
+                            .frame(width: 40)
+                    } else {
+                        SpinningCircleDownloadView()
+                    }
+                }
+                .frame(width: 80, height: 60)
+                .onHover { hovering in
+                    if !disabled {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isHovering = hovering
+                        }
+                    }
+                }
+                
+                Text(style.rawValue)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 100)
+                    .foregroundStyle(disabled ? .secondary : .primary)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if !disabled {
+                    action()
+                }
+            }
+            .opacity(disabled ? 0.5 : 1.0)
+        }
+        
+        private var backgroundColor: Color {
+            if disabled { return Color(nsColor: .controlBackgroundColor) }
+            if isSelected { return Color.accentColor.opacity(0.1) }
+            if isHovering { return Color.primary.opacity(0.05) }
+            return Color(nsColor: .controlBackgroundColor)
+        }
+        
+        private var borderColor: Color {
+            if isSelected { return Color.accentColor }
+            if isHovering { return Color.primary.opacity(0.1) }
+            return Color.clear
+        }
     }
 }
 

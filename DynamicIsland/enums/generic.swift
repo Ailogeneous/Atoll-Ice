@@ -46,6 +46,7 @@ enum SettingsEnum {
 enum DownloadIndicatorStyle: String, Defaults.Serializable {
     case progress = "Progress"
     case percentage = "Percentage"
+    case circle = "Circle"
 }
 
 enum DownloadIconStyle: String, Defaults.Serializable {

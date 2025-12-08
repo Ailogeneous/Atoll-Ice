@@ -201,11 +201,14 @@ class DynamicIslandViewCoordinator: ObservableObject {
         didSet {
             if expandingView.show {
                 expandingViewTask?.cancel()
-                let duration: TimeInterval = (expandingView.type == .download ? 2 : 3)
-                expandingViewTask = Task { [weak self] in
-                    try? await Task.sleep(for: .seconds(duration))
-                    guard let self = self, !Task.isCancelled else { return }
-                    self.toggleExpandingView(status: false, type: .battery)
+                // Only auto-hide for battery, not for downloads (DownloadManager handles that)
+                if expandingView.type != .download {
+                    let duration: TimeInterval = 3
+                    expandingViewTask = Task { [weak self] in
+                        try? await Task.sleep(for: .seconds(duration))
+                        guard let self = self, !Task.isCancelled else { return }
+                        self.toggleExpandingView(status: false, type: .battery)
+                    }
                 }
             } else {
                 expandingViewTask?.cancel()

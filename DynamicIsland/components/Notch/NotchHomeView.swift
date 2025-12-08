@@ -259,7 +259,7 @@ struct MusicControlsView: View {
                 backwardConfig.action()
             }
 
-            HoverButton(icon: musicManager.isPlaying ? "pause.fill" : "play.fill", scale: .large) {
+            HoverButton(icon: musicManager.isPlaying ? (musicManager.isLiveStream ? "stop.fill" : "pause.fill") : "play.fill", scale: .large) {
                 MusicManager.shared.togglePlay()
             }
 
@@ -329,7 +329,7 @@ struct MusicControlsView: View {
         case .lyrics:
             HoverButton(
                 icon: enableLyrics ? "quote.bubble.fill" : "quote.bubble",
-                iconColor: enableLyrics ? .accentColor : .white,
+                iconColor: enableLyrics ? Color(nsColor: MusicManager.shared.avgColor) : .white,
                 scale: .medium
             ) {
                 enableLyrics.toggle()

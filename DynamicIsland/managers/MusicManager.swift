@@ -370,8 +370,7 @@ class MusicManager: ObservableObject {
                 }
             } else {
                 let shouldClearForKnownDuration =
-                    !isPlaying
-                    || (duration > 10 && remaining > 5)
+                    (duration > 10 && remaining > 5)
                     || (liveStreamCompletionObservationCount == 0
                         && liveStreamEdgeObservationCount == 0
                         && liveStreamCompletionReleaseCount >= 4)
@@ -394,9 +393,6 @@ class MusicManager: ObservableObject {
             liveStreamEdgeObservationCount = 0
             liveStreamCompletionObservationCount = 0
             liveStreamCompletionReleaseCount = 0
-            if !hasKnownDuration && isLiveStream {
-                isLiveStream = false
-            }
         }
     }
 

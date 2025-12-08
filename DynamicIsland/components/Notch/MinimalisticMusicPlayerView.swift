@@ -715,7 +715,7 @@ private struct MinimalisticReminderDetailsView: View {
     
     private var playPauseButton: some View {
         MinimalisticSquircircleButton(
-            icon: musicManager.isPlaying ? "pause.fill" : "play.fill",
+            icon: musicManager.isPlaying ? (musicManager.isLiveStream ? "stop.fill" : "pause.fill") : "play.fill",
             fontSize: 28,
             fontWeight: .semibold,
             frameSize: CGSize(width: 60, height: 60),
@@ -733,6 +733,7 @@ private struct MinimalisticReminderDetailsView: View {
         icon: String,
         size: CGFloat = 18,
         isActive: Bool = false,
+        activeColor: Color = .red,
         pressEffect: MinimalisticSquircircleButton.PressEffect = .none,
         symbolEffect: MinimalisticSquircircleButton.SymbolEffectStyle = .none,
         action: @escaping () -> Void
@@ -743,7 +744,7 @@ private struct MinimalisticReminderDetailsView: View {
             fontWeight: .medium,
             frameSize: CGSize(width: 40, height: 40),
             cornerRadius: 16,
-            foregroundColor: isActive ? .red : .white.opacity(0.85),
+            foregroundColor: isActive ? activeColor : .white.opacity(0.85),
             pressEffect: pressEffect,
             symbolEffectStyle: symbolEffect,
             action: action
@@ -767,6 +768,7 @@ private struct MinimalisticReminderDetailsView: View {
             controlButton(
                 icon: enableLyrics ? "quote.bubble.fill" : "quote.bubble",
                 isActive: enableLyrics,
+                activeColor: Color(nsColor: musicManager.avgColor),
                 symbolEffect: .replace
             ) {
                 enableLyrics.toggle()

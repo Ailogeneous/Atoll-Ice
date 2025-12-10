@@ -9,12 +9,16 @@ final class LockScreenReminderWidgetPanelManager {
 
     private var window: NSWindow?
     private var hasDelegated = false
+    private var screenChangeObserver: NSObjectProtocol?
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     var isVisible: Bool {
         window?.isVisible == true
     }
 
-    private init() {}
+    private init() {
+        registerScreenChangeObservers()
+    }
 
     func show(with snapshot: LockScreenReminderWidgetSnapshot) {
         render(snapshot: snapshot, makeVisible: true)
@@ -129,6 +133,33 @@ final class LockScreenReminderWidgetPanelManager {
         proposedY = max(lowerBound, min(proposedY, clampedUpperBound))
 
         return NSRect(x: originX, y: proposedY, width: size.width, height: size.height)
+    }
+
+    private func registerScreenChangeObservers() {
+        screenChangeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleScreenGeometryChange(reason: "screen-parameters")
+        }
+
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        let wakeObserver = workspaceCenter.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleScreenGeometryChange(reason: "screens-did-wake")
+        }
+
+        workspaceObservers = [wakeObserver]
+    }
+
+    private func handleScreenGeometryChange(reason: String) {
+        guard window?.isVisible == true else { return }
+        refreshPosition(animated: false)
+        print("LockScreenReminderWidgetPanelManager: realigned window due to \(reason)")
     }
 }
 

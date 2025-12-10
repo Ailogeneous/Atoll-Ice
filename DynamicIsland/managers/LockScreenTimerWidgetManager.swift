@@ -102,8 +102,12 @@ final class LockScreenTimerWidgetPanelManager {
     private let animator = LockScreenTimerWidgetAnimator()
     private var hideTask: Task<Void, Never>?
     private(set) var latestFrame: NSRect?
+    private var screenChangeObserver: NSObjectProtocol?
+    private var workspaceObservers: [NSObjectProtocol] = []
 
-    private init() {}
+    private init() {
+        registerScreenChangeObservers()
+    }
 
     func showWidget() {
         guard let screen = NSScreen.main else { return }
@@ -247,5 +251,32 @@ final class LockScreenTimerWidgetPanelManager {
     private func clampedTimerOffset() -> Double {
         let raw = Defaults[.lockScreenTimerVerticalOffset]
         return min(max(raw, -160), 160)
+    }
+
+    private func registerScreenChangeObservers() {
+        screenChangeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleScreenGeometryChange(reason: "screen-parameters")
+        }
+
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        let wakeObserver = workspaceCenter.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleScreenGeometryChange(reason: "screens-did-wake")
+        }
+
+        workspaceObservers = [wakeObserver]
+    }
+
+    private func handleScreenGeometryChange(reason: String) {
+        guard window?.isVisible == true else { return }
+        refreshPosition(animated: false)
+        print("LockScreenTimerWidgetPanelManager: realigned window due to \(reason)")
     }
 }

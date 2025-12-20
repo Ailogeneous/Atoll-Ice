@@ -23,17 +23,39 @@ class SystemHUDManager {
     }
     
     private func setupSettingsObserver() {
+        // Observe Vertical HUD toggle
+        Defaults.publisher(.enableVerticalHUD, options: []).sink { [weak self] change in
+            guard let self = self, self.isSetupComplete else {
+                return
+            }
+            Task { @MainActor in
+                if change.newValue {
+                    // Always restart to ensure correct flags are applied
+                    await self.startSystemObserver()
+                } else if Defaults[.enableSystemHUD] || Defaults[.enableCustomOSD] || Defaults[.enableCircularHUD] {
+                    // Restart to apply flags for the remaining active HUD
+                    await self.startSystemObserver()
+                } else {
+                    await self.stopSystemObserver()
+                }
+            }
+        }.store(in: &cancellables)
+        
         // Observe master HUD toggle
         Defaults.publisher(.enableSystemHUD, options: []).sink { [weak self] change in
             guard let self = self, self.isSetupComplete else {
                 return
             }
             Task { @MainActor in
-                if change.newValue && !Defaults[.enableCustomOSD] {
+                if change.newValue && !Defaults[.enableCustomOSD] && !Defaults[.enableVerticalHUD] && !Defaults[.enableCircularHUD] {
+                     // Always restart to ensure correct flags are applied
                     await self.startSystemObserver()
-                } else if !Defaults[.enableCustomOSD] {
-                    // Only stop if OSD is also disabled
+                } else if !Defaults[.enableCustomOSD] && !Defaults[.enableVerticalHUD] && !Defaults[.enableCircularHUD] {
+                    // Only stop if others are also disabled
                     await self.stopSystemObserver()
+                } else if change.newValue == false && (Defaults[.enableCustomOSD] || Defaults[.enableVerticalHUD] || Defaults[.enableCircularHUD]) {
+                     // If disabling system HUD but others are active, restart to update flags
+                     await self.startSystemObserver()
                 }
             }
         }.store(in: &cancellables)
@@ -45,17 +67,30 @@ class SystemHUDManager {
             }
             Task { @MainActor in
                 if change.newValue {
-                    // Start observer for OSD if not already running
-                    if self.changesObserver == nil {
-                        await self.startSystemObserver()
-                    }
-                } else if Defaults[.enableSystemHUD] {
-                    // Keep observer running for HUD
-                    if self.changesObserver == nil {
-                        await self.startSystemObserver()
-                    }
+                     // Always restart to ensure correct flags are applied
+                    await self.startSystemObserver()
+                } else if Defaults[.enableSystemHUD] || Defaults[.enableVerticalHUD] || Defaults[.enableCircularHUD] {
+                    // Restart to apply flags for the remaining active HUD
+                    await self.startSystemObserver()
                 } else {
-                    // Stop observer if both HUD and OSD are disabled
+                    await self.stopSystemObserver()
+                }
+            }
+        }.store(in: &cancellables)
+        
+        // Observe Circular HUD toggle
+        Defaults.publisher(.enableCircularHUD, options: []).sink { [weak self] change in
+            guard let self = self, self.isSetupComplete else {
+                return
+            }
+            Task { @MainActor in
+                if change.newValue {
+                     // Always restart to ensure correct flags are applied
+                    await self.startSystemObserver()
+                } else if Defaults[.enableSystemHUD] || Defaults[.enableCustomOSD] || Defaults[.enableVerticalHUD] {
+                    // Restart to apply flags for the remaining active HUD
+                    await self.startSystemObserver()
+                } else {
                     await self.stopSystemObserver()
                 }
             }
@@ -145,8 +180,8 @@ class SystemHUDManager {
             CustomOSDWindowManager.shared.initialize()
         }
         
-        // Start observer if either HUD or OSD is enabled
-        if Defaults[.enableSystemHUD] || Defaults[.enableCustomOSD] {
+        // Start observer if any HUD/OSD is enabled
+        if Defaults[.enableSystemHUD] || Defaults[.enableCustomOSD] || Defaults[.enableVerticalHUD] || Defaults[.enableCircularHUD] {
             Task { @MainActor in
                 await startSystemObserver()
                 self.isSetupComplete = true
@@ -170,7 +205,12 @@ class SystemHUDManager {
         let brightnessEnabled: Bool
         let keyboardBacklightEnabled: Bool
         
-        if Defaults[.enableCustomOSD] {
+        if Defaults[.enableCircularHUD] || Defaults[.enableVerticalHUD] {
+            // Vertical and Circular HUD support all events
+            volumeEnabled = true
+            brightnessEnabled = true
+            keyboardBacklightEnabled = true
+        } else if Defaults[.enableCustomOSD] {
             volumeEnabled = Defaults[.enableOSDVolume]
             brightnessEnabled = Defaults[.enableOSDBrightness]
             keyboardBacklightEnabled = Defaults[.enableOSDKeyboardBacklight]
@@ -186,7 +226,10 @@ class SystemHUDManager {
             keyboardBacklightEnabled: keyboardBacklightEnabled
         )
         
-        print("System observer started (HUD: \(Defaults[.enableSystemHUD]), OSD: \(Defaults[.enableCustomOSD]))")
+        // Force disable system HUD to ensure no duplicates
+        SystemOSDManager.disableSystemHUD()
+        
+        print("System observer started (HUD: \(Defaults[.enableSystemHUD]), OSD: \(Defaults[.enableCustomOSD]), Vertical: \(Defaults[.enableVerticalHUD]))")
         isSystemOperationInProgress = false
     }
     
@@ -197,6 +240,9 @@ class SystemHUDManager {
         isSystemOperationInProgress = true
         changesObserver?.stopObserving()
         changesObserver = nil
+        
+        // Re-enable system HUD when we stop observing
+        SystemOSDManager.enableSystemHUD()
         
         print("System observer stopped")
         isSystemOperationInProgress = false

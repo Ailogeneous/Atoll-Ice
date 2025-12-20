@@ -21,22 +21,30 @@ struct CustomOSDView: View {
     var body: some View {
         VStack(spacing: spacing) {
             // Icon
-            Image(systemName: symbolName)
-                .font(.system(size: iconSize, weight: .regular))
-                .foregroundStyle(iconColor)
-                .symbolRenderingMode(.hierarchical)
+            ZStack {
+                Image(systemName: symbolName)
+                    .font(.system(size: iconSize, weight: .regular))
+                    .foregroundStyle(iconColor)
+                    .symbolRenderingMode(.hierarchical)
+            }
+            .frame(width: 80, height: 60, alignment: .center) // Fixed container for icon
             
             // Progress/Value Indicator
             progressView
                 .frame(width: 140)
+                .padding(.top, 4) // Lower the bar slightly
         }
         .frame(width: 200, height: 200)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(.black.opacity(0.1)) // Subtle backing for shadow source
+                .shadow(color: Color.black.opacity(0.25), radius: 24, x: 0, y: 8)
+        )
         .background(
             backgroundView
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         )
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .shadow(color: Color.black.opacity(0.25), radius: 24, x: 0, y: 8)
     }
     
     // MARK: - Symbol Logic

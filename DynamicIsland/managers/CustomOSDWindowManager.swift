@@ -11,9 +11,9 @@ import Defaults
 final class CustomOSDWindowManager {
     static let shared = CustomOSDWindowManager()
     
-    private var volumeWindow: OSDWindow?
-    private var brightnessWindow: OSDWindow?
-    private var backlightWindow: OSDWindow?
+    private var volumeWindows: [NSScreen: OSDWindow] = [:]
+    private var brightnessWindows: [NSScreen: OSDWindow] = [:]
+    private var backlightWindows: [NSScreen: OSDWindow] = [:]
     
     private var hideWorkItem: DispatchWorkItem?
     private let displayDuration: TimeInterval = 2.0
@@ -50,62 +50,61 @@ final class CustomOSDWindowManager {
     // MARK: - Private Implementation
     
     private func show(type: SneakContentType, value: CGFloat, icon: String) {
-        guard let screen = NSScreen.main else { return }
+        let screens = NSScreen.screens
+        guard !screens.isEmpty else { return }
         
         // Close other windows first
         hideAllWindowsExcept(type: type)
         
-        let window = ensureWindow(for: type)
-        updateContent(window: window, type: type, value: value, icon: icon)
-        
-        let targetFrame = calculateFrame(for: screen)
-        
-        if window.nsWindow.alphaValue <= 0.01 {
-            // Initial presentation
-            presentWindow(window, targetFrame: targetFrame)
-        } else {
-            // Update existing window
-            window.nsWindow.setFrame(targetFrame, display: true)
-            window.nsWindow.orderFrontRegardless()
+        // Show on all screens
+        for screen in screens {
+            let window = ensureWindow(for: type, screen: screen)
+            updateContent(window: window, type: type, value: value, icon: icon)
+            
+            let targetFrame = calculateFrame(for: screen)
+            
+            if window.nsWindow.alphaValue <= 0.01 {
+                // Initial presentation
+                presentWindow(window, targetFrame: targetFrame)
+            } else {
+                // Update existing window
+                window.nsWindow.setFrame(targetFrame, display: true)
+                window.nsWindow.orderFrontRegardless()
+            }
         }
         
         scheduleHide(for: type)
     }
     
-    private func ensureWindow(for type: SneakContentType) -> OSDWindow {
-        let window: OSDWindow
-        
+    private func ensureWindow(for type: SneakContentType, screen: NSScreen) -> OSDWindow {
         switch type {
         case .volume:
-            if let existing = volumeWindow {
+            if let existing = volumeWindows[screen] {
                 return existing
             }
-            window = createWindow(for: type)
-            volumeWindow = window
+            let window = createWindow(for: type, screen: screen)
+            volumeWindows[screen] = window
+            return window
         case .brightness:
-            if let existing = brightnessWindow {
+            if let existing = brightnessWindows[screen] {
                 return existing
             }
-            window = createWindow(for: type)
-            brightnessWindow = window
+            let window = createWindow(for: type, screen: screen)
+            brightnessWindows[screen] = window
+            return window
         case .backlight:
-            if let existing = backlightWindow {
+            if let existing = backlightWindows[screen] {
                 return existing
             }
-            window = createWindow(for: type)
-            backlightWindow = window
+            let window = createWindow(for: type, screen: screen)
+            backlightWindows[screen] = window
+            return window
         default:
             fatalError("Unsupported OSD type: \(type)")
         }
-        
-        return window
     }
     
-    private func createWindow(for type: SneakContentType) -> OSDWindow {
-        guard let screen = NSScreen.main else {
-            fatalError("No main screen available")
-        }
-        
+    private func createWindow(for type: SneakContentType, screen: NSScreen) -> OSDWindow {
         let osdView = CustomOSDView(type: .constant(type), value: .constant(0), icon: .constant(""))
         let hostingView = NSHostingView(rootView: osdView)
         
@@ -161,14 +160,20 @@ final class CustomOSDWindowManager {
     }
     
     private func hideAllWindowsExcept(type: SneakContentType) {
-        if type != .volume, let volumeWindow = volumeWindow, volumeWindow.nsWindow.alphaValue > 0.01 {
-            hideWindowImmediately(volumeWindow)
+        if type != .volume {
+            for window in volumeWindows.values where window.nsWindow.alphaValue > 0.01 {
+                hideWindowImmediately(window)
+            }
         }
-        if type != .brightness, let brightnessWindow = brightnessWindow, brightnessWindow.nsWindow.alphaValue > 0.01 {
-            hideWindowImmediately(brightnessWindow)
+        if type != .brightness {
+            for window in brightnessWindows.values where window.nsWindow.alphaValue > 0.01 {
+                hideWindowImmediately(window)
+            }
         }
-        if type != .backlight, let backlightWindow = backlightWindow, backlightWindow.nsWindow.alphaValue > 0.01 {
-            hideWindowImmediately(backlightWindow)
+        if type != .backlight {
+            for window in backlightWindows.values where window.nsWindow.alphaValue > 0.01 {
+                hideWindowImmediately(window)
+            }
         }
     }
     
@@ -197,20 +202,20 @@ final class CustomOSDWindowManager {
     }
     
     private func hideWindow(for type: SneakContentType) {
-        let window: OSDWindow?
+        let windows: [OSDWindow]
         
         switch type {
         case .volume:
-            window = volumeWindow
+            windows = Array(volumeWindows.values)
         case .brightness:
-            window = brightnessWindow
+            windows = Array(brightnessWindows.values)
         case .backlight:
-            window = backlightWindow
+            windows = Array(backlightWindows.values)
         default:
             return
         }
         
-        guard let window else { return }
+        for window in windows {
         
         let currentFrame = window.nsWindow.frame
         let hideFrame = currentFrame.offsetBy(dx: 0, dy: -20)
@@ -223,6 +228,7 @@ final class CustomOSDWindowManager {
         } completionHandler: {
             window.nsWindow.orderOut(nil)
         }
+        }
     }
     
     // MARK: - Cleanup
@@ -231,13 +237,19 @@ final class CustomOSDWindowManager {
         hideWorkItem?.cancel()
         hideWorkItem = nil
         
-        volumeWindow?.nsWindow.orderOut(nil)
-        brightnessWindow?.nsWindow.orderOut(nil)
-        backlightWindow?.nsWindow.orderOut(nil)
+        for window in volumeWindows.values {
+            window.nsWindow.orderOut(nil)
+        }
+        for window in brightnessWindows.values {
+            window.nsWindow.orderOut(nil)
+        }
+        for window in backlightWindows.values {
+            window.nsWindow.orderOut(nil)
+        }
         
-        volumeWindow = nil
-        brightnessWindow = nil
-        backlightWindow = nil
+        volumeWindows.removeAll()
+        brightnessWindows.removeAll()
+        backlightWindows.removeAll()
     }
 }
 

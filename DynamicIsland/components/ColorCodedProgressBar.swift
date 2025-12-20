@@ -98,10 +98,12 @@ extension ColorCodedProgressBar {
 
 // MARK: - Palette Helpers
 
-private enum ColorCodedPalette {
-    private static let greenComponents: (CGFloat, CGFloat, CGFloat) = (0.2, 0.78, 0.35)
-    private static let yellowComponents: (CGFloat, CGFloat, CGFloat) = (0.93, 0.75, 0.2)
-    private static let redComponents: (CGFloat, CGFloat, CGFloat) = (0.95, 0.36, 0.3)
+// MARK: - Palette Helpers
+
+enum ColorCodedPalette {
+    static let greenComponents: (CGFloat, CGFloat, CGFloat) = (0.2, 0.78, 0.35)
+    static let yellowComponents: (CGFloat, CGFloat, CGFloat) = (0.93, 0.75, 0.2)
+    static let redComponents: (CGFloat, CGFloat, CGFloat) = (0.95, 0.36, 0.3)
 
     static func color(for intensity: CGFloat, smooth: Bool) -> Color {
         if smooth {

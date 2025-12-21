@@ -90,7 +90,7 @@ struct MusicSlotConfigurationView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: true) {
                 HStack(spacing: 12) {
                     ForEach(pickerOptions, id: \.self) { control in
                         paletteItem(for: control)

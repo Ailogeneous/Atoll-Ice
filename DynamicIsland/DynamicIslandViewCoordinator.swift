@@ -51,6 +51,10 @@ class DynamicIslandViewCoordinator: ObservableObject {
     
     @Published var currentView: NotchViews = .home {
         didSet {
+            if Defaults[.enableMinimalisticUI] && currentView != .home {
+                currentView = .home
+                return
+            }
             handleStatsTabTransition(from: oldValue, to: currentView)
         }
     }
@@ -116,6 +120,13 @@ class DynamicIslandViewCoordinator: ObservableObject {
                 self?.handleTimerFeatureToggle(change.newValue)
             }
             .store(in: &cancellables)
+
+        Defaults.publisher(.enableMinimalisticUI)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] change in
+                self?.handleMinimalisticModeChange(change.newValue)
+            }
+            .store(in: &cancellables)
     }
 
     private func handleStatsTabTransition(from oldValue: NotchViews, to newValue: NotchViews) {
@@ -150,6 +161,15 @@ class DynamicIslandViewCoordinator: ObservableObject {
         guard !isEnabled, currentView == .timer else { return }
         withAnimation(.smooth) {
             currentView = .home
+        }
+    }
+
+    private func handleMinimalisticModeChange(_ isEnabled: Bool) {
+        guard isEnabled else { return }
+        if currentView != .home {
+            withAnimation(.smooth) {
+                currentView = .home
+            }
         }
     }
     

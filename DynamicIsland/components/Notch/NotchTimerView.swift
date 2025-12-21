@@ -16,6 +16,7 @@ struct NotchTimerView: View {
     @ObservedObject var timerManager = TimerManager.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @Default(.enableTimerFeature) var enableTimerFeature
+    @Default(.enableMinimalisticUI) private var enableMinimalisticUI
     @Default(.timerPresets) private var timerPresets
     @Default(.timerIconColorMode) private var colorMode
     @Default(.timerSolidColor) private var solidColor
@@ -75,11 +76,13 @@ struct NotchTimerView: View {
     private var leftColumn: some View {
         VStack(alignment: .leading, spacing: 16) {
             if timerManager.isTimerActive {
+                Spacer(minLength: 0)
                 activeTimerCard
+                Spacer(minLength: 0)
             } else {
                 customTimerComposer
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(maxHeight: maxTabContentHeight, alignment: .top)
@@ -104,7 +107,9 @@ struct NotchTimerView: View {
                         ForEach(timerPresets) { preset in
                             TimerPresetCard(preset: preset, isActive: timerManager.activePresetId == preset.id) {
                                 timerManager.startTimer(duration: preset.duration, name: preset.name, preset: preset)
-                                coordinator.currentView = .timer
+                                if !enableMinimalisticUI {
+                                    coordinator.currentView = .timer
+                                }
                             }
                             .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
                             .listRowBackground(Color.clear)
@@ -146,13 +151,9 @@ struct NotchTimerView: View {
                 countdownSection
             }
 
-            if showsProgress {
-                progressSection
-            }
+            progressSection
         }
-        .padding(16)
-        .background(Color.white.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 4)
     }
 
     @ViewBuilder
@@ -186,7 +187,7 @@ struct NotchTimerView: View {
                 }
             }
         } else {
-            externalTimerNotice
+            inactiveTimerPlaceholder
         }
     }
 
@@ -218,47 +219,52 @@ struct NotchTimerView: View {
         .frame(height: 32)
     }
 
+    @ViewBuilder
     private var countdownSection: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text(timerManager.formattedRemainingTime())
-                .font(.system(size: 36, weight: .black, design: .monospaced))
-                .foregroundStyle(timerManager.isOvertime ? Color.red : .white)
-                .contentTransition(.numericText())
-                .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+        if showsProgress && progressStyle == .ring {
+            TimerProgressRing(
+                progress: timerManager.progress,
+                tint: timerAccentColor,
+                timeText: timerManager.formattedRemainingTime(),
+                isOvertime: timerManager.isOvertime,
+                remainingTime: timerManager.remainingTime
+            )
+        } else {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(timerManager.formattedRemainingTime())
+                    .font(.system(size: 36, weight: .black, design: .monospaced))
+                    .foregroundStyle(timerManager.isOvertime ? Color.red : .white)
+                    .contentTransition(.numericText())
+                    .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
-            if timerManager.isOvertime {
-                Text("Overtime")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                if timerManager.isOvertime {
+                    Text("Overtime")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             }
+            .frame(width: 190, alignment: .trailing)
         }
-        .frame(width: 190, alignment: .trailing)
     }
 
     @ViewBuilder
     private var progressSection: some View {
-        if progressStyle == .bar {
-            GeometryReader { geometry in
-                Capsule()
-                    .fill(Color.white.opacity(0.12))
-                    .frame(height: 4)
-                    .overlay(alignment: .leading) {
-                        Capsule()
-                            .fill(timerAccentColor)
-                            .frame(width: geometry.size.width * max(0, CGFloat(min(timerManager.progress, 1.0))))
-                            .animation(.smooth(duration: 0.25), value: timerManager.progress)
-                    }
-            }
-            .frame(height: 4)
-            .frame(maxWidth: .infinity)
-        } else {
-            HStack(spacing: 12) {
-                TimerProgressRing(progress: timerManager.progress, tint: timerAccentColor)
-                    .frame(height: 56)
-                Spacer()
-            }
+        if showsProgress && progressStyle == .bar {
+            Capsule()
+                .fill(Color.white.opacity(0.12))
+                .frame(height: 4)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(timerAccentColor)
+                        .frame(height: 4)
+                        .scaleEffect(x: normalizedProgress, y: 1, anchor: .leading)
+                        .animation(.smooth(duration: 0.25), value: timerManager.progress)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 6)
+                .padding(.bottom, 2)
         }
     }
 
@@ -314,18 +320,9 @@ struct NotchTimerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    private var externalTimerNotice: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Managed in Clock app", systemImage: "arrow.triangle.2.circlepath")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Button("Hide", role: .destructive) {
-                timerManager.endExternalTimer(triggerSmoothClose: false)
-            }
-            .buttonStyle(.borderless)
-            .font(.caption)
-        }
+    private var inactiveTimerPlaceholder: some View {
+        Color.clear
+            .frame(height: 46)
     }
 
     private var disabledState: some View {
@@ -381,6 +378,10 @@ struct NotchTimerView: View {
         case .solid:
             return solidColor
         }
+    }
+
+    private var normalizedProgress: CGFloat {
+        CGFloat(max(0, min(timerManager.progress, 1)))
     }
 
     private var timerDisplayName: String {
@@ -450,7 +451,9 @@ struct NotchTimerView: View {
         Button {
             withAnimation(.smooth) {
                 timerManager.startTimer(duration: customDurationInSeconds, name: "Custom Timer")
-                coordinator.currentView = .timer
+                if !enableMinimalisticUI {
+                    coordinator.currentView = .timer
+                }
             }
         } label: {
             Label("Start", systemImage: "play.fill")
@@ -552,18 +555,32 @@ private struct TimerControlButton: View {
 private struct TimerProgressRing: View {
     let progress: Double
     let tint: Color
+    let timeText: String
+    let isOvertime: Bool
+    let remainingTime: TimeInterval
+
+    private var clampedProgress: Double { min(max(progress, 0), 1) }
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 6)
+                .stroke(Color.white.opacity(0.12), lineWidth: 8)
+
             Circle()
-                .trim(from: 0, to: min(progress, 1.0))
-                .stroke(tint, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .trim(from: 0, to: clampedProgress)
+                .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.smooth(duration: 0.3), value: progress)
+                .animation(.smooth(duration: 0.3), value: clampedProgress)
+
+            Text(timeText)
+                .font(.system(size: 28, weight: .black, design: .monospaced))
+                .foregroundStyle(isOvertime ? Color.red : .white)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .contentTransition(.numericText())
+                .animation(.smooth(duration: 0.25), value: remainingTime)
         }
-        .frame(width: 60, height: 60)
+        .frame(width: 110, height: 110)
     }
 }
 

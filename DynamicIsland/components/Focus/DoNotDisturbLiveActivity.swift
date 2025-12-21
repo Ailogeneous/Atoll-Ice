@@ -22,7 +22,6 @@ struct DoNotDisturbLiveActivity: View {
     @State private var scaleResetTask: Task<Void, Never>?
     @State private var collapseTask: Task<Void, Never>?
     @State private var cleanupTask: Task<Void, Never>?
-    @State private var labelIntrinsicWidth: CGFloat = 0
 
     private enum ToastTiming {
         static let activeDisplay: UInt64 = 1800  // focus enabled toast linger
@@ -119,12 +118,15 @@ struct DoNotDisturbLiveActivity: View {
     }
 
     private var desiredLabelWidth: CGFloat {
-        let measuredWidth = labelIntrinsicWidth + 8 // horizontal padding inside the label
         let fallbackWidth = max(collapsedNotchWidth * 0.52, 136)
-        var width = max(measuredWidth, fallbackWidth)
+        var width = fallbackWidth
 
         if focusMode == .doNotDisturb && shouldShowLabel {
             width = max(width, 164)
+        }
+
+        if !shouldMarqueeLabel {
+            width = max(width, labelIntrinsicWidth + 8)
         }
 
         return width
@@ -132,6 +134,31 @@ struct DoNotDisturbLiveActivity: View {
 
     private var shouldShowLabel: Bool {
         focusToastMode ? (isExpanded && !labelText.isEmpty) : (showLabelSetting && isExpanded && !labelText.isEmpty)
+    }
+
+    private var labelIntrinsicWidth: CGFloat {
+        guard !labelText.isEmpty else { return 0 }
+        return (labelText as NSString).size(withAttributes: [.font: focusLabelNSFont]).width
+    }
+
+    private var shouldMarqueeLabel: Bool {
+        shouldShowLabel && labelIntrinsicWidth > focusLabelBaselineWidth
+    }
+
+    private var marqueeFrameWidth: CGFloat {
+        max(48, labelWingWidth - 8)
+    }
+
+    private var focusLabelFont: Font {
+        .system(size: 12, weight: .semibold, design: .rounded)
+    }
+
+    private var focusLabelNSFont: NSFont {
+        NSFont.systemFont(ofSize: 12, weight: .semibold)
+    }
+
+    private var focusLabelBaselineWidth: CGFloat {
+        FocusLabelMetrics.baselineWidth
     }
 
     // MARK: - Focus metadata
@@ -247,25 +274,31 @@ struct DoNotDisturbLiveActivity: View {
         Color.clear
             .overlay(alignment: .trailing) {
                 if shouldShowLabel {
-                    Text(labelText)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundColor(labelColor)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .contentTransition(.opacity)
-                        .background(
-                            GeometryReader { proxy in
-                                Color.clear
-                                    .preference(key: FocusLabelWidthPreferenceKey.self, value: proxy.size.width)
-                            }
-                        )
-                        .padding(.horizontal, 4)
+                    Group {
+                        if shouldMarqueeLabel {
+                            MarqueeText(
+                                .constant(labelText),
+                                font: focusLabelFont,
+                                nsFont: .caption1,
+                                textColor: labelColor,
+                                minDuration: 0.4,
+                                frameWidth: marqueeFrameWidth
+                            )
+                            .frame(width: marqueeFrameWidth, alignment: .trailing)
+                        } else {
+                            Text(labelText)
+                                .font(focusLabelFont)
+                                .foregroundColor(labelColor)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .contentTransition(.opacity)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                        }
+                    }
+                    .padding(.horizontal, 4)
                 }
             }
             .animation(.smooth(duration: 0.3), value: shouldShowLabel)
-            .onPreferenceChange(FocusLabelWidthPreferenceKey.self) { value in
-                labelIntrinsicWidth = value
-            }
     }
 
     private var labelColor: Color {
@@ -385,14 +418,6 @@ struct DoNotDisturbLiveActivity: View {
         .background(Color.black)
 }
 
-private struct FocusLabelWidthPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
 private final class SymbolAvailabilityCache {
     static let shared = SymbolAvailabilityCache()
     private var cache: [String: Bool] = [:]
@@ -417,4 +442,17 @@ private final class SymbolAvailabilityCache {
         lock.unlock()
         return available
     }
+}
+
+private enum FocusLabelMetrics {
+    static let baselineText = "Do Not Disturb"
+
+    static let baselineWidth: CGFloat = {
+        #if canImport(AppKit)
+        let font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        return (baselineText as NSString).size(withAttributes: [.font: font]).width
+        #else
+        return 0
+        #endif
+    }()
 }

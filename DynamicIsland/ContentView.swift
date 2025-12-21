@@ -248,14 +248,14 @@ struct ContentView: View {
                 }
                 .onChange(of: vm.isBatteryPopoverActive) { _, newPopoverState in
                     runAfter(0.1) {
-                        if !newPopoverState && !isHovering && vm.notchState == .open && !vm.isStatsPopoverActive && !vm.isMediaOutputPopoverActive && !vm.isReminderPopoverActive {
+                        if !newPopoverState && !isHovering && vm.notchState == .open && !shouldPreventAutoClose() {
                             vm.close()
                         }
                     }
                 }
                 .onChange(of: vm.isStatsPopoverActive) { _, newPopoverState in
                     runAfter(0.1) {
-                        if !newPopoverState && !isHovering && vm.notchState == .open && !vm.isBatteryPopoverActive && !vm.isClipboardPopoverActive && !vm.isColorPickerPopoverActive && !vm.isMediaOutputPopoverActive && !vm.isReminderPopoverActive {
+                        if !newPopoverState && !isHovering && vm.notchState == .open && !shouldPreventAutoClose() {
                             vm.close()
                         }
                     }
@@ -263,7 +263,14 @@ struct ContentView: View {
                 .onChange(of: vm.shouldRecheckHover) { _, _ in
                     // Recheck hover state when popovers are closed
                     runAfter(0.1) {
-                        if vm.notchState == .open && !vm.isBatteryPopoverActive && !vm.isClipboardPopoverActive && !vm.isColorPickerPopoverActive && !vm.isStatsPopoverActive && !vm.isMediaOutputPopoverActive && !vm.isReminderPopoverActive && !isHovering {
+                        if vm.notchState == .open && !shouldPreventAutoClose() && !isHovering {
+                            vm.close()
+                        }
+                    }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .sharingDidFinish)) { _ in
+                    runAfter(0.1) {
+                        if vm.notchState == .open && !isHovering && !shouldPreventAutoClose() {
                             vm.close()
                         }
                     }
@@ -737,7 +744,9 @@ struct ContentView: View {
                         }
 
                         vm.dropEvent = false
-                        vm.close()
+                        if !shouldPreventAutoClose() {
+                            vm.close()
+                        }
                     }
                 }
         } else {
@@ -800,7 +809,7 @@ struct ContentView: View {
                         self.isHovering = false
                     }
 
-                    if self.vm.notchState == .open && !self.hasAnyActivePopovers() {
+                    if self.vm.notchState == .open && !self.shouldPreventAutoClose() {
                         self.vm.close()
                     }
                 }
@@ -817,6 +826,10 @@ struct ContentView: View {
          vm.isTimerPopoverActive ||
          vm.isMediaOutputPopoverActive ||
          vm.isReminderPopoverActive
+    }
+
+    private func shouldPreventAutoClose() -> Bool {
+        hasAnyActivePopovers() || SharingStateManager.shared.preventNotchClose
     }
     
     // Helper to prevent rapid haptic feedback

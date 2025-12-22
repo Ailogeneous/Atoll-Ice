@@ -73,11 +73,14 @@ struct VerticalHUDView: View {
                 // Icon & Text overlay
                 VStack {
                     if showValue {
-                        Text("\(Int(state.value * 100))%")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(state.value > 0.85 ? (useAccentColor ? .white : .black) : .secondary)
-                            .padding(.top, 8 + (stretchOffset < 0 ? abs(stretchOffset/4) : 0))
-                            .contentTransition(.numericText())
+                        HUDNumericLabel(
+                            value: state.value,
+                            font: .system(size: 10, weight: .bold),
+                            color: valueLabelColor,
+                            alignment: .center,
+                            width: hudWidth * 0.8
+                        )
+                        .padding(.top, 8 + (stretchOffset < 0 ? abs(stretchOffset/4) : 0))
                     }
                     
                     Spacer()
@@ -224,6 +227,13 @@ struct VerticalHUDView: View {
         }
         
         return AnyShapeStyle(useAccentColor ? Color.accentColor : Color.white)
+    }
+
+    private var valueLabelColor: Color {
+        if state.value > 0.85 {
+            return useAccentColor ? .white : .black
+        }
+        return .secondary
     }
 }
 #endif

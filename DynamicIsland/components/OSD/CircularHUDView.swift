@@ -20,44 +20,71 @@ struct CircularHUDView: View {
     
     var body: some View {
         ZStack {
-            // Background circle
+            // Background circle (SOLO OPAQUE - No transparency)
             Circle()
-                .fill(.ultraThinMaterial)
+                .fill(Color(white: 0.1))
                 .overlay {
                     Circle()
-                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                        .stroke(Color(white: 0.2), lineWidth: 1)
                 }
             
-            // Progress ring background
+            // 1. Static Background Track (Empty binario)
             Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: strokeWidth)
-                .padding(strokeWidth / 2)
+                .trim(from: 0.15, to: 0.85)
+                .stroke(Color(white: 0.15), style: StrokeStyle(lineWidth: strokeWidth * 1.5, lineCap: .round))
+                .rotationEffect(.degrees(90))
+                .frame(width: size, height: size)
             
-            // Progress ring
+            // 2. Animated Progress Arc (Filled part)
             Circle()
-                .trim(from: 0, to: value)
-                .stroke(
-                    strokeStyle,
-                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .padding(strokeWidth / 2)
-                .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: value)
+                .trim(from: 0.15, to: 0.15 + (0.7 * value))
+                .stroke(strokeStyle, style: StrokeStyle(lineWidth: strokeWidth * 1.5, lineCap: .round))
+                .rotationEffect(.degrees(90))
+                .frame(width: size, height: size)
+                .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: value)
             
-            // Content
-            VStack(spacing: 2) {
-                Image(systemName: symbolName)
-                    .font(.system(size: size * 0.35, weight: .semibold))
-                    .foregroundStyle(useAccentColor ? (value > 0.9 ? .white : .primary) : .white)
-                    .symbolRenderingMode(.hierarchical)
+            // 3. The "Ball" Indicator (Oversized White Pallino)
+            GeometryReader { geometry in
+                let radius = size / 2
+                let trackWidth = strokeWidth * 1.5
+                let startAngle = 144.0
+                let currentAngle = startAngle + (252.0 * value)
                 
-                if showValue {
-                    Text("\(Int(value * 100))")
-                        .font(.system(size: size * 0.18, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .contentTransition(.numericText())
+                let x = radius + radius * cos(currentAngle * .pi / 180)
+                let y = radius + radius * sin(currentAngle * .pi / 180)
+                
+                Circle()
+                    .fill(.white)
+                    .frame(width: trackWidth * 1.45, height: trackWidth * 1.45)
+                    .shadow(color: .black.opacity(0.45), radius: 2, x: 0, y: 1.2)
+                    .position(x: x, y: y)
+                    .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: value)
+            }
+            .frame(width: size, height: size)
+            
+            // Central Icon
+            Image(systemName: symbolName)
+                .font(.system(size: size * 0.32, weight: .bold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.white)
+                .contentTransition(.symbolEffect(.replace))
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: symbolName)
+            
+            // Bottom Value Label
+            if showValue {
+                VStack {
+                    Spacer()
+                    HUDNumericLabel(
+                        value: value,
+                        font: .system(size: size * 0.15, weight: .bold, design: .rounded),
+                        color: .white.opacity(0.65)
+                    )
+                    .padding(.bottom, size * 0.03)
                 }
             }
+
+
+
         }
         .frame(width: size, height: size)
         .shadow(color: .black.opacity(0.2), radius: 15, x: 0, y: 5)
@@ -69,7 +96,12 @@ struct CircularHUDView: View {
             return ColorCodedProgressBar.shapeStyle(for: value, mode: .volume, smoothGradient: useSmoothGradient)
         }
         
-        return AnyShapeStyle(useAccentColor ? Color.accentColor : Color.white)
+        if useAccentColor {
+            return AnyShapeStyle(Color.accentColor)
+        }
+        
+        // Default to the approved solid dark gray to match reference when not colored
+        return AnyShapeStyle(Color(white: 0.25))
     }
     
     private var symbolName: String {
@@ -82,7 +114,7 @@ struct CircularHUDView: View {
             
             if deviceInfo.isAirPods {
                 // Use AirPods icon when AirPods are connected
-                if value < 0.01 { return "airpods" }
+                if value < 0.01 { return "headphones.slash" }
                 else { return "airpods" }
             } else if deviceInfo.isHeadphones {
                 // Use headphone icons when other headphones are connected

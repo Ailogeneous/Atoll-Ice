@@ -1031,7 +1031,7 @@ private enum WeatherSymbolMapper {
             return "cloud.rain.fill"
         case 179, 182, 185, 311, 314, 317, 320, 362, 365:
             return "cloud.sleet.fill"
-        case 227, 230, 281, 284, 317, 320, 323, 326, 329, 332, 335, 338, 368, 371, 374, 377:
+        case 227, 230, 281, 284, 323, 326, 329, 332, 335, 338, 368, 371, 374, 377:
             return "cloud.snow.fill"
         case 200, 386, 389, 392, 395:
             return "cloud.bolt.rain.fill"

@@ -606,13 +606,18 @@ final class SystemBrightnessController {
     }
 
     private func setBrightnessViaDisplayServices(_ value: Float) -> Bool {
-        let status = DisplayServicesSetBrightness(displayID, value)
+        guard let status = DisplayServicesDynamic.shared.setBrightness(displayID: displayID, value: value) else {
+            return false
+        }
         if status == kIOReturnSuccess {
             return true
         }
         // Attempt to refresh display ID in case the main display changed
         displayID = CGMainDisplayID()
-        let retry = DisplayServicesSetBrightness(displayID, value)
+        guard let retry = DisplayServicesDynamic.shared.setBrightness(displayID: displayID, value: value) else {
+            NSLog("⚠️ DisplayServicesSetBrightness unavailable after display refresh")
+            return false
+        }
         if retry != kIOReturnSuccess {
             NSLog("⚠️ DisplayServicesSetBrightness failed: \(retry)")
             return false
@@ -621,17 +626,21 @@ final class SystemBrightnessController {
     }
 
     private func getBrightnessViaDisplayServices() -> Float? {
-        var brightness: Float = 0
-        let status = DisplayServicesGetBrightness(displayID, &brightness)
-        if status == kIOReturnSuccess {
-            return brightness
+        guard let result = DisplayServicesDynamic.shared.getBrightness(displayID: displayID) else {
+            return nil
+        }
+        if result.status == kIOReturnSuccess {
+            return result.value
         }
         displayID = CGMainDisplayID()
-        let retry = DisplayServicesGetBrightness(displayID, &brightness)
-        if retry == kIOReturnSuccess {
-            return brightness
+        guard let retry = DisplayServicesDynamic.shared.getBrightness(displayID: displayID) else {
+            NSLog("⚠️ DisplayServicesGetBrightness unavailable after display refresh")
+            return nil
         }
-        NSLog("⚠️ DisplayServicesGetBrightness failed: \(retry)")
+        if retry.status == kIOReturnSuccess {
+            return retry.value
+        }
+        NSLog("⚠️ DisplayServicesGetBrightness failed: \(retry.status)")
         return nil
     }
 
@@ -655,9 +664,3 @@ final class SystemBrightnessController {
         observers.forEach { DistributedNotificationCenter.default().removeObserver($0) }
     }
 }
-
-@_silgen_name("DisplayServicesGetBrightness")
-private func DisplayServicesGetBrightness(_ display: UInt32, _ brightness: UnsafeMutablePointer<Float>) -> Int32
-
-@_silgen_name("DisplayServicesSetBrightness")
-private func DisplayServicesSetBrightness(_ display: UInt32, _ brightness: Float) -> Int32

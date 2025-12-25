@@ -8,9 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		7E1ADF1D2EA209B1001DA867 /* SkyLightWindow in Frameworks */ = {isa = PBXBuildFile; productRef = 7E61181E2E24071E0050006C /* SkyLightWindow */; };
-		7E25ECA12E6C6C3800700E72 /* CoreBrightness.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E25ECA02E6C6C3800700E72 /* CoreBrightness.framework */; };
-		7E25ECA32E6C6E2600700E72 /* OSD.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E25ECA22E6C6E2600700E72 /* OSD.framework */; };
-		7E25ECA52E6C6E7800700E72 /* DisplayServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E25ECA42E6C6E7800700E72 /* DisplayServices.framework */; };
 		7E6118142E24071E0050006C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 14D032192C68F32E0096E6A1 /* LaunchAtLogin */; };
 		7E6118152E24071E0050006C /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 14D0321C2C68F3350096E6A1 /* Sparkle */; };
 		7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654382C6F4990000B926A /* KeyboardShortcuts */; };
@@ -28,23 +25,7 @@
 		7E9911B02EFD7D1B002EDFD5 /* Reindeer.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E9911AF2EFD7D1B002EDFD5 /* Reindeer.json */; };
 		7EE1D73D2E6B1E0B00997219 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */; };
 		7EE1D73F2E6B1E1200997219 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73E2E6B1E1200997219 /* IOKit.framework */; };
-		BA90505C953246D0AB206451 /* MediaRemoteAdapter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */; };
-		C61F69420FB64DA98516CFBC /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		B933CDB48C2F42C2887A9836 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 12;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				C61F69420FB64DA98516CFBC /* MediaRemoteAdapter.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		7E25ECA02E6C6C3800700E72 /* CoreBrightness.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBrightness.framework; path = /System/Library/PrivateFrameworks/CoreBrightness.framework; sourceTree = "<absolute>"; };
@@ -77,15 +58,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				7E1ADF1D2EA209B1001DA867 /* SkyLightWindow in Frameworks */,
-				7E25ECA12E6C6C3800700E72 /* CoreBrightness.framework in Frameworks */,
 				7EE1D73F2E6B1E1200997219 /* IOKit.framework in Frameworks */,
 				7EE1D73D2E6B1E0B00997219 /* ApplicationServices.framework in Frameworks */,
-				BA90505C953246D0AB206451 /* MediaRemoteAdapter.framework in Frameworks */,
 				7E61181C2E24071E0050006C /* MacroVisionKit in Frameworks */,
 				7E61181B2E24071E0050006C /* LottieUI in Frameworks */,
 				7E61181A2E24071E0050006C /* SwiftUIIntrospect in Frameworks */,
-				7E25ECA32E6C6E2600700E72 /* OSD.framework in Frameworks */,
-				7E25ECA52E6C6E7800700E72 /* DisplayServices.framework in Frameworks */,
 				7E6118192E24071E0050006C /* Defaults in Frameworks */,
 				7E6118172E24071E0050006C /* Collections in Frameworks */,
 				7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */,
@@ -160,7 +137,6 @@
 				F54406E32CD4987A00C7AFD9 /* Sources */,
 				F54406E42CD4987A00C7AFD9 /* Frameworks */,
 				F54406E52CD4987A00C7AFD9 /* Resources */,
-				B933CDB48C2F42C2887A9836 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);

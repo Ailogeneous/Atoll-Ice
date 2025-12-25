@@ -18,7 +18,8 @@ final class MediaChecker: Sendable {
     func checkDeprecationStatus() async throws -> Bool {
         guard let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl"),
               let nowPlayingTestClientPath = Bundle.main.url(forResource: "MediaRemoteAdapterTestClient", withExtension: nil)?.path,
-              let frameworkPath = Bundle.main.privateFrameworksPath?.appending("/MediaRemoteAdapter.framework")
+              //let frameworkPath = Bundle.main.privateFrameworksPath?.appending("/MediaRemoteAdapter.framework")
+              let frameworkPath = Optional("/System/Library/PrivateFrameworks/MediaRemoteAdapter.framework")
         else {
             throw MediaCheckerError.missingResources
         }

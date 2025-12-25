@@ -5,7 +5,7 @@
         <item>
             <title>1.2.2-beta</title>
             <pubDate>Thu, 25 Dec 2025 23:48:51 +0530</pubDate>
-            <sparkle:version>1</sparkle:version>
+            <sparkle:version>3</sparkle:version>
             <sparkle:shortVersionString>1.2.2-beta</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/Ebullioscopic/Atoll/releases/download/v1.2.2-beta/Atoll.1.2.2-beta.dmg" length="16752120" type="application/octet-stream" sparkle:edSignature="ForeteqM3Y3zRh01AlaY0IHAKB8dT6S9RcnEB/kywMRennifpduCZV99kSOLBpHKMcOioHVldiNI3FhYqXGlCA=="/>

@@ -99,7 +99,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .timer: return .red
         case .calendar: return .cyan
         case .hudAndOSD: return .indigo
-        case .battery: return .yellow
+        case .battery: return Color(red: 0.202, green: 0.783, blue: 0.348, opacity: 1.000)
         case .stats: return .teal
         case .clipboard: return .mint
         case .screenAssistant: return .pink
@@ -107,7 +107,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .downloads: return .gray
         case .shelf: return .brown
         case .shortcuts: return .orange
-        case .notes: return .yellow
+        case .notes: return Color(red: 0.979, green: 0.716, blue: 0.153, opacity: 1.000)
         case .about: return .secondary
         }
     }

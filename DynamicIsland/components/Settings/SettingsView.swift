@@ -1302,6 +1302,9 @@ private struct HUDAndOSDSettingsView: View {
     @Default(.enableVerticalHUD) var enableVerticalHUD
     @Default(.enableCircularHUD) var enableCircularHUD
     @Default(.verticalHUDPosition) var verticalHUDPosition
+    @Default(.enableVolumeHUD) var enableVolumeHUD
+    @Default(.enableBrightnessHUD) var enableBrightnessHUD
+    @Default(.enableKeyboardBacklightHUD) var enableKeyboardBacklightHUD
     
     // Vertical HUD Props
     @Default(.verticalHUDShowValue) var verticalHUDShowValue
@@ -1530,6 +1533,20 @@ private struct HUDAndOSDSettingsView: View {
                             Text("Accessibility")
                         }
                     }
+
+                    if accessibilityPermission.isAuthorized {
+                        Section {
+                            Toggle("Volume HUD", isOn: $enableVolumeHUD)
+                            Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
+                            Toggle("Keyboard Backlight HUD", isOn: $enableKeyboardBacklightHUD)
+                        } header: {
+                            Text("Controls")
+                        } footer: {
+                            Text("Choose which system controls should display HUD notifications.")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                    }
                     
                     Section {
                         Toggle("Show Percentage", isOn: $verticalHUDShowValue)
@@ -1596,6 +1613,20 @@ private struct HUDAndOSDSettingsView: View {
                             )
                         } header: {
                             Text("Accessibility")
+                        }
+                    }
+
+                    if accessibilityPermission.isAuthorized {
+                        Section {
+                            Toggle("Volume HUD", isOn: $enableVolumeHUD)
+                            Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
+                            Toggle("Keyboard Backlight HUD", isOn: $enableKeyboardBacklightHUD)
+                        } header: {
+                            Text("Controls")
+                        } footer: {
+                            Text("Choose which system controls should display HUD notifications.")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
                         }
                     }
                     

@@ -98,7 +98,7 @@ class SystemHUDManager {
         
         // Observe individual HUD toggles
         Defaults.publisher(.enableVolumeHUD, options: []).sink { [weak self] change in
-            guard let self = self, self.isSetupComplete, Defaults[.enableSystemHUD] else {
+            guard let self = self, self.isSetupComplete, self.requiresSystemToggleHandling else {
                 return
             }
             self.changesObserver?.update(
@@ -109,7 +109,7 @@ class SystemHUDManager {
         }.store(in: &cancellables)
         
         Defaults.publisher(.enableBrightnessHUD, options: []).sink { [weak self] change in
-            guard let self = self, self.isSetupComplete, Defaults[.enableSystemHUD] else {
+            guard let self = self, self.isSetupComplete, self.requiresSystemToggleHandling else {
                 return
             }
             self.changesObserver?.update(
@@ -120,7 +120,7 @@ class SystemHUDManager {
         }.store(in: &cancellables)
 
         Defaults.publisher(.enableKeyboardBacklightHUD, options: []).sink { [weak self] change in
-            guard let self = self, self.isSetupComplete, Defaults[.enableSystemHUD] else {
+            guard let self = self, self.isSetupComplete, self.requiresSystemToggleHandling else {
                 return
             }
             self.changesObserver?.update(
@@ -166,6 +166,10 @@ class SystemHUDManager {
     }
     
     private var cancellables = Set<AnyCancellable>()
+
+    private var requiresSystemToggleHandling: Bool {
+        Defaults[.enableSystemHUD] || Defaults[.enableVerticalHUD] || Defaults[.enableCircularHUD]
+    }
     
     /// Public property to check if system operations are in progress
     var isOperationInProgress: Bool {
@@ -206,10 +210,10 @@ class SystemHUDManager {
         let keyboardBacklightEnabled: Bool
         
         if Defaults[.enableCircularHUD] || Defaults[.enableVerticalHUD] {
-            // Vertical and Circular HUD support all events
-            volumeEnabled = true
-            brightnessEnabled = true
-            keyboardBacklightEnabled = true
+            // Respect per-control toggles so the system HUD can handle disabled events
+            volumeEnabled = Defaults[.enableVolumeHUD]
+            brightnessEnabled = Defaults[.enableBrightnessHUD]
+            keyboardBacklightEnabled = Defaults[.enableKeyboardBacklightHUD]
         } else if Defaults[.enableCustomOSD] {
             volumeEnabled = Defaults[.enableOSDVolume]
             brightnessEnabled = Defaults[.enableOSDBrightness]

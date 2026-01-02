@@ -182,7 +182,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         }
         
         // Send to Circular HUD if enabled
-        if Defaults[.enableCircularHUD] {
+        if Defaults[.enableCircularHUD] && Defaults[.enableVolumeHUD] {
             Task { @MainActor in
                 CircularHUDWindowManager.shared.show(type: .volume, value: CGFloat(value))
             }
@@ -190,7 +190,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         }
         
         // Send to Vertical HUD if enabled
-        if Defaults[.enableVerticalHUD] {
+        if Defaults[.enableVerticalHUD] && Defaults[.enableVolumeHUD] {
             let icon = resolvedVolumeIcon(isMuted: isMuted)
             VerticalHUDWindowManager.shared.show(type: .volume, value: CGFloat(value), icon: icon)
             return
@@ -228,7 +228,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
 
     private func sendBrightnessNotification(value: Float) {
         // Send to Circular HUD if enabled
-        if Defaults[.enableCircularHUD] {
+        if Defaults[.enableCircularHUD] && Defaults[.enableBrightnessHUD] {
             Task { @MainActor in
                 CircularHUDWindowManager.shared.show(type: .brightness, value: CGFloat(value))
             }
@@ -236,7 +236,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         }
         
         // Send to Vertical HUD if enabled
-        if Defaults[.enableVerticalHUD] {
+        if Defaults[.enableVerticalHUD] && Defaults[.enableBrightnessHUD] {
             Task { @MainActor in
                 VerticalHUDWindowManager.shared.show(type: .brightness, value: CGFloat(value))
             }
@@ -266,7 +266,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
 
     private func sendKeyboardBacklightNotification(value: Float) {
         // Send to Circular HUD if enabled
-        if Defaults[.enableCircularHUD] {
+        if Defaults[.enableCircularHUD] && Defaults[.enableKeyboardBacklightHUD] {
             Task { @MainActor in
                 CircularHUDWindowManager.shared.show(type: .backlight, value: CGFloat(value))
             }
@@ -274,7 +274,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         }
         
         // Send to Vertical HUD if enabled
-        if Defaults[.enableVerticalHUD] {
+        if Defaults[.enableVerticalHUD] && Defaults[.enableKeyboardBacklightHUD] {
             Task { @MainActor in
                 VerticalHUDWindowManager.shared.show(type: .backlight, value: CGFloat(value))
             }

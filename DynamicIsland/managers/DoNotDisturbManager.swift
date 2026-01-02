@@ -131,6 +131,9 @@ final class DoNotDisturbManager: ObservableObject {
 
             if nameChanged {
                 self.currentFocusModeName = finalName
+                    .localizedCaseInsensitiveContains(
+                        "Reduce Interruptions"
+                    ) ? "Reduce Interr." : finalName
             }
 
             if identifierChanged || nameChanged || shouldToggleActive {
@@ -322,7 +325,7 @@ enum FocusModeType: String, CaseIterable {
         case .gaming: return "Gaming"
         case .mindfulness: return "Mindfulness"
         case .reading: return "Reading"
-        case .reduceInterruptions: return "Reduce Interruptions"
+        case .reduceInterruptions: return "Reduce Interr."
         case .custom: return "Focus"
         case .unknown: return "Focus Mode"
         }

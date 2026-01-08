@@ -24,6 +24,7 @@ enum SneakContentType {
     case bluetoothAudio
     case privacy
     case lockScreen
+    case capsLock
 }
 
 struct sneakPeek {
@@ -190,7 +191,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
             return
         }
         DispatchQueue.main.async {
-            withAnimation(.smooth) {
+            withAnimation(.smooth(duration: 0.3)) {
                 self.sneakPeek.show = status
                 self.sneakPeek.type = type
                 self.sneakPeek.value = value
@@ -205,6 +206,9 @@ class DynamicIslandViewCoordinator: ObservableObject {
     // Helper function to manage sneakPeek timer using Swift Concurrency
     private func scheduleSneakPeekHide(after duration: TimeInterval) {
         sneakPeekTask?.cancel()
+        
+        // Don't schedule auto-hide if duration is infinite (for persistent indicators like Caps Lock)
+        guard duration.isFinite else { return }
 
         sneakPeekTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(duration))

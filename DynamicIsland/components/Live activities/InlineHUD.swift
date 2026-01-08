@@ -128,6 +128,12 @@ struct InlineHUD: View {
                                 .symbolRenderingMode(.hierarchical)
                                 .contentTransition(.interpolate)
                                 .frame(width: 20, height: 15, alignment: .center)
+                        case .capsLock:
+                            Image(systemName: "capslock.fill")
+                                .symbolRenderingMode(.hierarchical)
+                                .contentTransition(.interpolate)
+                                .frame(width: 20, height: 15, alignment: .center)
+                                .foregroundStyle(Defaults[.capsLockIndicatorUseGreenColor] ? .green : .white)
                         default:
                             EmptyView()
                     }
@@ -147,7 +153,7 @@ struct InlineHUD: View {
                             frameWidth: infoWidth
                         )
                     }
-                } else {
+                } else if type != .capsLock {
                     Text(Type2Name(type))
                         .font(.subheadline)
                         .fontWeight(.medium)
@@ -175,6 +181,16 @@ struct InlineHUD: View {
                 } else if (type == .timer) {
                     Text(TimerManager.shared.formattedRemainingTime())
                         .foregroundStyle(TimerManager.shared.timerColor)
+                        .lineLimit(1)
+                        .allowsTightening(true)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .contentTransition(.interpolate)
+                } else if (type == .capsLock) {
+                    Text("Caps Lock")
+                        .foregroundStyle(Defaults[.capsLockIndicatorUseGreenColor] ? .green : .white)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                         .lineLimit(1)
                         .allowsTightening(true)
                         .multilineTextAlignment(.trailing)
@@ -374,6 +390,8 @@ struct InlineHUD: View {
                 return "Mic"
             case .bluetoothAudio:
                 return BluetoothAudioManager.shared.lastConnectedDevice?.name ?? "Bluetooth"
+            case .capsLock:
+                return "Caps Lock"
             default:
                 return ""
         }

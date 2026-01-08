@@ -738,6 +738,10 @@ extension Defaults.Keys {
     static let enableLockScreenLiveActivity = Key<Bool>("enableLockScreenLiveActivity", default: true)
     static let enableLockSounds = Key<Bool>("enableLockSounds", default: true)
     
+    // MARK: Caps Lock Indicator
+    static let enableCapsLockIndicator = Key<Bool>("enableCapsLockIndicator", default: true)
+    static let capsLockIndicatorUseGreenColor = Key<Bool>("capsLockIndicatorUseGreenColor", default: false)
+    
     // MARK: ImageService
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCacheV1", default: false)
     

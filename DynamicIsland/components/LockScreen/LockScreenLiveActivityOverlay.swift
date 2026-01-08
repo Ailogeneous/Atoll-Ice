@@ -26,6 +26,8 @@ struct LockScreenLiveActivityOverlay: View {
 		Self.collapsedScale(for: notchSize)
 	}
 
+    @State private var isHovering: Bool = false
+
 	var body: some View {
 		HStack(spacing: 0) {
 			Color.clear
@@ -52,8 +54,18 @@ struct LockScreenLiveActivityOverlay: View {
 			)
 		)
 		.frame(width: totalWidth, height: notchSize.height)
-		.scaleEffect(x: max(model.scale, collapsedScale), y: 1, anchor: .center)
+		.scaleEffect(x: max(model.scale, collapsedScale) * (isHovering ? 1.03 : 1.0), 
+                     y: 1 * (isHovering ? 1.03 : 1.0), 
+                     anchor: .center)
 		.opacity(model.opacity)
+        .onHover { hovering in
+            withAnimation(.smooth(duration: 0.2)) {
+                isHovering = hovering
+            }
+            if hovering {
+                NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .default)
+            }
+        }
 	}
 }
 

@@ -4623,6 +4623,9 @@
         }
       }
     },
+    "Caps Lock" : {
+
+    },
     "Center" : {
       "extractionState" : "stale",
       "localizations" : {

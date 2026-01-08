@@ -1735,6 +1735,11 @@ private struct DevicesSettingsView: View {
             Section {
                 Defaults.Toggle("Show Bluetooth device connections", key: .showBluetoothDeviceConnections)
                     .settingsHighlight(id: highlightID("Show Bluetooth device connections"))
+                Defaults.Toggle("Show Caps Lock Indicator", key: .enableCapsLockIndicator)
+                    .settingsHighlight(id: highlightID("Show Caps Lock Indicator"))
+                Defaults.Toggle("Use green color for Caps Lock text", key: .capsLockIndicatorUseGreenColor)
+                    .disabled(!Defaults[.enableCapsLockIndicator])
+                    .settingsHighlight(id: highlightID("Use green color for Caps Lock text"))
                 Defaults.Toggle("Use circular battery indicator", key: .useCircularBluetoothBatteryIndicator)
                     .settingsHighlight(id: highlightID("Use circular battery indicator"))
                 Defaults.Toggle("Show battery percentage text in HUD", key: .showBluetoothBatteryPercentageText)

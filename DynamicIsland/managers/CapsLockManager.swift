@@ -10,6 +10,7 @@ import Foundation
 import Combine
 import AppKit
 import Defaults
+import SwiftUI
 
 @MainActor
 class CapsLockManager: ObservableObject {
@@ -20,6 +21,7 @@ class CapsLockManager: ObservableObject {
     private var localEventMonitor: Any?
     private var globalEventMonitor: Any?
     private let coordinator = DynamicIslandViewCoordinator.shared
+    private let capsLockAnimation = Animation.spring(response: 0.32, dampingFraction: 0.85)
     
     private init() {
         // Get initial state
@@ -55,7 +57,9 @@ class CapsLockManager: ObservableObject {
         
         guard newState != isCapsLockActive else { return }
         
-        isCapsLockActive = newState
+        withAnimation(capsLockAnimation) {
+            isCapsLockActive = newState
+        }
         
         print("CapsLockManager: Caps Lock \(newState ? "ACTIVATED" : "DEACTIVATED")")
         

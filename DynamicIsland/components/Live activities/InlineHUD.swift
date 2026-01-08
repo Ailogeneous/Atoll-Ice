@@ -25,6 +25,7 @@ struct InlineHUD: View {
     @Default(.showBluetoothBatteryPercentageText) var showBluetoothBatteryPercentageText
     @Default(.showBluetoothDeviceNameMarquee) var showBluetoothDeviceNameMarquee
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
+    @Default(.showCapsLockLabel) var showCapsLockLabel
     @ObservedObject var bluetoothManager = BluetoothAudioManager.shared
     
     @State private var displayName: String = ""
@@ -32,55 +33,87 @@ struct InlineHUD: View {
     var body: some View {
         let useCircularIndicator = useCircularBluetoothBatteryIndicator
         let hasBatteryLevel = value > 0
+        let capsLockAccentColor: Color = Defaults[.capsLockIndicatorUseGreenColor] ? .green : .white
 
         let baseInfoWidth: CGFloat = {
-            guard type == .bluetoothAudio else { return 100 }
-            if showBluetoothDeviceNameMarquee {
-                return enableMinimalisticUI ? 128 : 140
+            if type == .bluetoothAudio {
+                if showBluetoothDeviceNameMarquee {
+                    return enableMinimalisticUI ? 128 : 140
+                }
+                return enableMinimalisticUI ? 64 : 72
             }
-            return enableMinimalisticUI ? 64 : 72
+
+            if type == .capsLock && !showCapsLockLabel {
+                return enableMinimalisticUI ? 56 : 64
+            }
+
+            return 100
         }()
 
         let infoWidth: CGFloat = {
             var width = baseInfoWidth + gestureProgress / 2
             if !hoverAnimation { width -= 8 }
             let minimum: CGFloat = {
-                guard type == .bluetoothAudio else { return 88 }
-                if showBluetoothDeviceNameMarquee {
-                    return enableMinimalisticUI ? 112 : 120
+                if type == .bluetoothAudio {
+                    if showBluetoothDeviceNameMarquee {
+                        return enableMinimalisticUI ? 112 : 120
+                    }
+                    return enableMinimalisticUI ? 56 : 68
                 }
-                return enableMinimalisticUI ? 56 : 68
+
+                if type == .capsLock && !showCapsLockLabel {
+                    return enableMinimalisticUI ? 44 : 52
+                }
+
+                return 88
             }()
             return max(width, minimum)
         }()
 
         let baseTrailingWidth: CGFloat = {
-            guard type == .bluetoothAudio else { return 100 }
-            if !hasBatteryLevel {
-                return showBluetoothDeviceNameMarquee ? (enableMinimalisticUI ? 104 : 118) : (enableMinimalisticUI ? 74 : 88)
+            if type == .bluetoothAudio {
+                if !hasBatteryLevel {
+                    return showBluetoothDeviceNameMarquee ? (enableMinimalisticUI ? 104 : 118) : (enableMinimalisticUI ? 74 : 88)
+                }
+
+                if useCircularIndicator {
+                    return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 108 : 120) : (enableMinimalisticUI ? 72 : 84)
+                }
+
+                return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 118 : 136) : (enableMinimalisticUI ? 92 : 108)
             }
 
-            if useCircularIndicator {
-                return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 108 : 120) : (enableMinimalisticUI ? 72 : 84)
+            if type == .capsLock {
+                if showCapsLockLabel {
+                    return enableMinimalisticUI ? 84 : 96
+                }
+                return 0
             }
 
-            return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 118 : 136) : (enableMinimalisticUI ? 92 : 108)
+            return 100
         }()
 
         let trailingWidth: CGFloat = {
             var width = baseTrailingWidth + gestureProgress / 2
             if !hoverAnimation { width -= 8 }
             let minimum: CGFloat = {
-                guard type == .bluetoothAudio else { return 90 }
-                if !hasBatteryLevel {
-                    return showBluetoothDeviceNameMarquee ? (enableMinimalisticUI ? 96 : 110) : (enableMinimalisticUI ? 62 : 88)
+                if type == .bluetoothAudio {
+                    if !hasBatteryLevel {
+                        return showBluetoothDeviceNameMarquee ? (enableMinimalisticUI ? 96 : 110) : (enableMinimalisticUI ? 62 : 88)
+                    }
+
+                    if useCircularIndicator {
+                        return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 92 : 110) : (enableMinimalisticUI ? 56 : 72)
+                    }
+
+                    return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 104 : 120) : (enableMinimalisticUI ? 72 : 90)
                 }
 
-                if useCircularIndicator {
-                    return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 92 : 110) : (enableMinimalisticUI ? 56 : 72)
+                if type == .capsLock {
+                    return showCapsLockLabel ? (enableMinimalisticUI ? 68 : 80) : 0
                 }
 
-                return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 104 : 120) : (enableMinimalisticUI ? 72 : 90)
+                return 90
             }()
             return max(width, minimum)
         }()
@@ -133,7 +166,7 @@ struct InlineHUD: View {
                                 .symbolRenderingMode(.hierarchical)
                                 .contentTransition(.interpolate)
                                 .frame(width: 20, height: 15, alignment: .center)
-                                .foregroundStyle(Defaults[.capsLockIndicatorUseGreenColor] ? .green : .white)
+                                .foregroundStyle(capsLockAccentColor)
                         default:
                             EmptyView()
                     }
@@ -187,15 +220,17 @@ struct InlineHUD: View {
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .contentTransition(.interpolate)
                 } else if (type == .capsLock) {
-                    Text("Caps Lock")
-                        .foregroundStyle(Defaults[.capsLockIndicatorUseGreenColor] ? .green : .white)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .lineLimit(1)
-                        .allowsTightening(true)
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .contentTransition(.interpolate)
+                    if showCapsLockLabel {
+                        Text("Caps Lock")
+                            .foregroundStyle(capsLockAccentColor)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .lineLimit(1)
+                            .allowsTightening(true)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .contentTransition(.interpolate)
+                    }
                 } else if (type == .bluetoothAudio) {
                     if hasBatteryLevel {
                         let indicatorSpacing: CGFloat = {

@@ -741,6 +741,7 @@ extension Defaults.Keys {
     // MARK: Caps Lock Indicator
     static let enableCapsLockIndicator = Key<Bool>("enableCapsLockIndicator", default: true)
     static let capsLockIndicatorUseGreenColor = Key<Bool>("capsLockIndicatorUseGreenColor", default: false)
+    static let showCapsLockLabel = Key<Bool>("showCapsLockLabel", default: true)
     
     // MARK: ImageService
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCacheV1", default: false)

@@ -2363,6 +2363,9 @@
         }
       }
     },
+    "Adds a notch HUD when Caps Lock is enabled, with optional label and tint controls." : {
+
+    },
     "Adds the AirPlay/route picker button back to the customizable controls palette." : {
 
     },
@@ -4624,6 +4627,9 @@
       }
     },
     "Caps Lock" : {
+
+    },
+    "Caps Lock Indicator" : {
 
     },
     "Center" : {

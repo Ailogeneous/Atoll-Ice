@@ -578,11 +578,6 @@ extension Defaults.Keys {
     static let enableLockScreenTimerWidget = Key<Bool>("enableLockScreenTimerWidget", default: true)
     static let lockScreenWeatherRefreshInterval = Key<TimeInterval>("lockScreenWeatherRefreshInterval", default: 30 * 60)
     static let lockScreenWeatherShowsLocation = Key<Bool>("lockScreenWeatherShowsLocation", default: true)
-    static let lockScreenWeatherShowsCharging = Key<Bool>("lockScreenWeatherShowsCharging", default: true)
-    static let lockScreenWeatherShowsChargingPercentage = Key<Bool>("lockScreenWeatherShowsChargingPercentage", default: true)
-    static let lockScreenWeatherShowsBluetooth = Key<Bool>("lockScreenWeatherShowsBluetooth", default: true)
-    static let lockScreenWeatherShowsBatteryGauge = Key<Bool>("lockScreenWeatherShowsBatteryGauge", default: true)
-    static let lockScreenWeatherBatteryUsesLaptopSymbol = Key<Bool>("lockScreenWeatherBatteryUsesLaptopSymbol", default: true)
     static let lockScreenWeatherShowsSunrise = Key<Bool>("lockScreenWeatherShowsSunrise", default: true)
     static let lockScreenWeatherWidgetStyle = Key<LockScreenWeatherWidgetStyle>("lockScreenWeatherWidgetStyle", default: .circular)
     static let lockScreenWeatherTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("lockScreenWeatherTemperatureUnit", default: .celsius)
@@ -607,6 +602,15 @@ extension Defaults.Keys {
     static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
     static let playLowBatteryAlertSound = Key<Bool>("playLowBatteryAlertSound", default: true)
+    
+    static let lockScreenBatteryShowsBatteryGauge = Key<Bool>(
+        "lockScreenWeatherShowsBatteryGauge",
+        default: BatteryActivityManager.shared.hasBattery()
+    )
+    static let lockScreenBatteryUsesLaptopSymbol = Key<Bool>("lockScreenWeatherBatteryUsesLaptopSymbol", default: true)
+    static let lockScreenBatteryShowsCharging = Key<Bool>("lockScreenWeatherShowsCharging", default: true)
+    static let lockScreenBatteryShowsChargingPercentage = Key<Bool>("lockScreenWeatherShowsChargingPercentage", default: true)
+    static let lockScreenBatteryShowsBluetooth = Key<Bool>("lockScreenWeatherShowsBluetooth", default: true)
     
         // MARK: Downloads
     static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)

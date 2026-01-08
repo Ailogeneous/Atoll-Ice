@@ -3993,6 +3993,9 @@
         }
       }
     },
+    "Battery Widget" : {
+
+    },
     "Behavior & Style" : {
 
     },
@@ -8250,6 +8253,9 @@
       }
     },
     "Enable stats monitoring in Settings to view system performance data." : {
+
+    },
+    "Enable the battery capsule and configure its layout." : {
 
     },
     "Enable the timer feature in Settings to access this tab." : {

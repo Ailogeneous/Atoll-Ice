@@ -41,10 +41,24 @@ struct ContentView: View {
     @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.timerDisplayMode) var timerDisplayMode
     @Default(.enableHorizontalMusicGestures) var enableHorizontalMusicGestures
+    @Default(.reminderPresentationStyle) var reminderPresentationStyle
+    @Default(.timerShowsCountdown) var timerShowsCountdown
+    @Default(.timerShowsProgress) var timerShowsProgress
+    @Default(.timerProgressStyle) var timerProgressStyle
+    @Default(.timerIconColorMode) var timerIconColorMode
+    @Default(.timerSolidColor) var timerSolidColor
+    @Default(.timerPresets) var timerPresets
+    @Default(.showCapsLockLabel) var showCapsLockLabel
+    @Default(.capsLockIndicatorTintMode) var capsLockTintMode
+    @Default(.enableDoNotDisturbDetection) var enableDoNotDisturbDetection
+    @Default(.showDoNotDisturbIndicator) var showDoNotDisturbIndicator
+    @Default(.focusIndicatorNonPersistent) var focusIndicatorNonPersistent
+    @Default(.enableScreenRecordingDetection) var enableScreenRecordingDetection
+    @Default(.enableCapsLockIndicator) var enableCapsLockIndicator
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
-        var baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
+        let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
         
         if coordinator.currentView == .timer {
             return CGSize(width: baseSize.width, height: 250) // Extra height for timer presets
@@ -620,9 +634,7 @@ struct ContentView: View {
       }
 
     private func reminderColor(for reminder: ReminderLiveActivityManager.ReminderEntry, now: Date) -> Color {
-        let window = TimeInterval(Defaults[.reminderSneakPeekDuration])
-        let remaining = reminder.event.start.timeIntervalSince(now)
-        if window > 0 && remaining > 0 && remaining <= window {
+        if isReminderCritical(reminder, now: now) {
             return .red
         }
         return Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
@@ -673,8 +685,18 @@ struct ContentView: View {
 
     @ViewBuilder
     func MusicLiveActivity() -> some View {
-        HStack {
-            HStack {
+        let secondary = resolveMusicSecondaryLiveActivity()
+        let notchContentHeight = max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12))
+        let wingBaseWidth = max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2)
+        let centerBaseWidth = vm.closedNotchSize.width + (isHovering ? 8 : 0)
+        let inlineSneakPeekActive = (coordinator.expandingView.show && (coordinator.expandingView.type == .music || coordinator.expandingView.type == .timer) && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline)
+        let rightWingWidth = resolvedRightWingWidth(for: secondary, baseWidth: wingBaseWidth, centerBaseWidth: centerBaseWidth)
+        let centerWidth = resolvedCenterWidth(baseWidth: centerBaseWidth, baseRightWidth: wingBaseWidth, desiredRightWidth: rightWingWidth)
+        let badgeSize = max(16, notchContentHeight * 0.45)
+        let effectiveCenterWidth = inlineSneakPeekActive ? 380 : centerWidth
+
+        HStack(spacing: 0) {
+            ZStack(alignment: .bottomTrailing) {
                 Color.clear
                     .aspectRatio(1, contentMode: .fit)
                     .background(
@@ -686,12 +708,16 @@ struct ContentView: View {
                     .clipShape(RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed))
                     .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                     .albumArtFlip(angle: musicManager.flipAngle)
-                    .frame(width: max(0, vm.effectiveClosedNotchHeight - 12), height: max(0, vm.effectiveClosedNotchHeight - 12))
+                albumArtBadge(for: secondary, badgeSize: badgeSize)
+                    .offset(x: badgeSize * 0.2, y: badgeSize * 0.25)
+                    .id(secondary?.id ?? "music-badge")
+                    .contentTransition(.symbolEffect(.replace))
             }
-            .frame(width: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2), height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)))
+            .frame(width: wingBaseWidth, height: notchContentHeight)
 
             Rectangle()
                 .fill(.black)
+                .frame(width: effectiveCenterWidth, height: notchContentHeight)
                 .overlay(
                     HStack(alignment: .top){
                         if(coordinator.expandingView.show && coordinator.expandingView.type == .music) {
@@ -727,30 +753,193 @@ struct ContentView: View {
                         }
                     }
                 )
-                .frame(width: (coordinator.expandingView.show && (coordinator.expandingView.type == .music || coordinator.expandingView.type == .timer) && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 380 : vm.closedNotchSize.width + (isHovering ? 8 : 0))
-            
 
-            HStack {
-                if useMusicVisualizer {
-                    Rectangle()
-                        .fill(Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor).gradient : Color.gray.gradient)
-                        .frame(width: 50, alignment: .center)
-                        .matchedGeometryEffect(id: "spectrum", in: albumArtNamespace)
-                        .mask {
-                            AudioSpectrumView(isPlaying: $musicManager.isPlaying)
-                                .frame(width: 16, height: 12)
-                        }
-                        .frame(width: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2),
-                               height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
-                } else {
-                    LottieAnimationView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .frame(width: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2),
-                   height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
+            musicRightWing(for: secondary)
+                .frame(width: rightWingWidth, height: notchContentHeight, alignment: .center)
+                .id(secondary?.id ?? "music-spectrum")
+                .contentTransition(.symbolEffect(.replace))
         }
         .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
+        .animation(.smooth(duration: 0.25), value: secondary?.id)
+    }
+
+    private func resolveMusicSecondaryLiveActivity() -> MusicSecondaryLiveActivity? {
+        if coordinator.timerLiveActivityEnabled && timerManager.isTimerActive {
+            return .timer
+        }
+
+        if enableReminderLiveActivity, reminderManager.isActive, let reminder = reminderManager.activeReminder {
+            return .reminder(reminder)
+        }
+
+        if enableScreenRecordingDetection && (recordingManager.isRecording || !recordingManager.isRecorderIdle) {
+            return .recording
+        }
+
+        if enableDoNotDisturbDetection && showDoNotDisturbIndicator && (doNotDisturbManager.isDoNotDisturbActive || focusIndicatorNonPersistent) {
+            let mode = FocusModeType.resolve(identifier: doNotDisturbManager.currentFocusModeIdentifier, name: doNotDisturbManager.currentFocusModeName)
+            return .focus(mode)
+        }
+
+        if enableCapsLockIndicator && capsLockManager.isCapsLockActive {
+            return .capsLock(showLabel: showCapsLockLabel)
+        }
+
+        if showNotHumanFace {
+            return .coolFace
+        }
+
+        return nil
+    }
+
+    private func resolvedRightWingWidth(for secondary: MusicSecondaryLiveActivity?, baseWidth: CGFloat, centerBaseWidth: CGFloat) -> CGFloat {
+        guard let secondary else { return baseWidth }
+
+        func scaledWidth(factor: CGFloat, extra: CGFloat = 0) -> CGFloat {
+            max(baseWidth, max(centerBaseWidth * factor, baseWidth + extra))
+        }
+
+        switch secondary {
+        case .timer:
+            return scaledWidth(factor: 0.58, extra: 28)
+        case .reminder:
+            return scaledWidth(factor: 0.52, extra: 22)
+        case .capsLock(let showLabel):
+            return showLabel ? scaledWidth(factor: 0.4, extra: 12) : baseWidth
+        case .coolFace:
+            return scaledWidth(factor: 0.38, extra: 8)
+        case .focus:
+            return scaledWidth(factor: 0.42, extra: 10)
+        case .recording:
+            return scaledWidth(factor: 0.45, extra: 14)
+        }
+    }
+
+    private func resolvedCenterWidth(baseWidth: CGFloat, baseRightWidth: CGFloat, desiredRightWidth: CGFloat) -> CGFloat {
+        let delta = max(0, desiredRightWidth - baseRightWidth)
+        return max(96, baseWidth - delta)
+    }
+
+    @ViewBuilder
+    private func albumArtBadge(for secondary: MusicSecondaryLiveActivity?, badgeSize: CGFloat) -> some View {
+        if let secondary, badgeSize > 0 {
+            ZStack {
+                Circle()
+                    .fill(Color.black)
+
+                switch secondary {
+                case .timer:
+                    Image(systemName: "timer")
+                        .font(.system(size: badgeSize * 0.55, weight: .semibold))
+                        .foregroundStyle(timerAccentColor)
+                case .reminder(let entry):
+                    let accent = reminderColor(for: entry, now: reminderManager.currentDate)
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.system(size: badgeSize * 0.55, weight: .semibold))
+                        .foregroundStyle(accent)
+                case .focus(let mode):
+                    mode.resolvedActiveIcon(usePrivateSymbol: true)
+                        .renderingMode(.template)
+                        .font(.system(size: badgeSize * 0.5, weight: .semibold))
+                        .foregroundStyle(mode.accentColor)
+                case .recording:
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: badgeSize * 0.45, height: badgeSize * 0.45)
+                        .modifier(PulsingModifier())
+                case .capsLock:
+                    Image(systemName: "capslock.fill")
+                        .font(.system(size: badgeSize * 0.5, weight: .semibold))
+                        .foregroundStyle(capsLockTintMode.color)
+                case .coolFace:
+                    Image(systemName: "face.smiling")
+                        .font(.system(size: badgeSize * 0.5, weight: .semibold))
+                        .foregroundStyle(.mint)
+                }
+            }
+            .frame(width: badgeSize, height: badgeSize)
+            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
+            .transition(.opacity.combined(with: .scale))
+        } else {
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func musicRightWing(for secondary: MusicSecondaryLiveActivity?) -> some View {
+        switch secondary {
+        case .timer:
+            MusicTimerSupplementView(
+                timerManager: timerManager,
+                accentColor: timerAccentColor,
+                showsCountdown: timerShowsCountdown,
+                showsProgress: timerShowsProgress,
+                progressStyle: timerProgressStyle
+            )
+        case .reminder(let entry):
+            MusicReminderSupplementView(
+                entry: entry,
+                now: reminderManager.currentDate,
+                style: reminderPresentationStyle,
+                accent: reminderColor(for: entry, now: reminderManager.currentDate)
+            )
+        case .capsLock(let showLabel):
+            if showLabel {
+                MusicCapsLockLabelView(color: capsLockTintMode.color)
+            } else {
+                spectrumView(forceSpectrum: true)
+            }
+        case .coolFace:
+            IdleAnimationView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 4)
+        case .focus, .recording:
+            spectrumView(forceSpectrum: true)
+        case .none:
+            spectrumView(forceSpectrum: false)
+        }
+    }
+
+    @ViewBuilder
+    private func spectrumView(forceSpectrum: Bool) -> some View {
+        if useMusicVisualizer || forceSpectrum {
+            Rectangle()
+                .fill(Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor).gradient : Color.gray.gradient)
+                .frame(width: 50, alignment: .center)
+                .matchedGeometryEffect(id: "spectrum", in: albumArtNamespace)
+                .mask {
+                    AudioSpectrumView(isPlaying: $musicManager.isPlaying)
+                        .frame(width: 16, height: 12)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            LottieAnimationView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private var timerAccentColor: Color {
+        switch timerIconColorMode {
+        case .adaptive:
+            if let presetId = timerManager.activePresetId,
+               let preset = timerPresets.first(where: { $0.id == presetId }) {
+                return preset.color
+            }
+            return timerManager.timerColor
+        case .solid:
+            return timerSolidColor
+        }
+    }
+
+    private func reminderIconName(for reminder: ReminderLiveActivityManager.ReminderEntry, now: Date) -> String {
+        isReminderCritical(reminder, now: now) ? ReminderLiveActivityManager.criticalIconName : ReminderLiveActivityManager.standardIconName
+    }
+
+    private func isReminderCritical(_ reminder: ReminderLiveActivityManager.ReminderEntry, now: Date) -> Bool {
+        let window = TimeInterval(Defaults[.reminderSneakPeekDuration])
+        guard window > 0 else { return false }
+        let remaining = reminder.event.start.timeIntervalSince(now)
+        return remaining > 0 && remaining <= window
     }
     
     @ViewBuilder
@@ -1239,6 +1428,171 @@ struct ContentView: View {
 
     private func hideMusicControlWindow() {}
     #endif
+}
+
+private enum MusicSecondaryLiveActivity: Equatable {
+    case timer
+    case reminder(ReminderLiveActivityManager.ReminderEntry)
+    case recording
+    case focus(FocusModeType)
+    case capsLock(showLabel: Bool)
+    case coolFace
+
+    var id: String {
+        switch self {
+        case .timer:
+            return "timer"
+        case .reminder(let entry):
+            return "reminder-\(entry.id)"
+        case .recording:
+            return "recording"
+        case .focus(let mode):
+            return "focus-\(mode.rawValue)"
+        case .capsLock(let showLabel):
+            return showLabel ? "caps-lock-label" : "caps-lock-icon"
+        case .coolFace:
+            return "cool-face"
+        }
+    }
+}
+
+private struct MusicTimerSupplementView: View {
+    @ObservedObject var timerManager: TimerManager
+    let accentColor: Color
+    let showsCountdown: Bool
+    let showsProgress: Bool
+    let progressStyle: TimerProgressStyle
+
+    private var clampedProgress: Double {
+        min(max(timerManager.progress, 0), 1)
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if showsProgress {
+                if progressStyle == .ring {
+                    ZStack {
+                        Circle()
+                            .stroke(Color.white.opacity(0.18), lineWidth: 3)
+                        Circle()
+                            .trim(from: 0, to: clampedProgress)
+                            .stroke(accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .animation(.smooth(duration: 0.25), value: clampedProgress)
+                    }
+                    .frame(width: 24, height: 24)
+                } else if !showsCountdown {
+                    barView()
+                }
+            }
+
+            if showsCountdown {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(timerManager.formattedRemainingTime())
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(timerManager.isOvertime ? .red : .white)
+                        .contentTransition(.numericText())
+                        .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
+
+                    if showsProgress && progressStyle == .bar {
+                        barView()
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            } else if !showsProgress {
+                Text(timerManager.timerName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private func barView() -> some View {
+        Capsule()
+            .fill(Color.white.opacity(0.15))
+            .frame(width: 68, height: 4)
+            .overlay(alignment: .leading) {
+                Capsule()
+                    .fill(accentColor)
+                    .frame(width: 68 * max(0, CGFloat(clampedProgress)), height: 4)
+                    .animation(.smooth(duration: 0.25), value: clampedProgress)
+            }
+    }
+}
+
+private struct MusicReminderSupplementView: View {
+    let entry: ReminderLiveActivityManager.ReminderEntry
+    let now: Date
+    let style: ReminderPresentationStyle
+    let accent: Color
+
+    private var progressValue: Double {
+        guard entry.leadTime > 0 else { return 1 }
+        let remaining = max(entry.event.start.timeIntervalSince(now), 0)
+        let elapsed = entry.leadTime - remaining
+        return min(max(elapsed / entry.leadTime, 0), 1)
+    }
+
+    private var digitalCountdownText: String {
+        let remaining = max(entry.event.start.timeIntervalSince(now), 0)
+        let totalSeconds = Int(remaining.rounded(.down))
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var minutesCountdownText: String {
+        let remaining = max(entry.event.start.timeIntervalSince(now), 0)
+        let minutes = max(1, Int(ceil(remaining / 60)))
+        return minutes == 1 ? "in 1 min" : "in \(minutes) min"
+    }
+
+    var body: some View {
+        switch style {
+        case .ringCountdown:
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.15), lineWidth: 3)
+                Circle()
+                    .trim(from: 0, to: progressValue)
+                    .stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.smooth(duration: 0.25), value: progressValue)
+            }
+            .frame(width: 24, height: 24)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+
+        case .digital:
+            Text(digitalCountdownText)
+                .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                .foregroundColor(accent)
+                .contentTransition(.numericText())
+                .animation(.smooth(duration: 0.25), value: digitalCountdownText)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+
+        case .minutes:
+            Text(minutesCountdownText)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(accent)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+}
+
+private struct MusicCapsLockLabelView: View {
+    let color: Color
+
+    var body: some View {
+        Text("Caps Lock")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(color)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .contentTransition(.opacity)
+    }
 }
 
 struct FullScreenDropDelegate: DropDelegate {

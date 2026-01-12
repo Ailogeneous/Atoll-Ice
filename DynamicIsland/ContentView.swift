@@ -495,7 +495,7 @@ struct ContentView: View {
                               return coordinator.expandingView.type == .recording
                           case .focus:
                               return coordinator.expandingView.type == .doNotDisturb
-                          case .capsLock, .coolFace:
+                          case .capsLock:
                               return false
                           }
                       }()
@@ -823,10 +823,6 @@ struct ContentView: View {
             return .capsLock(showLabel: showCapsLockLabel)
         }
 
-        if showNotHumanFace {
-            return .coolFace
-        }
-
         return nil
     }
 
@@ -840,8 +836,6 @@ struct ContentView: View {
             return reminderRightWingWidth(for: entry, baseWidth: baseWidth, notchHeight: notchHeight, now: reminderManager.currentDate)
         case .capsLock(let showLabel):
             return showLabel ? scaledWingWidth(baseWidth: baseWidth, centerBaseWidth: centerBaseWidth, factor: 0.4, extra: 12) : baseWidth
-        case .coolFace:
-            return scaledWingWidth(baseWidth: baseWidth, centerBaseWidth: centerBaseWidth, factor: 0.36, extra: 8)
         case .focus:
             return focusRightWingWidth(baseWidth: baseWidth)
         case .recording:
@@ -942,10 +936,6 @@ struct ContentView: View {
                     Image(systemName: "capslock.fill")
                         .font(.system(size: badgeSize * 0.5, weight: .semibold))
                         .foregroundStyle(capsLockTintMode.color)
-                case .coolFace:
-                    Image(systemName: "face.smiling")
-                        .font(.system(size: badgeSize * 0.5, weight: .semibold))
-                        .foregroundStyle(.mint)
                 }
             }
             .frame(width: badgeSize, height: badgeSize)
@@ -982,10 +972,6 @@ struct ContentView: View {
             } else {
                 spectrumView(forceSpectrum: true)
             }
-        case .coolFace:
-            IdleAnimationView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 4)
         case .focus(let mode):
             spectrumView(forceSpectrum: true)
         case .recording:
@@ -1532,7 +1518,6 @@ private enum MusicSecondaryLiveActivity: Equatable {
     case recording
     case focus(FocusModeType)
     case capsLock(showLabel: Bool)
-    case coolFace
 
     var id: String {
         switch self {
@@ -1546,8 +1531,6 @@ private enum MusicSecondaryLiveActivity: Equatable {
             return "focus-\(mode.rawValue)"
         case .capsLock(let showLabel):
             return showLabel ? "caps-lock-label" : "caps-lock-icon"
-        case .coolFace:
-            return "cool-face"
         }
     }
 }

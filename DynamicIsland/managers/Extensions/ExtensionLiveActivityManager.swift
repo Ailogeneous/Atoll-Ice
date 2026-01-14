@@ -10,21 +10,52 @@ final class ExtensionLiveActivityManager: ObservableObject {
 
     private let authorizationManager = ExtensionAuthorizationManager.shared
     private let maxCapacityKey = Defaults.Keys.extensionLiveActivityCapacity
+    private let eventBridge = ExtensionEventBridge.shared
+    private var liveActivityObserver: NSObjectProtocol?
+    private var suppressBroadcast = false
+    private let currentProcessID = ProcessInfo.processInfo.processIdentifier
 
-    private init() {}
+    private init() {
+        activeActivities = eventBridge.loadPersistedLiveActivities()
+        sortActivities()
+        liveActivityObserver = eventBridge.observeLiveActivitySnapshots { [weak self] payloads, sourcePID in
+            self?.applySnapshot(payloads, sourcePID: sourcePID)
+        }
+    }
+
+    deinit {
+        if let token = liveActivityObserver {
+            eventBridge.removeObserver(token)
+        }
+    }
 
     func present(descriptor: AtollLiveActivityDescriptor, bundleIdentifier: String) throws {
         guard authorizationManager.canProcessLiveActivityRequest(from: bundleIdentifier) else {
+            logDiagnostics("Rejected live activity \(descriptor.id) from \(bundleIdentifier): scope disabled or bundle unauthorized")
             throw ExtensionValidationError.unauthorized
         }
         guard descriptor.isValid else {
+            logDiagnostics("Rejected live activity \(descriptor.id) from \(bundleIdentifier): descriptor validation failed")
             throw ExtensionValidationError.invalidDescriptor("Structure validation failed")
         }
-        guard activeActivities.count < Defaults[maxCapacityKey] else {
-            throw ExtensionValidationError.exceedsCapacity
+
+        if let index = activeActivities.firstIndex(where: { $0.descriptor.id == descriptor.id && $0.bundleIdentifier == bundleIdentifier }) {
+            let payload = ExtensionLiveActivityPayload(
+                bundleIdentifier: bundleIdentifier,
+                descriptor: descriptor,
+                receivedAt: activeActivities[index].receivedAt
+            )
+            activeActivities[index] = payload
+            sortActivities()
+            authorizationManager.recordActivity(for: bundleIdentifier, scope: .liveActivities)
+            Logger.log("Replaced extension live activity \(descriptor.id) for \(bundleIdentifier)", category: .extensions)
+            broadcastSnapshot()
+            return
         }
-        guard activeActivities.contains(where: { $0.descriptor.id == descriptor.id }) == false else {
-            throw ExtensionValidationError.duplicateIdentifier
+
+        guard activeActivities.count < Defaults[maxCapacityKey] else {
+            logDiagnostics("Rejected live activity \(descriptor.id) from \(bundleIdentifier): capacity limit \(Defaults[maxCapacityKey]) reached")
+            throw ExtensionValidationError.exceedsCapacity
         }
 
         let payload = ExtensionLiveActivityPayload(
@@ -35,10 +66,13 @@ final class ExtensionLiveActivityManager: ObservableObject {
         activeActivities.append(payload)
         sortActivities()
         authorizationManager.recordActivity(for: bundleIdentifier, scope: .liveActivities)
+        logDiagnostics("Queued live activity \(descriptor.id) for \(bundleIdentifier); total activities: \(activeActivities.count)")
+        broadcastSnapshot()
     }
 
     func update(descriptor: AtollLiveActivityDescriptor, bundleIdentifier: String) throws {
         guard descriptor.isValid else {
+            logDiagnostics("Rejected live activity update \(descriptor.id) from \(bundleIdentifier): descriptor validation failed")
             throw ExtensionValidationError.invalidDescriptor("Structure validation failed")
         }
         guard let index = activeActivities.firstIndex(where: { $0.descriptor.id == descriptor.id && $0.bundleIdentifier == bundleIdentifier }) else {
@@ -52,6 +86,8 @@ final class ExtensionLiveActivityManager: ObservableObject {
         activeActivities[index] = payload
         sortActivities()
         authorizationManager.recordActivity(for: bundleIdentifier, scope: .liveActivities)
+        logDiagnostics("Updated live activity \(descriptor.id) for \(bundleIdentifier)")
+        broadcastSnapshot()
     }
 
     func dismiss(activityID: String, bundleIdentifier: String) {
@@ -60,6 +96,8 @@ final class ExtensionLiveActivityManager: ObservableObject {
         if previousCount != activeActivities.count {
             Logger.log("Dismissed extension live activity \(activityID) from \(bundleIdentifier)", category: .extensions)
             ExtensionXPCServiceHost.shared.notifyActivityDismiss(bundleIdentifier: bundleIdentifier, activityID: activityID)
+            logDiagnostics("Removed live activity \(activityID) for \(bundleIdentifier); remaining: \(activeActivities.count)")
+            broadcastSnapshot()
         }
     }
 
@@ -69,6 +107,10 @@ final class ExtensionLiveActivityManager: ObservableObject {
             .map { $0.descriptor.id }
         activeActivities.removeAll { $0.bundleIdentifier == bundleIdentifier }
         ids.forEach { ExtensionXPCServiceHost.shared.notifyActivityDismiss(bundleIdentifier: bundleIdentifier, activityID: $0) }
+        if !ids.isEmpty {
+            logDiagnostics("Removed all live activities for \(bundleIdentifier); ids: \(ids.joined(separator: ", "))")
+            broadcastSnapshot()
+        }
     }
 
     func sortedActivities(for coexistence: Bool = false) -> [ExtensionLiveActivityPayload] {
@@ -86,5 +128,24 @@ final class ExtensionLiveActivityManager: ObservableObject {
 
     private func sortActivities() {
         activeActivities.sort(by: descriptorComparator)
+    }
+
+    private func broadcastSnapshot() {
+        guard !suppressBroadcast else { return }
+        eventBridge.broadcastLiveActivitySnapshot(activeActivities)
+        logDiagnostics("Broadcasted live activity snapshot (count: \(activeActivities.count))")
+    }
+
+    private func applySnapshot(_ payloads: [ExtensionLiveActivityPayload], sourcePID: Int32) {
+        guard sourcePID != currentProcessID else { return }
+        suppressBroadcast = true
+        activeActivities = payloads.sorted(by: descriptorComparator)
+        suppressBroadcast = false
+        logDiagnostics("Applied external live activity snapshot from PID \(sourcePID) (count: \(payloads.count))")
+    }
+
+    private func logDiagnostics(_ message: String) {
+        guard Defaults[.extensionDiagnosticsLoggingEnabled] else { return }
+        Logger.log(message, category: .extensions)
     }
 }

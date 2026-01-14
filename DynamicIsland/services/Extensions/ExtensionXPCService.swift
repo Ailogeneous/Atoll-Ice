@@ -24,112 +24,147 @@ final class ExtensionXPCService: NSObject, AtollXPCServiceProtocol {
     // MARK: Authorization
 
     func requestAuthorization(bundleIdentifier providedBundleIdentifier: String, reply: @escaping (Bool, Error?) -> Void) {
-        guard validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard self.validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
 
-        guard authorizationManager.isExtensionsFeatureEnabled else {
-            reply(false, ExtensionValidationError.featureDisabled.asNSError)
-            return
+            guard self.authorizationManager.isExtensionsFeatureEnabled else {
+                reply(false, ExtensionValidationError.featureDisabled.asNSError)
+                return
+            }
+
+            let entry = self.authorizationManager.ensureEntryExists(bundleIdentifier: self.bundleIdentifier, appName: self.resolvedApplicationName())
+
+            if entry.status == .pending {
+                self.authorizationManager.authorize(bundleIdentifier: self.bundleIdentifier, appName: self.resolvedApplicationName())
+                self.host?.notifyAuthorizationChange(bundleIdentifier: self.bundleIdentifier, isAuthorized: true)
+                reply(true, nil)
+                return
+            }
+
+            reply(entry.isAuthorized, entry.isAuthorized ? nil : ExtensionValidationError.unauthorized.asNSError)
         }
-
-        let entry = authorizationManager.ensureEntryExists(bundleIdentifier: bundleIdentifier, appName: resolvedApplicationName())
-
-        if entry.status == .pending {
-            authorizationManager.authorize(bundleIdentifier: bundleIdentifier, appName: resolvedApplicationName())
-            host?.notifyAuthorizationChange(bundleIdentifier: bundleIdentifier, isAuthorized: true)
-            reply(true, nil)
-            return
-        }
-
-        reply(entry.isAuthorized, entry.isAuthorized ? nil : ExtensionValidationError.unauthorized.asNSError)
     }
 
     func checkAuthorization(bundleIdentifier providedBundleIdentifier: String, reply: @escaping (Bool) -> Void) {
-        guard providedBundleIdentifier == bundleIdentifier else {
-            reply(false)
-            return
-        }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard providedBundleIdentifier == self.bundleIdentifier else {
+                reply(false)
+                return
+            }
 
-        let isAuthorized = authorizationManager.authorizationEntry(for: bundleIdentifier)?.isAuthorized ?? false
-        reply(isAuthorized)
+            let isAuthorized = self.authorizationManager.authorizationEntry(for: self.bundleIdentifier)?.isAuthorized ?? false
+            reply(isAuthorized)
+        }
     }
 
     // MARK: Live Activities
 
     func presentLiveActivity(descriptorData: Data, reply: @escaping (Bool, Error?) -> Void) {
-        respond(reply: reply) {
-            let descriptor = try decoder.decode(AtollLiveActivityDescriptor.self, from: descriptorData)
+        respond(reply: reply) { service in
+            let descriptor = try service.decoder.decode(AtollLiveActivityDescriptor.self, from: descriptorData)
             try ExtensionDescriptorValidator.validate(descriptor)
-            try liveActivityManager.present(descriptor: descriptor, bundleIdentifier: bundleIdentifier)
+            service.logDiagnostics("Received live activity payload from \(service.bundleIdentifier) (id: \(descriptor.id), priority: \(descriptor.priority.rawValue), coexistence: \(descriptor.allowsMusicCoexistence))")
+            try service.liveActivityManager.present(descriptor: descriptor, bundleIdentifier: service.bundleIdentifier)
+            service.logDiagnostics("Live activity \(descriptor.id) stored for \(service.bundleIdentifier); active activities: \(service.liveActivityManager.activeActivities.count)")
         }
     }
 
     func updateLiveActivity(descriptorData: Data, reply: @escaping (Bool, Error?) -> Void) {
-        respond(reply: reply) {
-            let descriptor = try decoder.decode(AtollLiveActivityDescriptor.self, from: descriptorData)
+        respond(reply: reply) { service in
+            let descriptor = try service.decoder.decode(AtollLiveActivityDescriptor.self, from: descriptorData)
             try ExtensionDescriptorValidator.validate(descriptor)
-            try liveActivityManager.update(descriptor: descriptor, bundleIdentifier: bundleIdentifier)
+            service.logDiagnostics("Received live activity update from \(service.bundleIdentifier) (id: \(descriptor.id))")
+            try service.liveActivityManager.update(descriptor: descriptor, bundleIdentifier: service.bundleIdentifier)
+            service.logDiagnostics("Live activity \(descriptor.id) updated for \(service.bundleIdentifier)")
         }
     }
 
     func dismissLiveActivity(activityID: String, bundleIdentifier providedBundleIdentifier: String, reply: @escaping (Bool, Error?) -> Void) {
-        guard validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard self.validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
 
-        liveActivityManager.dismiss(activityID: activityID, bundleIdentifier: bundleIdentifier)
-        reply(true, nil)
+            self.logDiagnostics("Received live activity dismissal from \(self.bundleIdentifier) (id: \(activityID))")
+            self.liveActivityManager.dismiss(activityID: activityID, bundleIdentifier: self.bundleIdentifier)
+            self.logDiagnostics("Live activity \(activityID) dismissed for \(self.bundleIdentifier)")
+            reply(true, nil)
+        }
     }
 
     // MARK: Lock Screen Widgets
 
     func presentLockScreenWidget(descriptorData: Data, reply: @escaping (Bool, Error?) -> Void) {
-        respond(reply: reply) {
-            let descriptor = try decoder.decode(AtollLockScreenWidgetDescriptor.self, from: descriptorData)
+        respond(reply: reply) { service in
+            let descriptor = try service.decoder.decode(AtollLockScreenWidgetDescriptor.self, from: descriptorData)
             try ExtensionDescriptorValidator.validate(descriptor)
-            try widgetManager.present(descriptor: descriptor, bundleIdentifier: bundleIdentifier)
+            service.logDiagnostics("Received lock screen widget payload from \(service.bundleIdentifier) (id: \(descriptor.id), style: \(descriptor.layoutStyle))")
+            try service.widgetManager.present(descriptor: descriptor, bundleIdentifier: service.bundleIdentifier)
+            service.logDiagnostics("Lock screen widget \(descriptor.id) stored for \(service.bundleIdentifier); active widgets: \(service.widgetManager.activeWidgets.count)")
         }
     }
 
     func updateLockScreenWidget(descriptorData: Data, reply: @escaping (Bool, Error?) -> Void) {
-        respond(reply: reply) {
-            let descriptor = try decoder.decode(AtollLockScreenWidgetDescriptor.self, from: descriptorData)
+        respond(reply: reply) { service in
+            let descriptor = try service.decoder.decode(AtollLockScreenWidgetDescriptor.self, from: descriptorData)
             try ExtensionDescriptorValidator.validate(descriptor)
-            try widgetManager.update(descriptor: descriptor, bundleIdentifier: bundleIdentifier)
+            service.logDiagnostics("Received lock screen widget update from \(service.bundleIdentifier) (id: \(descriptor.id))")
+            try service.widgetManager.update(descriptor: descriptor, bundleIdentifier: service.bundleIdentifier)
+            service.logDiagnostics("Lock screen widget \(descriptor.id) updated for \(service.bundleIdentifier)")
         }
     }
 
     func dismissLockScreenWidget(widgetID: String, bundleIdentifier providedBundleIdentifier: String, reply: @escaping (Bool, Error?) -> Void) {
-        guard validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard self.validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
 
-        widgetManager.dismiss(widgetID: widgetID, bundleIdentifier: bundleIdentifier)
-        reply(true, nil)
+            self.logDiagnostics("Received lock screen widget dismissal from \(self.bundleIdentifier) (id: \(widgetID))")
+            self.widgetManager.dismiss(widgetID: widgetID, bundleIdentifier: self.bundleIdentifier)
+            self.logDiagnostics("Lock screen widget \(widgetID) dismissed for \(self.bundleIdentifier)")
+            reply(true, nil)
+        }
     }
 
     // MARK: Diagnostics
 
     func getVersion(reply: @escaping (String) -> Void) {
-        reply(appVersion)
+        Task { @MainActor in
+            reply(appVersion)
+        }
     }
 
     // MARK: Helpers
 
-    private func respond(reply: @escaping (Bool, Error?) -> Void, operation: () throws -> Void) {
-        do {
-            try operation()
-            reply(true, nil)
-        } catch {
-            if Defaults[.extensionDiagnosticsLoggingEnabled] {
-                Logger.log("Extension XPC request failed: \(error)", category: .extensions)
+    private func respond(reply: @escaping (Bool, Error?) -> Void, operation: @escaping (ExtensionXPCService) throws -> Void) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try operation(self)
+                reply(true, nil)
+            } catch {
+                if Defaults[.extensionDiagnosticsLoggingEnabled] {
+                    Logger.log("Extension XPC request failed: \(error)", category: .extensions)
+                }
+                reply(false, error.asNSError)
             }
-            reply(false, error.asNSError)
         }
     }
 
     private func validate(bundleIdentifier providedBundleIdentifier: String, reply: @escaping (Bool, Error?) -> Void) -> Bool {
         guard providedBundleIdentifier == bundleIdentifier else {
             let error = ExtensionXPCServiceError.bundleMismatch(expected: bundleIdentifier, received: providedBundleIdentifier)
+            logDiagnostics("Rejected XPC request due to bundle mismatch. Expected \(bundleIdentifier) received \(providedBundleIdentifier)")
             reply(false, error.asNSError)
             return false
         }
         return true
+    }
+
+    private func logDiagnostics(_ message: String) {
+        guard Defaults[.extensionDiagnosticsLoggingEnabled] else { return }
+        Logger.log(message, category: .extensions)
     }
 
     private func resolvedApplicationName() -> String {

@@ -1,4 +1,5 @@
 import SwiftUI
+import Defaults
 import AtollExtensionKit
 
 struct ExtensionLockScreenWidgetView: View {
@@ -20,6 +21,12 @@ struct ExtensionLockScreenWidgetView: View {
             RoundedRectangle(cornerRadius: descriptor.cornerRadius, style: .continuous)
                 .stroke(Color.white.opacity(0.04), lineWidth: 1)
         )
+        .onAppear {
+            logWidgetDiagnostics("Rendering extension lock screen widget \(payload.descriptor.id) for \(payload.bundleIdentifier)")
+        }
+        .onDisappear {
+            logWidgetDiagnostics("Lock screen widget \(payload.descriptor.id) removed")
+        }
     }
 
     @ViewBuilder
@@ -116,6 +123,11 @@ struct ExtensionLockScreenWidgetView: View {
             Color.clear
         }
     }
+}
+
+private func logWidgetDiagnostics(_ message: String) {
+    guard Defaults[.extensionDiagnosticsLoggingEnabled] else { return }
+    Logger.log(message, category: .extensions)
 }
 
 private struct ExtensionGraphView: View {

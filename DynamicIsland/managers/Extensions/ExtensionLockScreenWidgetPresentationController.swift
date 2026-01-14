@@ -12,6 +12,7 @@ final class ExtensionLockScreenWidgetPresentationController {
     private let windowPool = ExtensionLockScreenWidgetWindowPool()
     private var cachedPayloads: [ExtensionLockScreenWidgetPayload] = []
     private var isLocked: Bool = false
+    private var lastVisibilityState: VisibilityState?
 
     init(manager: ExtensionLockScreenWidgetManager) {
         self.manager = manager
@@ -55,6 +56,7 @@ final class ExtensionLockScreenWidgetPresentationController {
                     self.refreshPresentation()
                 } else {
                     self.windowPool.hideAll()
+                    self.updateVisibilityLog(.hidden(reason: "feature-disabled"))
                 }
             }
             .store(in: &cancellables)
@@ -63,13 +65,37 @@ final class ExtensionLockScreenWidgetPresentationController {
     private func refreshPresentation() {
         guard isLocked, LockScreenManager.shared.currentLockStatus, Defaults[.enableExtensionLockScreenWidgets] else {
             windowPool.hideAll()
+            updateVisibilityLog(.hidden(reason: "lock-state"))
             return
         }
         guard cachedPayloads.isEmpty == false else {
             windowPool.hideAll()
+            updateVisibilityLog(.hidden(reason: "no-payloads"))
             return
         }
         windowPool.sync(with: cachedPayloads)
+        updateVisibilityLog(.showing(count: cachedPayloads.count))
+    }
+
+    private func updateVisibilityLog(_ state: VisibilityState) {
+        guard state != lastVisibilityState else { return }
+        lastVisibilityState = state
+        switch state {
+        case let .hidden(reason):
+            logDiagnostics("Lock screen widgets hidden (reason: \(reason))")
+        case let .showing(count):
+            logDiagnostics("Presenting \(count) extension lock screen widget(s)")
+        }
+    }
+
+    private func logDiagnostics(_ message: String) {
+        guard Defaults[.extensionDiagnosticsLoggingEnabled] else { return }
+        Logger.log(message, category: .extensions)
+    }
+
+    private enum VisibilityState: Equatable {
+        case hidden(reason: String)
+        case showing(count: Int)
     }
 }
 
@@ -111,11 +137,13 @@ private final class ExtensionLockScreenWidgetWindowPool {
             record.window.contentView = nil
         }
         windows.removeAll()
+        logDiagnostics("Cleared all lock screen widget windows")
     }
 
     private func renderWindow(for payload: ExtensionLockScreenWidgetPayload) {
         guard let screen = currentScreen() else { return }
         let descriptor = payload.descriptor
+        let isNewWindow = windows[payload.id] == nil
         let window = ensureWindow(for: payload.id)
         let hosting = NSHostingView(rootView: ExtensionLockScreenWidgetView(payload: payload))
         hosting.frame = NSRect(origin: .zero, size: descriptor.size)
@@ -126,6 +154,11 @@ private final class ExtensionLockScreenWidgetWindowPool {
         window.setFrame(frame(for: descriptor, on: screen), display: true)
         window.alphaValue = 1
         window.orderFrontRegardless()
+        if isNewWindow {
+            logDiagnostics("Created lock screen widget window for \(payload.bundleIdentifier) id=\(payload.id) style=\(descriptor.layoutStyle)")
+        } else {
+            logDiagnostics("Updated lock screen widget window for \(payload.bundleIdentifier) id=\(payload.id)")
+        }
     }
 
     private func ensureWindow(for id: String) -> NSWindow {
@@ -162,6 +195,7 @@ private final class ExtensionLockScreenWidgetWindowPool {
         record.window.orderOut(nil)
         record.window.contentView = nil
         windows.removeValue(forKey: id)
+        logDiagnostics("Removed lock screen widget window id=\(id)")
     }
 
     private func registerScreenChangeObservers() {
@@ -188,7 +222,7 @@ private final class ExtensionLockScreenWidgetWindowPool {
     private func handleScreenGeometryChange(reason: String) {
         guard windows.isEmpty == false else { return }
         repositionAll(animated: false)
-        print("ExtensionLockScreenWidgetWindowPool: realigned windows due to \(reason)")
+        logDiagnostics("Realigned lock screen widget windows due to \(reason)")
     }
 
     private func repositionAll(animated: Bool) {
@@ -245,4 +279,9 @@ private final class ExtensionLockScreenWidgetWindowPool {
     private func currentScreen() -> NSScreen? {
         LockScreenDisplayContextProvider.shared.contextSnapshot()?.screen ?? NSScreen.main
     }
+}
+
+private func logDiagnostics(_ message: String) {
+    guard Defaults[.extensionDiagnosticsLoggingEnabled] else { return }
+    Logger.log(message, category: .extensions)
 }

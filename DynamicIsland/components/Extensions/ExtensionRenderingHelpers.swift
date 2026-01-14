@@ -254,11 +254,13 @@ struct ExtensionProgressIndicatorView: View {
     }
 }
 
-// MARK: - Trailing Content Rendering
+// MARK: - Edge Content Rendering
 
-struct ExtensionTrailingContentView: View {
+struct ExtensionEdgeContentView: View {
     let content: AtollTrailingContent
     let accent: Color
+    let availableWidth: CGFloat
+    let alignment: Alignment
 
     var body: some View {
         switch content {
@@ -267,6 +269,19 @@ struct ExtensionTrailingContentView: View {
                 .font(font.swiftUIFont())
                 .foregroundStyle(accent)
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: alignment)
+        case let .marquee(value, font: font, minDuration: duration):
+            MarqueeText(
+                .constant(value),
+                font: font.swiftUIFont(),
+                nsFont: .body,
+                textColor: accent,
+                minDuration: duration,
+                frameWidth: max(24, availableWidth - 12)
+            )
+        case let .countdownText(targetDate, font: font):
+            ExtensionCountdownTextView(targetDate: targetDate, font: font, accent: accent)
+                .frame(maxWidth: .infinity, alignment: alignment)
         case let .icon(descriptor):
             ExtensionIconView(
                 descriptor: descriptor,
@@ -292,12 +307,37 @@ struct ExtensionTrailingContentView: View {
     }
 }
 
+struct ExtensionCountdownTextView: View {
+    let targetDate: Date
+    let font: AtollFontDescriptor
+    let accent: Color
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            Text(formattedRemaining(since: context.date))
+                .font(font.swiftUIFont())
+                .foregroundStyle(accent)
+                .monospacedDigit()
+        }
+    }
+
+    private func formattedRemaining(since date: Date) -> String {
+        let remaining = max(Int(targetDate.timeIntervalSince(date)), 0)
+        let hours = remaining / 3600
+        let minutes = (remaining % 3600) / 60
+        let seconds = remaining % 60
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        }
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
 // MARK: - Layout Metrics
 
 enum ExtensionLayoutMetrics {
     static func trailingWidth(for payload: ExtensionLiveActivityPayload, baseWidth: CGFloat, maxWidth: CGFloat? = nil) -> CGFloat {
-        var width = baseWidth
-        width = max(width, widthForTrailing(content: payload.descriptor.trailingContent, baseWidth: baseWidth))
+        var width = edgeWidth(for: payload.descriptor.trailingContent, baseWidth: baseWidth, maxWidth: maxWidth)
         if let indicator = payload.descriptor.progressIndicator {
             width = max(width, widthForProgress(indicator))
         }
@@ -307,11 +347,26 @@ enum ExtensionLayoutMetrics {
         return width
     }
 
-    private static func widthForTrailing(content: AtollTrailingContent, baseWidth: CGFloat) -> CGFloat {
+    static func edgeWidth(for content: AtollTrailingContent, baseWidth: CGFloat, maxWidth: CGFloat? = nil) -> CGFloat {
+        var width = widthForContent(content, baseWidth: baseWidth)
+        if let maxWidth {
+            width = min(width, maxWidth)
+        }
+        return width
+    }
+
+    private static func widthForContent(_ content: AtollTrailingContent, baseWidth: CGFloat) -> CGFloat {
         switch content {
         case let .text(text, font: font):
             let measured = ExtensionTextMeasurer.width(for: text, font: font.nsFont())
             return max(baseWidth, measured + 32)
+        case let .marquee(text, font: font, _):
+            let measured = ExtensionTextMeasurer.width(for: text, font: font.nsFont())
+            return max(baseWidth, min(measured + 40, baseWidth * 2))
+        case let .countdownText(targetDate, font: font):
+            let sample = targetDate.timeIntervalSinceNow >= 3600 ? "00:00:00" : "00:00"
+            let measured = ExtensionTextMeasurer.width(for: sample, font: font.nsFont())
+            return max(baseWidth, measured + 24)
         case .icon:
             return max(baseWidth, 52)
         case .spectrum:

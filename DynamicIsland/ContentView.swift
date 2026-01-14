@@ -9,6 +9,7 @@
 import AVFoundation
 import Combine
 import Defaults
+import Foundation
 import KeyboardShortcuts
 import SwiftUI
 import SwiftUIIntrospect
@@ -480,12 +481,18 @@ struct ContentView: View {
                       .padding(.top, 40)
                       Spacer()
                   } else {
+                        let hasMusicMetadata = !musicManager.songTitle.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
+                            || !musicManager.artistName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
+                      let hasActiveMusicSnapshot: Bool = {
+                          if musicManager.isPlaying { return true }
+                          return !musicManager.isPlayerIdle && hasMusicMetadata
+                      }()
                       let musicPairingEligible = vm.notchState == .closed
-                          && (musicManager.isPlaying || !musicManager.isPlayerIdle)
+                          && hasActiveMusicSnapshot
                           && coordinator.musicLiveActivityEnabled
                           && !vm.hideOnClosed
                           && !lockScreenManager.isLocked
-                      let musicSecondary = resolveMusicSecondaryLiveActivity()
+                      let musicSecondary = resolveMusicSecondaryLiveActivity(isMusicPairingEligible: musicPairingEligible)
                       let extensionSecondaryPayloadID = extensionSecondaryPayloadID(for: musicSecondary)
                       let extensionStandalonePayload = resolvedExtensionStandalonePayload(excluding: extensionSecondaryPayloadID)
                       let expansionMatchesSecondary: Bool = {
@@ -561,10 +568,14 @@ struct ContentView: View {
                     } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .privacy) && vm.notchState == .closed && privacyManager.hasAnyIndicator && (Defaults[.enableCameraDetection] || Defaults[.enableMicrophoneDetection]) && !vm.hideOnClosed {
                         PrivacyLiveActivity()
                       } else if let extensionPayload = extensionStandalonePayload {
+                          let layout = extensionStandaloneLayout(
+                              for: extensionPayload,
+                              notchHeight: vm.effectiveClosedNotchHeight,
+                              isHovering: isHovering
+                          )
                           ExtensionLiveActivityStandaloneView(
                               payload: extensionPayload,
-                              notchWidth: extensionStandaloneNotchWidth(for: vm.effectiveClosedNotchHeight, isHovering: isHovering),
-                              notchHeight: vm.effectiveClosedNotchHeight,
+                              layout: layout,
                               isHovering: isHovering
                           )
                           .transition(.opacity.combined(with: .scale))
@@ -805,7 +816,7 @@ struct ContentView: View {
                     }
                 )
 
-            musicRightWing(for: secondary, notchHeight: notchContentHeight)
+            musicRightWing(for: secondary, notchHeight: notchContentHeight, trailingWidth: rightWingWidth)
                 .frame(width: rightWingWidth, height: notchContentHeight, alignment: .center)
                 .id(secondary?.id ?? "music-spectrum")
                 .contentTransition(.symbolEffect(.replace))
@@ -815,7 +826,7 @@ struct ContentView: View {
         .animation(.smooth(duration: 0.25), value: secondary?.id)
     }
 
-    private func resolveMusicSecondaryLiveActivity() -> MusicSecondaryLiveActivity? {
+    private func resolveMusicSecondaryLiveActivity(isMusicPairingEligible: Bool = true) -> MusicSecondaryLiveActivity? {
         if coordinator.timerLiveActivityEnabled && timerManager.isTimerActive {
             return .timer
         }
@@ -837,7 +848,7 @@ struct ContentView: View {
             return .capsLock(showLabel: showCapsLockLabel)
         }
 
-        if let extensionPayload = resolvedExtensionMusicPayload() {
+        if isMusicPairingEligible, let extensionPayload = resolvedExtensionMusicPayload() {
             return .extensionPayload(extensionPayload)
         }
 
@@ -979,7 +990,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func musicRightWing(for secondary: MusicSecondaryLiveActivity?, notchHeight: CGFloat) -> some View {
+    private func musicRightWing(for secondary: MusicSecondaryLiveActivity?, notchHeight: CGFloat, trailingWidth: CGFloat) -> some View {
         switch secondary {
         case .timer:
             MusicTimerSupplementView(
@@ -1004,12 +1015,12 @@ struct ContentView: View {
             } else {
                 spectrumView(forceSpectrum: true)
             }
-        case .focus(let mode):
+        case .focus:
             spectrumView(forceSpectrum: true)
         case .recording:
             spectrumView(forceSpectrum: true, trailingInset: 6)
         case .extensionPayload(let payload):
-            ExtensionMusicWingView(payload: payload, notchHeight: notchHeight)
+            ExtensionMusicWingView(payload: payload, notchHeight: notchHeight, trailingWidth: trailingWidth)
         case .none:
             spectrumView(forceSpectrum: false)
         }
@@ -1064,36 +1075,214 @@ struct ContentView: View {
     }
 
     private func resolvedExtensionMusicPayload() -> ExtensionLiveActivityPayload? {
-        guard enableExtensionLiveActivities,
-              vm.notchState == .closed,
-              !vm.hideOnClosed,
-              !lockScreenManager.isLocked,
-              coordinator.musicLiveActivityEnabled else {
+        let candidates = extensionLiveActivityManager.sortedActivities(for: true)
+        guard let payload = candidates.first else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .music,
+                reason: "no eligible coexistence payloads",
+                pendingCount: candidates.count
+            )
+            ExtensionRoutingDiagnostics.shared.reset(.music)
             return nil
         }
-        return extensionLiveActivityManager.sortedActivities(for: true).first
+
+        guard enableExtensionLiveActivities else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .music,
+                reason: "feature toggle disabled",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard vm.notchState == .closed else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .music,
+                reason: "notch is \(vm.notchState)",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard !vm.hideOnClosed else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .music,
+                reason: "hideOnClosed engaged (fullscreen)",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard !lockScreenManager.isLocked else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .music,
+                reason: "lock screen currently active",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard coordinator.musicLiveActivityEnabled else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .music,
+                reason: "music live activity disabled in settings",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        ExtensionRoutingDiagnostics.shared.logDisplay(.music, payload: payload)
+        return payload
     }
 
     private func resolvedExtensionStandalonePayload(excluding musicPayloadID: String?) -> ExtensionLiveActivityPayload? {
-        guard enableExtensionLiveActivities,
-              vm.notchState == .closed,
-              !vm.hideOnClosed,
-              !lockScreenManager.isLocked,
-              vm.effectiveClosedNotchHeight > 0,
-              !coordinator.expandingView.show else {
+        let baseCandidates = extensionLiveActivityManager.sortedActivities()
+        guard !baseCandidates.isEmpty else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "no active extension payloads",
+                pendingCount: 0
+            )
+            ExtensionRoutingDiagnostics.shared.reset(.standalone)
             return nil
         }
 
-        return extensionLiveActivityManager
-            .sortedActivities()
-            .first(where: { $0.id != musicPayloadID })
+        let candidates = baseCandidates.filter { $0.id != musicPayloadID }
+        guard let payload = candidates.first else {
+            if let musicPayloadID {
+                ExtensionRoutingDiagnostics.shared.logSuppression(
+                    .standalone,
+                    reason: "all pending payloads are paired with music (\(musicPayloadID))",
+                    pendingCount: baseCandidates.count
+                )
+            } else {
+                ExtensionRoutingDiagnostics.shared.logSuppression(
+                    .standalone,
+                    reason: "no standalone payloads after filtering",
+                    pendingCount: baseCandidates.count
+                )
+                ExtensionRoutingDiagnostics.shared.reset(.standalone)
+            }
+            return nil
+        }
+
+        guard enableExtensionLiveActivities else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "feature toggle disabled",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard vm.notchState == .closed else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "notch is \(vm.notchState)",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard !vm.hideOnClosed else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "hideOnClosed engaged (fullscreen)",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard !lockScreenManager.isLocked else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "lock screen currently active",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard vm.effectiveClosedNotchHeight > 0 else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "effective notch height is \(vm.effectiveClosedNotchHeight)",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        guard !coordinator.expandingView.show else {
+            ExtensionRoutingDiagnostics.shared.logSuppression(
+                .standalone,
+                reason: "expanding view \(coordinator.expandingView.type) visible",
+                pendingCount: candidates.count
+            )
+            return nil
+        }
+
+        ExtensionRoutingDiagnostics.shared.logDisplay(.standalone, payload: payload)
+        return payload
     }
 
-    private func extensionStandaloneNotchWidth(for height: CGFloat, isHovering: Bool) -> CGFloat {
-        let effectiveCenter = max(vm.closedNotchSize.width + (isHovering ? 8 : 0), 96)
-        let wing = max(height - (isHovering ? 0 : 12), 0)
-        let total = effectiveCenter + (wing * 2)
-        return max(total, effectiveCenter)
+    private func extensionStandaloneLayout(for payload: ExtensionLiveActivityPayload, notchHeight: CGFloat, isHovering: Bool) -> ExtensionStandaloneLayout {
+        let outerHeight = notchHeight
+        let contentHeight = max(0, notchHeight - (isHovering ? 0 : 12))
+        let leadingWidth = max(contentHeight, 44)
+        let centerWidth = max(vm.closedNotchSize.width + (isHovering ? 8 : 0), 96)
+        let trailingWidth = ExtensionLayoutMetrics.trailingWidth(
+            for: payload,
+            baseWidth: leadingWidth,
+            maxWidth: leadingWidth + centerWidth * 0.6
+        )
+        let totalWidth = leadingWidth + centerWidth + trailingWidth
+        return ExtensionStandaloneLayout(
+            totalWidth: totalWidth,
+            outerHeight: outerHeight,
+            contentHeight: contentHeight,
+            leadingWidth: leadingWidth,
+            centerWidth: centerWidth,
+            trailingWidth: trailingWidth
+        )
+    }
+
+    @MainActor
+    private final class ExtensionRoutingDiagnostics {
+        static let shared = ExtensionRoutingDiagnostics()
+
+        enum Channel: Hashable {
+            case music
+            case standalone
+
+            var label: String {
+                switch self {
+                case .music:
+                    return "music pairing"
+                case .standalone:
+                    return "standalone notch"
+                }
+            }
+        }
+
+        private var lastMessages: [Channel: String] = [:]
+
+        func logSuppression(_ channel: Channel, reason: String, pendingCount: Int) {
+            log("Extension \(channel.label) suppressed: \(reason) (pending: \(pendingCount))", channel: channel)
+        }
+
+        func logDisplay(_ channel: Channel, payload: ExtensionLiveActivityPayload) {
+            log("Extension \(channel.label) showing \(payload.descriptor.id) from \(payload.bundleIdentifier)", channel: channel)
+        }
+
+        func reset(_ channel: Channel) {
+            lastMessages.removeValue(forKey: channel)
+        }
+
+        private func log(_ message: String, channel: Channel) {
+            guard Defaults[.extensionDiagnosticsLoggingEnabled] else { return }
+            guard lastMessages[channel] != message else { return }
+            lastMessages[channel] = message
+            Logger.log(message, category: .extensions)
+        }
     }
     
     @ViewBuilder

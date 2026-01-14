@@ -3,7 +3,7 @@ import Defaults
 import AtollExtensionKit
 import SwiftUI
 
-struct ExtensionLiveActivityPayload: Identifiable, Hashable {
+struct ExtensionLiveActivityPayload: Identifiable, Hashable, Codable {
     let bundleIdentifier: String
     let descriptor: AtollLiveActivityDescriptor
     let receivedAt: Date
@@ -13,7 +13,7 @@ struct ExtensionLiveActivityPayload: Identifiable, Hashable {
     var priority: AtollLiveActivityPriority { descriptor.priority }
 }
 
-struct ExtensionLockScreenWidgetPayload: Identifiable, Hashable {
+struct ExtensionLockScreenWidgetPayload: Identifiable, Hashable, Codable {
     let bundleIdentifier: String
     let descriptor: AtollLockScreenWidgetDescriptor
     let receivedAt: Date

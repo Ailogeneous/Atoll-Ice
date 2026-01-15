@@ -1271,13 +1271,7 @@ struct ContentView: View {
         let outerHeight = notchHeight
         let contentHeight = max(0, notchHeight - (isHovering ? 0 : 12))
         let leadingWidth = max(contentHeight, 44)
-        let centerWidth: CGFloat = {
-            if suppressingCenterText {
-                let base = vm.closedNotchSize.width * 0.35
-                return max(64, min(base, 96))
-            }
-            return max(vm.closedNotchSize.width + (isHovering ? 8 : 0), 96)
-        }()
+        let centerWidth: CGFloat = max(vm.closedNotchSize.width + (isHovering ? 8 : 0), 96)
         let trailingWidth = ExtensionLayoutMetrics.trailingWidth(
             for: payload,
             baseWidth: leadingWidth,
@@ -1297,13 +1291,8 @@ struct ContentView: View {
 
     private func shouldSuppressExtensionCenter(for payload: ExtensionLiveActivityPayload) -> Bool {
         guard vm.notchState == .closed else { return false }
-        let descriptor = payload.descriptor
-        guard descriptor.sneakPeekConfig?.enabled ?? true else { return false }
-        guard coordinator.sneakPeek.show else { return false }
-        guard case let .extensionLiveActivity(bundleID, activityID) = coordinator.sneakPeek.type else { return false }
-        guard bundleID == payload.bundleIdentifier && activityID == descriptor.id else { return false }
-        let style = coordinator.sneakPeek.styleOverride ?? Defaults[.sneakPeekStyles]
-        return style == .inline
+        let config = payload.descriptor.sneakPeekConfig ?? .default
+        return config.enabled
     }
 
     @MainActor

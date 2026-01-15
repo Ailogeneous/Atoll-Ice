@@ -318,10 +318,13 @@ struct ExtensionProgressIndicatorView: View {
                 .monospacedDigit()
         case let .countdown(font, color):
             let textColor = color?.swiftUIColor ?? accent
-            Text(countdownText)
+            let text = countdownText
+            Text(text)
                 .font(font.swiftUIFont())
                 .foregroundStyle(textColor)
                 .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(.smooth(duration: 0.25), value: text)
         case .lottie:
             Image(systemName: "sparkles")
                 .font(.system(size: 14, weight: .medium))
@@ -418,10 +421,13 @@ struct ExtensionCountdownTextView: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            Text(formattedRemaining(since: context.date))
+            let remainingText = formattedRemaining(since: context.date)
+            Text(remainingText)
                 .font(font.swiftUIFont())
                 .foregroundStyle(customColor ?? accent)
                 .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(.smooth(duration: 0.25), value: remainingText)
         }
     }
 

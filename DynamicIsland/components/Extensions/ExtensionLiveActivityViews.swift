@@ -344,12 +344,37 @@ struct ExtensionInlineSneakPeekView: View {
     @ViewBuilder
     private var trailingWing: some View {
         if let payload {
-            ExtensionMusicWingView(
-                payload: payload,
-                notchHeight: contentHeight,
-                trailingWidth: trailingWidth
-            )
+            let descriptor = payload.descriptor
+            switch resolvedExtensionTrailingRenderable(for: descriptor) {
+            case let .content(content):
+                if case .none = content {
+                    spectrumPlaceholder
+                } else {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        ExtensionEdgeContentView(
+                            content: content,
+                            accent: resolvedAccent,
+                            availableWidth: trailingWidth,
+                            alignment: .trailing
+                        )
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.trailing, 8)
+                    .padding(.vertical, 6)
+                }
+            case .indicator:
+                spectrumPlaceholder
+            }
         } else {
+            spectrumPlaceholder
+        }
+    }
+
+    @ViewBuilder
+    private var spectrumPlaceholder: some View {
+        VStack {
             Rectangle()
                 .fill(resolvedAccent.gradient)
                 .mask {
@@ -358,5 +383,8 @@ struct ExtensionInlineSneakPeekView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .padding(.trailing, 8)
+        .padding(.vertical, 6)
     }
 }

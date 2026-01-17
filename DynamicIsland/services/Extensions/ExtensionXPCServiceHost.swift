@@ -91,6 +91,12 @@ final class ExtensionXPCServiceHost: NSObject, NSXPCListenerDelegate {
         }
     }
 
+    func notifyNotchExperienceDismiss(bundleIdentifier: String, experienceID: String) {
+        deliver(to: bundleIdentifier) { client in
+            client.notchExperienceDidDismiss(experienceID: experienceID)
+        }
+    }
+
     private func resolveBundleIdentifier(for connection: NSXPCConnection) -> String? {
         let processIdentifier = connection.processIdentifier
         guard processIdentifier != 0 else { return nil }

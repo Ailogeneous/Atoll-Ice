@@ -103,11 +103,13 @@ enum AnimationSource: Codable, Hashable, Equatable {
 enum ExtensionPermissionScope: String, CaseIterable, Codable, Defaults.Serializable {
     case liveActivities
     case lockScreenWidgets
+    case notchExperiences
 
     var displayName: String {
         switch self {
         case .liveActivities: return "Live Activities"
         case .lockScreenWidgets: return "Lock Screen Widgets"
+        case .notchExperiences: return "Notch Experiences"
         }
     }
 }
@@ -168,13 +170,43 @@ struct ExtensionRateLimitRecord: Codable, Defaults.Serializable, Hashable, Ident
     let bundleIdentifier: String
     var activityTimestamps: [Date]
     var widgetTimestamps: [Date]
+    var notchExperienceTimestamps: [Date]
 
     var id: String { bundleIdentifier }
 
-    init(bundleIdentifier: String, activityTimestamps: [Date] = [], widgetTimestamps: [Date] = []) {
+    init(
+        bundleIdentifier: String,
+        activityTimestamps: [Date] = [],
+        widgetTimestamps: [Date] = [],
+        notchExperienceTimestamps: [Date] = []
+    ) {
         self.bundleIdentifier = bundleIdentifier
         self.activityTimestamps = activityTimestamps
         self.widgetTimestamps = widgetTimestamps
+        self.notchExperienceTimestamps = notchExperienceTimestamps
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case bundleIdentifier
+        case activityTimestamps
+        case widgetTimestamps
+        case notchExperienceTimestamps
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        bundleIdentifier = try container.decode(String.self, forKey: .bundleIdentifier)
+        activityTimestamps = try container.decodeIfPresent([Date].self, forKey: .activityTimestamps) ?? []
+        widgetTimestamps = try container.decodeIfPresent([Date].self, forKey: .widgetTimestamps) ?? []
+        notchExperienceTimestamps = try container.decodeIfPresent([Date].self, forKey: .notchExperienceTimestamps) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
+        try container.encode(activityTimestamps, forKey: .activityTimestamps)
+        try container.encode(widgetTimestamps, forKey: .widgetTimestamps)
+        try container.encode(notchExperienceTimestamps, forKey: .notchExperienceTimestamps)
     }
 }
 
@@ -800,11 +832,16 @@ extension Defaults.Keys {
     static let enableThirdPartyExtensions = Key<Bool>("enableThirdPartyExtensions", default: true)
     static let enableExtensionLiveActivities = Key<Bool>("enableExtensionLiveActivities", default: true)
     static let enableExtensionLockScreenWidgets = Key<Bool>("enableExtensionLockScreenWidgets", default: true)
+    static let enableExtensionNotchExperiences = Key<Bool>("enableExtensionNotchExperiences", default: true)
+    static let enableExtensionNotchTabs = Key<Bool>("enableExtensionNotchTabs", default: true)
+    static let enableExtensionNotchMinimalisticOverrides = Key<Bool>("enableExtensionNotchMinimalisticOverrides", default: true)
+    static let enableExtensionNotchInteractiveWebViews = Key<Bool>("enableExtensionNotchInteractiveWebViews", default: true)
     static let extensionAuthorizationEntries = Key<[ExtensionAuthorizationEntry]>("extensionAuthorizationEntries", default: [])
     static let extensionRateLimitRecords = Key<[ExtensionRateLimitRecord]>("extensionRateLimitRecords", default: [])
     static let extensionDiagnosticsLoggingEnabled = Key<Bool>("extensionDiagnosticsLoggingEnabled", default: true)
     static let extensionLiveActivityCapacity = Key<Int>("extensionLiveActivityCapacity", default: 4)
     static let extensionLockScreenWidgetCapacity = Key<Int>("extensionLockScreenWidgetCapacity", default: 4)
+    static let extensionNotchExperienceCapacity = Key<Int>("extensionNotchExperienceCapacity", default: 2)
     
     // MARK: Keyboard Shortcuts
     static let enableShortcuts = Key<Bool>("enableShortcuts", default: true)

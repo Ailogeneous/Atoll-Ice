@@ -52,53 +52,12 @@ struct ExtensionLockScreenWidgetView: View {
         }
     }
 
-    @ViewBuilder
     private func view(for element: AtollWidgetContentElement) -> some View {
-        switch element {
-        case let .text(text, font: font, color: color, alignment: _):
-            Text(text)
-                .font(font.swiftUIFont())
-                .foregroundStyle((color?.swiftUIColor) ?? Color.white.opacity(0.9))
-                .lineLimit(2)
-        case let .icon(iconDescriptor, tint):
-            ExtensionIconView(
-                descriptor: iconDescriptor,
-                tint: (tint?.swiftUIColor) ?? accentColor,
-                size: CGSize(width: 28, height: 28),
-                cornerRadius: 8
-            )
-        case let .progress(indicator, value, color):
-            ExtensionProgressIndicatorView(
-                indicator: indicator,
-                progress: value,
-                accent: (color?.swiftUIColor) ?? accentColor,
-                estimatedDuration: nil
-            )
-        case let .graph(data, color, size):
-            ExtensionGraphView(data: data, color: color.swiftUIColor, size: size)
-                .frame(width: size.width, height: size.height)
-        case let .gauge(value, minValue, maxValue, style, color):
-            ExtensionGaugeView(
-                value: value,
-                minValue: minValue,
-                maxValue: maxValue,
-                style: style,
-                accent: (color?.swiftUIColor) ?? accentColor
-            )
-                .frame(maxWidth: .infinity)
-        case let .spacer(height):
-            Color.clear
-                .frame(height: height)
-        case let .divider(color, thickness):
-            Rectangle()
-                .fill(color.swiftUIColor.opacity(0.4))
-                .frame(height: thickness)
-        case let .webView(webDescriptor):
-            ExtensionWebContentView(descriptor: webDescriptor)
-                .frame(height: webDescriptor.preferredHeight)
-                .frame(maxWidth: webDescriptor.maximumContentWidth ?? .infinity)
-                .allowsHitTesting(false)
-        }
+        ExtensionWidgetElementView(
+            element: element,
+            accent: accentColor,
+            allowWebInteraction: false
+        )
     }
 
     private func alignment(for element: AtollWidgetContentElement) -> Alignment {
@@ -235,8 +194,62 @@ private func logWidgetDiagnostics(_ message: String) {
     Logger.log(message, category: .extensions)
 }
 
-private struct ExtensionWebContentView: NSViewRepresentable {
+struct ExtensionWidgetElementView: View {
+    let element: AtollWidgetContentElement
+    let accent: Color
+    let allowWebInteraction: Bool
+
+    var body: some View {
+        switch element {
+        case let .text(text, font: font, color: color, alignment: _):
+            Text(text)
+                .font(font.swiftUIFont())
+                .foregroundStyle((color?.swiftUIColor) ?? Color.white.opacity(0.9))
+                .lineLimit(2)
+        case let .icon(iconDescriptor, tint):
+            ExtensionIconView(
+                descriptor: iconDescriptor,
+                tint: (tint?.swiftUIColor) ?? accent,
+                size: CGSize(width: 28, height: 28),
+                cornerRadius: 8
+            )
+        case let .progress(indicator, value, color):
+            ExtensionProgressIndicatorView(
+                indicator: indicator,
+                progress: value,
+                accent: (color?.swiftUIColor) ?? accent,
+                estimatedDuration: nil
+            )
+        case let .graph(data, color, size):
+            ExtensionGraphView(data: data, color: color.swiftUIColor, size: size)
+                .frame(width: size.width, height: size.height)
+        case let .gauge(value, minValue, maxValue, style, color):
+            ExtensionGaugeView(
+                value: value,
+                minValue: minValue,
+                maxValue: maxValue,
+                style: style,
+                accent: (color?.swiftUIColor) ?? accent
+            )
+                .frame(maxWidth: .infinity)
+        case let .spacer(height):
+            Color.clear
+                .frame(height: height)
+        case let .divider(color, thickness):
+            Rectangle()
+                .fill(color.swiftUIColor.opacity(0.4))
+                .frame(height: thickness)
+        case let .webView(webDescriptor):
+            ExtensionWebContentView(descriptor: webDescriptor, allowInteraction: allowWebInteraction)
+                .frame(height: webDescriptor.preferredHeight)
+                .frame(maxWidth: webDescriptor.maximumContentWidth ?? .infinity)
+        }
+    }
+}
+
+struct ExtensionWebContentView: NSViewRepresentable {
     let descriptor: AtollWidgetWebContentDescriptor
+    let allowInteraction: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(descriptor: descriptor)
@@ -246,7 +259,8 @@ private struct ExtensionWebContentView: NSViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.suppressesIncrementalRendering = false
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
-        let webView = NonInteractiveWKWebView(frame: .zero, configuration: configuration)
+        let webView = ConfigurableWKWebView(frame: .zero, configuration: configuration)
+        webView.allowInteraction = allowInteraction
         webView.navigationDelegate = context.coordinator
         webView.wantsLayer = true
         applyConfiguration(descriptor, to: webView)
@@ -259,6 +273,9 @@ private struct ExtensionWebContentView: NSViewRepresentable {
         context.coordinator.descriptor = descriptor
         webView.navigationDelegate = context.coordinator
         applyConfiguration(descriptor, to: webView)
+        if let configurableView = webView as? ConfigurableWKWebView {
+            configurableView.allowInteraction = allowInteraction
+        }
         if context.coordinator.lastHTML != descriptor.html {
             webView.loadHTMLString(descriptor.html, baseURL: nil)
             context.coordinator.lastHTML = descriptor.html
@@ -277,13 +294,16 @@ private struct ExtensionWebContentView: NSViewRepresentable {
         }
     }
 
-    private final class NonInteractiveWKWebView: WKWebView {
+    private final class ConfigurableWKWebView: WKWebView {
+        var allowInteraction = false
+
         override func hitTest(_ point: NSPoint) -> NSView? {
-            nil
+            guard allowInteraction else { return nil }
+            return super.hitTest(point)
         }
 
         override var acceptsFirstResponder: Bool {
-            false
+            allowInteraction
         }
     }
 

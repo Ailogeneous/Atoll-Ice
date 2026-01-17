@@ -97,6 +97,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
     private let statsSecondRowRevealDelay: TimeInterval = 0.5
     private let statsSecondRowAnimationDuration: TimeInterval = 0.3
     @Published var notesLayoutState: NotesLayoutState = .list
+    @Published var selectedExtensionExperienceID: String?
     
     
     @AppStorage("firstLaunch") var firstLaunch: Bool = true
@@ -138,6 +139,7 @@ class DynamicIslandViewCoordinator: ObservableObject {
     @Published var selectedScreen: String = NSScreen.main?.localizedName ?? "Unknown"
 
     @Published var optionKeyPressed: Bool = true
+    private let extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
     
     private init() {
         selectedScreen = preferredScreen
@@ -161,6 +163,36 @@ class DynamicIslandViewCoordinator: ObservableObject {
                 self?.handleMinimalisticModeChange(change.newValue)
             }
             .store(in: &cancellables)
+
+        extensionNotchExperienceManager.$activeExperiences
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] experiences in
+                self?.handleExtensionExperienceSnapshot(experiences)
+            }
+            .store(in: &cancellables)
+
+        Defaults.publisher(.enableThirdPartyExtensions)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleExtensionFeatureToggle()
+            }
+            .store(in: &cancellables)
+
+        Defaults.publisher(.enableExtensionNotchExperiences)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleExtensionFeatureToggle()
+            }
+            .store(in: &cancellables)
+
+        Defaults.publisher(.enableExtensionNotchTabs)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleExtensionFeatureToggle()
+            }
+            .store(in: &cancellables)
+
+        handleExtensionExperienceSnapshot(extensionNotchExperienceManager.activeExperiences)
     }
 
     private func handleStatsTabTransition(from oldValue: NotchViews, to newValue: NotchViews) {
@@ -205,6 +237,45 @@ class DynamicIslandViewCoordinator: ObservableObject {
                 currentView = .home
             }
         }
+    }
+
+    private func handleExtensionExperienceSnapshot(_ experiences: [ExtensionNotchExperiencePayload]) {
+        guard extensionTabsAllowed else {
+            selectedExtensionExperienceID = nil
+            resetExtensionViewIfNeeded()
+            return
+        }
+
+        let tabCapablePayloads = experiences.filter { $0.descriptor.tab != nil }
+        guard !tabCapablePayloads.isEmpty else {
+            selectedExtensionExperienceID = nil
+            resetExtensionViewIfNeeded()
+            return
+        }
+
+        if let currentID = selectedExtensionExperienceID,
+           tabCapablePayloads.contains(where: { $0.descriptor.id == currentID }) {
+            return
+        }
+
+        selectedExtensionExperienceID = tabCapablePayloads.first?.descriptor.id
+    }
+
+    private func handleExtensionFeatureToggle() {
+        handleExtensionExperienceSnapshot(extensionNotchExperienceManager.activeExperiences)
+    }
+
+    private func resetExtensionViewIfNeeded() {
+        guard currentView == .extensionExperience else { return }
+        withAnimation(.smooth) {
+            currentView = .home
+        }
+    }
+
+    private var extensionTabsAllowed: Bool {
+        Defaults[.enableThirdPartyExtensions]
+        && Defaults[.enableExtensionNotchExperiences]
+        && Defaults[.enableExtensionNotchTabs]
     }
     
     func toggleSneakPeek(

@@ -12,6 +12,7 @@ final class ExtensionXPCService: NSObject, AtollXPCServiceProtocol {
     private let authorizationManager = ExtensionAuthorizationManager.shared
     private let liveActivityManager = ExtensionLiveActivityManager.shared
     private let widgetManager = ExtensionLockScreenWidgetManager.shared
+    private let notchExperienceManager = ExtensionNotchExperienceManager.shared
     private let decoder = JSONDecoder()
 
     init(bundleIdentifier: String, host: ExtensionXPCServiceHost, connection: NSXPCConnection) {
@@ -123,6 +124,40 @@ final class ExtensionXPCService: NSObject, AtollXPCServiceProtocol {
             self.logDiagnostics("Received lock screen widget dismissal from \(self.bundleIdentifier) (id: \(widgetID))")
             self.widgetManager.dismiss(widgetID: widgetID, bundleIdentifier: self.bundleIdentifier)
             self.logDiagnostics("Lock screen widget \(widgetID) dismissed for \(self.bundleIdentifier)")
+            reply(true, nil)
+        }
+    }
+
+    // MARK: Notch Experiences
+
+    func presentNotchExperience(descriptorData: Data, reply: @escaping (Bool, Error?) -> Void) {
+        respond(reply: reply) { service in
+            let descriptor = try service.decoder.decode(AtollNotchExperienceDescriptor.self, from: descriptorData)
+            try ExtensionDescriptorValidator.validate(descriptor)
+            service.logDiagnostics("Received notch experience payload from \(service.bundleIdentifier) (id: \(descriptor.id), priority: \(descriptor.priority.rawValue))")
+            try service.notchExperienceManager.present(descriptor: descriptor, bundleIdentifier: service.bundleIdentifier)
+            service.logDiagnostics("Notch experience \(descriptor.id) stored for \(service.bundleIdentifier); active experiences: \(service.notchExperienceManager.activeExperiences.count)")
+        }
+    }
+
+    func updateNotchExperience(descriptorData: Data, reply: @escaping (Bool, Error?) -> Void) {
+        respond(reply: reply) { service in
+            let descriptor = try service.decoder.decode(AtollNotchExperienceDescriptor.self, from: descriptorData)
+            try ExtensionDescriptorValidator.validate(descriptor)
+            service.logDiagnostics("Received notch experience update from \(service.bundleIdentifier) (id: \(descriptor.id))")
+            try service.notchExperienceManager.update(descriptor: descriptor, bundleIdentifier: service.bundleIdentifier)
+            service.logDiagnostics("Notch experience \(descriptor.id) updated for \(service.bundleIdentifier)")
+        }
+    }
+
+    func dismissNotchExperience(experienceID: String, bundleIdentifier providedBundleIdentifier: String, reply: @escaping (Bool, Error?) -> Void) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard self.validate(bundleIdentifier: providedBundleIdentifier, reply: reply) else { return }
+
+            self.logDiagnostics("Received notch experience dismissal from \(self.bundleIdentifier) (id: \(experienceID))")
+            self.notchExperienceManager.dismiss(experienceID: experienceID, bundleIdentifier: self.bundleIdentifier)
+            self.logDiagnostics("Notch experience \(experienceID) dismissed for \(self.bundleIdentifier)")
             reply(true, nil)
         }
     }

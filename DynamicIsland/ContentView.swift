@@ -36,6 +36,7 @@ struct ContentView: View {
     @ObservedObject var lockScreenManager = LockScreenManager.shared
     @ObservedObject var capsLockManager = CapsLockManager.shared
     @ObservedObject var extensionLiveActivityManager = ExtensionLiveActivityManager.shared
+    @ObservedObject var extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
     @State private var downloadManager = DownloadManager.shared
     
     @Default(.enableStatsFeature) var enableStatsFeature
@@ -76,6 +77,19 @@ struct ContentView: View {
             let preferredHeight = coordinator.notesLayoutState.preferredHeight
             let resolvedHeight = max(baseSize.height, preferredHeight)
             return CGSize(width: baseSize.width, height: resolvedHeight)
+        }
+
+        if coordinator.currentView == .extensionExperience {
+            if let preferredHeight = extensionTabPreferredHeight(baseSize: baseSize) {
+                return CGSize(width: baseSize.width, height: preferredHeight)
+            }
+            return baseSize
+        }
+
+        if enableMinimalisticUI,
+           coordinator.currentView == .home,
+           let preferredHeight = extensionMinimalisticPreferredHeight(baseSize: baseSize) {
+            return CGSize(width: baseSize.width, height: preferredHeight)
         }
         
         guard coordinator.currentView == .stats else {
@@ -557,17 +571,17 @@ struct ContentView: View {
                               isHovering: isHovering,
                               gestureProgress: gestureProgress
                           )
-                          .transition(.move(edge: .trailing).combined(with: .opacity))
+                          .transition(AnyTransition.move(edge: .trailing).combined(with: .opacity))
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .reminder) && (coordinator.sneakPeek.type != .volume || vm.notchState == .closed) {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(
                                   coordinator.sneakPeek.type == .capsLock
-                                      ? .move(edge: .trailing).combined(with: .opacity)
-                                      : .opacity
+                                      ? AnyTransition.move(edge: .trailing).combined(with: .opacity)
+                                      : AnyTransition.opacity
                               )
                       } else if vm.notchState == .closed && capsLockManager.isCapsLockActive && Defaults[.enableCapsLockIndicator] && !vm.hideOnClosed && !lockScreenManager.isLocked {
                           InlineHUD(type: .constant(.capsLock), value: .constant(1.0), icon: .constant(""), hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
-                              .transition(.move(edge: .trailing).combined(with: .opacity))
+                              .transition(AnyTransition.move(edge: .trailing).combined(with: .opacity))
                       } else if canShowMusicDuringExpansion && musicPairingEligible {
                           MusicLiveActivity(secondary: musicSecondary)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .timer) && vm.notchState == .closed && timerManager.isTimerActive && coordinator.timerLiveActivityEnabled && !vm.hideOnClosed {
@@ -596,8 +610,7 @@ struct ContentView: View {
                           ExtensionLiveActivityStandaloneView(
                               payload: extensionPayload,
                               layout: layout,
-                              isHovering: isHovering,
-                              notchState: vm.notchState
+                              isHovering: isHovering
                           )
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           DynamicIslandFaceAnimation().animation(.interactiveSpring, value: musicManager.isPlayerIdle)
@@ -712,6 +725,12 @@ struct ContentView: View {
                                 NotchNotesView()
                             case .clipboard:
                                 NotchNotesView()
+                            case .extensionExperience:
+                                if let payload = currentExtensionTabPayload() {
+                                    ExtensionNotchExperienceTabView(payload: payload)
+                                } else {
+                                    NotchHomeView(albumArtNamespace: albumArtNamespace)
+                                }
                           }
                       }
                       .transition(.asymmetric(
@@ -1466,6 +1485,72 @@ struct ContentView: View {
         let count = enabledStatsGraphCount()
         if count == 0 { return 0 }
         return count <= 3 ? 1 : 2
+    }
+
+    private func currentExtensionTabPayload() -> ExtensionNotchExperiencePayload? {
+        guard Defaults[.enableThirdPartyExtensions],
+              Defaults[.enableExtensionNotchExperiences],
+              Defaults[.enableExtensionNotchTabs] else {
+            return nil
+        }
+        if let selectedID = coordinator.selectedExtensionExperienceID,
+           let payload = extensionNotchExperienceManager.payload(experienceID: selectedID) {
+            return payload
+        }
+        return extensionNotchExperienceManager.highestPriorityTabPayload()
+    }
+
+    private func extensionTabPreferredHeight(baseSize: CGSize) -> CGFloat? {
+        guard let preferred = currentExtensionTabPayload()?.descriptor.tab?.preferredHeight else {
+            return nil
+        }
+        let minHeight = baseSize.height
+        let maxHeight = baseSize.height + statsAdditionalRowHeight
+        return min(max(preferred, minHeight), maxHeight)
+    }
+
+    // Estimate the height required for minimalistic overrides (notably web content) and clamp it to the notch bounds.
+    private func extensionMinimalisticPreferredHeight(baseSize: CGSize) -> CGFloat? {
+        guard let configuration = extensionNotchExperienceManager.minimalisticReplacementPayload()?.descriptor.minimalistic else {
+            return nil
+        }
+
+        let minHeight = baseSize.height
+        let maxHeight = baseSize.height + statsAdditionalRowHeight
+
+        var contentHeight: CGFloat = 0
+        var blockCount = 0
+
+        if configuration.headline != nil {
+            contentHeight += 24
+            blockCount += 1
+        }
+
+        if configuration.subtitle != nil {
+            contentHeight += 20
+            blockCount += 1
+        }
+
+        if !configuration.sections.isEmpty {
+            let sectionEstimate: CGFloat = 98
+            contentHeight += CGFloat(configuration.sections.count) * sectionEstimate
+            blockCount += configuration.sections.count
+        }
+
+        if let webDescriptor = configuration.webContent {
+            contentHeight += webDescriptor.preferredHeight
+            blockCount += 1
+        }
+
+        guard blockCount > 0 else { return nil }
+
+        let spacingAllowance = CGFloat(max(blockCount - 1, 0)) * 16
+        let topPadding: CGFloat = 10
+        let bottomPadding: CGFloat = configuration.webContent == nil ? 10 : 0
+        let estimatedHeight = contentHeight + spacingAllowance + topPadding + bottomPadding
+
+        let clampedHeight = min(max(estimatedHeight, minHeight), maxHeight)
+        return clampedHeight > minHeight ? clampedHeight : nil
     }
     
     // MARK: - Gesture Handling

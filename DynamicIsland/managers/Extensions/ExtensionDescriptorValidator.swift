@@ -30,4 +30,15 @@ struct ExtensionDescriptorValidator {
             throw ExtensionValidationError.invalidDescriptor("Widget exceeds size limits")
         }
     }
+
+    static func validate(_ descriptor: AtollNotchExperienceDescriptor) throws {
+        guard descriptor.isValid else {
+            throw ExtensionValidationError.invalidDescriptor("Missing mandatory fields")
+        }
+        if let durationHint = descriptor.durationHint {
+            guard durationHint > 0, durationHint <= 21_600 else {
+                throw ExtensionValidationError.invalidDescriptor("Duration hint must be between 0 and 6 hours")
+            }
+        }
+    }
 }

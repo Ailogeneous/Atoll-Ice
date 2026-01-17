@@ -22,13 +22,16 @@ final class ExtensionAuthorizationManager: ObservableObject {
     var isExtensionsFeatureEnabled: Bool { Defaults[.enableThirdPartyExtensions] }
     var areLiveActivitiesEnabled: Bool { Defaults[.enableExtensionLiveActivities] }
     var areLockScreenWidgetsEnabled: Bool { Defaults[.enableExtensionLockScreenWidgets] }
+    var areNotchExperiencesEnabled: Bool { Defaults[.enableExtensionNotchExperiences] }
 
     func updateFeatureToggles(extensionsEnabled: Bool? = nil,
                               liveActivitiesEnabled: Bool? = nil,
-                              lockScreenWidgetsEnabled: Bool? = nil) {
+                              lockScreenWidgetsEnabled: Bool? = nil,
+                              notchExperiencesEnabled: Bool? = nil) {
         if let extensionsEnabled { Defaults[.enableThirdPartyExtensions] = extensionsEnabled }
         if let liveActivitiesEnabled { Defaults[.enableExtensionLiveActivities] = liveActivitiesEnabled }
         if let lockScreenWidgetsEnabled { Defaults[.enableExtensionLockScreenWidgets] = lockScreenWidgetsEnabled }
+        if let notchExperiencesEnabled { Defaults[.enableExtensionNotchExperiences] = notchExperiencesEnabled }
         objectWillChange.send()
     }
 
@@ -88,9 +91,12 @@ final class ExtensionAuthorizationManager: ObservableObject {
                 record.activityTimestamps.append(now)
             case .lockScreenWidgets:
                 record.widgetTimestamps.append(now)
+            case .notchExperiences:
+                record.notchExperienceTimestamps.append(now)
             }
             record.activityTimestamps = flushOldTimestamps(record.activityTimestamps)
             record.widgetTimestamps = flushOldTimestamps(record.widgetTimestamps)
+            record.notchExperienceTimestamps = flushOldTimestamps(record.notchExperienceTimestamps)
         }
     }
 
@@ -123,6 +129,12 @@ final class ExtensionAuthorizationManager: ObservableObject {
     func canProcessLockScreenRequest(from bundleIdentifier: String) -> Bool {
         guard preflight(bundleIdentifier: bundleIdentifier, scope: .lockScreenWidgets) else { return false }
         guard areLockScreenWidgetsEnabled else { return false }
+        return true
+    }
+
+    func canProcessNotchExperienceRequest(from bundleIdentifier: String) -> Bool {
+        guard preflight(bundleIdentifier: bundleIdentifier, scope: .notchExperiences) else { return false }
+        guard areNotchExperiencesEnabled else { return false }
         return true
     }
 

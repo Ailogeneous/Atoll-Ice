@@ -44,7 +44,7 @@ struct ExtensionsSettingsView: View {
                 selectedEntry = nil
             }
         } message: { entry in
-            Text("Remove \(entry.appName) from the authorized extensions list? This will dismiss all active live activities and lock screen widgets from this app.")
+            Text("Remove \(entry.appName) from the authorized extensions list? This will dismiss all active live activities, lock screen widgets, and notch experiences from this app.")
         }
     }
     
@@ -59,6 +59,21 @@ struct ExtensionsSettingsView: View {
                 
                 Defaults.Toggle("Allow extension lock screen widgets", key: .enableExtensionLockScreenWidgets)
                     .settingsHighlight(id: highlightID("Allow extension lock screen widgets"))
+
+                Defaults.Toggle("Allow extension notch experiences", key: .enableExtensionNotchExperiences)
+                    .settingsHighlight(id: highlightID("Allow extension notch experiences"))
+
+                if Defaults[.enableExtensionNotchExperiences] {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Defaults.Toggle("Show extension tabs", key: .enableExtensionNotchTabs)
+                            .tint(.accentColor)
+                        Defaults.Toggle("Allow minimalistic overrides", key: .enableExtensionNotchMinimalisticOverrides)
+                            .tint(.accentColor)
+                        Defaults.Toggle("Allow interactive web content", key: .enableExtensionNotchInteractiveWebViews)
+                            .tint(.accentColor)
+                    }
+                    .padding(.leading, 4)
+                }
                 
                 Defaults.Toggle("Enable extension diagnostics logging", key: .extensionDiagnosticsLoggingEnabled)
                     .settingsHighlight(id: highlightID("Enable extension diagnostics logging"))
@@ -67,7 +82,7 @@ struct ExtensionsSettingsView: View {
             Text("Global Settings")
         } footer: {
             if Defaults[.enableThirdPartyExtensions] {
-                Text("Third-party apps using AtollExtensionKit can display live activities and lock screen widgets. You can manage individual app permissions below.")
+                Text("Third-party apps using AtollExtensionKit can display live activities, lock screen widgets, and dedicated notch experiences. Toggle features above or manage individual app permissions below.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
@@ -148,6 +163,7 @@ private struct ExtensionEntryRow: View {
     @ObservedObject private var authManager = ExtensionAuthorizationManager.shared
     @ObservedObject private var liveActivityManager = ExtensionLiveActivityManager.shared
     @ObservedObject private var widgetManager = ExtensionLockScreenWidgetManager.shared
+    @ObservedObject private var notchExperienceManager = ExtensionNotchExperienceManager.shared
     let entry: ExtensionAuthorizationEntry
     let onRemove: () -> Void
     
@@ -275,8 +291,8 @@ private struct ExtensionEntryRow: View {
             }
             
             // Rate limits info
-            if let rateLimitRecord = authManager.rateLimitRecords.first(where: { $0.bundleIdentifier == entry.bundleIdentifier }),
-               !rateLimitRecord.activityTimestamps.isEmpty || !rateLimitRecord.widgetTimestamps.isEmpty {
+                if let rateLimitRecord = authManager.rateLimitRecords.first(where: { $0.bundleIdentifier == entry.bundleIdentifier }),
+                    !rateLimitRecord.activityTimestamps.isEmpty || !rateLimitRecord.widgetTimestamps.isEmpty || !rateLimitRecord.notchExperienceTimestamps.isEmpty {
                 rateLimitInfo(record: rateLimitRecord)
                 Divider()
             }
@@ -324,6 +340,21 @@ private struct ExtensionEntryRow: View {
             ))
             .font(.caption)
             .disabled(!authManager.areLockScreenWidgetsEnabled)
+
+            Toggle("Notch Experiences", isOn: Binding(
+                get: { entry.allowedScopes.contains(.notchExperiences) },
+                set: { enabled in
+                    var newScopes = entry.allowedScopes
+                    if enabled {
+                        newScopes.insert(.notchExperiences)
+                    } else {
+                        newScopes.remove(.notchExperiences)
+                    }
+                    authManager.updateAllowedScopes(bundleIdentifier: entry.bundleIdentifier, allowedScopes: newScopes)
+                }
+            ))
+            .font(.caption)
+            .disabled(!authManager.areNotchExperiencesEnabled)
         }
     }
     
@@ -350,6 +381,16 @@ private struct ExtensionEntryRow: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Text("\(record.widgetTimestamps.count)")
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+
+                if !record.notchExperienceTimestamps.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Notch Experiences")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("\(record.notchExperienceTimestamps.count)")
                             .font(.caption.monospacedDigit())
                     }
                 }
@@ -420,6 +461,11 @@ private struct ExtensionEntryRow: View {
                 widgetManager.dismissAll(for: entry.bundleIdentifier)
             }
             .disabled(!hasWidgets)
+
+            Button("Reset Notch Experiences") {
+                notchExperienceManager.dismissAll(for: entry.bundleIdentifier)
+            }
+            .disabled(!hasNotchExperiences)
         } label: {
             Label("Reset", systemImage: "arrow.counterclockwise.circle")
         }
@@ -433,6 +479,10 @@ private struct ExtensionEntryRow: View {
 
     private var hasWidgets: Bool {
         widgetManager.activeWidgets.contains { $0.bundleIdentifier == entry.bundleIdentifier }
+    }
+
+    private var hasNotchExperiences: Bool {
+        notchExperienceManager.activeExperiences.contains { $0.bundleIdentifier == entry.bundleIdentifier }
     }
     
     private func infoRow(label: String, value: String) -> some View {

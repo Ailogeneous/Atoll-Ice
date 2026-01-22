@@ -2,6 +2,7 @@ import Foundation
 import CoreGraphics
 import Defaults
 import AppKit
+import AVFoundation
 
 final class SystemChangesObserver: MediaKeyInterceptorDelegate {
     private weak var coordinator: DynamicIslandViewCoordinator?
@@ -9,6 +10,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
     private let brightnessController = SystemBrightnessController.shared
     private let keyboardBacklightController = SystemKeyboardBacklightController.shared
     private let mediaKeyInterceptor = MediaKeyInterceptor.shared
+    private let volumeFeedbackPlayer = VolumeFeedbackPlayer.shared
 
     private static let headsetIconSymbols: Set<String> = [
         "airpods",
@@ -140,6 +142,7 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         let baseStep = stepSize(for: step, base: standardVolumeStep)
         let delta = direction == .up ? baseStep : -baseStep
         volumeController.adjust(by: delta)
+        volumeFeedbackPlayer.playIfNeeded()
     }
 
     func mediaKeyInterceptorDidToggleMute(_ interceptor: MediaKeyInterceptor) {
@@ -321,6 +324,55 @@ private extension SystemChangesObserver {
             return base
         case .fine:
             return base / fineStepDivisor
+        }
+    }
+}
+
+private final class VolumeFeedbackPlayer {
+    static let shared = VolumeFeedbackPlayer()
+
+    private let queue = DispatchQueue(label: "com.dynamicisland.volume-feedback-player")
+    private var player: AVAudioPlayer?
+    private var lastPlayDate: Date = .distantPast
+    private let minimumInterval: TimeInterval = 0.08
+    private var didLogMissingAsset = false
+
+    private init() {}
+
+    func playIfNeeded() {
+        guard Defaults[.playVolumeChangeFeedback] else { return }
+        queue.async { [weak self] in
+            guard let self else { return }
+            let now = Date()
+            guard now.timeIntervalSince(self.lastPlayDate) >= self.minimumInterval else { return }
+            self.lastPlayDate = now
+            self.preparePlayerIfNeeded()
+            guard let player = self.player else { return }
+            player.currentTime = 0
+            player.play()
+        }
+    }
+
+    private func preparePlayerIfNeeded() {
+        if player != nil { return }
+        guard let url = Bundle.main.url(forResource: "audio-feedback", withExtension: "m4a") else {
+            if !didLogMissingAsset {
+                NSLog("⚠️ audio-feedback.m4a is missing from the app bundle; volume feedback disabled.")
+                didLogMissingAsset = true
+            }
+            return
+        }
+
+        do {
+            let audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer.volume = 1
+            audioPlayer.prepareToPlay()
+            player = audioPlayer
+        } catch {
+            if !didLogMissingAsset {
+                NSLog("⚠️ Failed to initialize volume feedback player: \(error.localizedDescription)")
+                didLogMissingAsset = true
+            }
         }
     }
 }

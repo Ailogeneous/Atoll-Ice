@@ -1860,6 +1860,18 @@ struct HUD: View {
             }
 
             Section {
+                Defaults.Toggle("Play feedback when volume is changed", key: .playVolumeChangeFeedback)
+                    .settingsHighlight(id: highlightID("Play feedback when volume is changed"))
+                    .help("Plays the supplied feedback clip whenever you press the hardware volume keys.")
+            } header: {
+                Text("Audio feedback")
+            } footer: {
+                Text("Requires Accessibility permission so Dynamic Island can intercept the hardware volume keys.")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+            }
+
+            Section {
                 Defaults.Toggle("Color-coded volume display", key: .useColorCodedVolumeDisplay)
                     .disabled(colorCodingDisabled)
                     .settingsHighlight(id: highlightID("Color-coded volume display"))

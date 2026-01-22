@@ -11,6 +11,8 @@ import Defaults
 struct LockScreenMusicPanel: View {
     private struct GlassLogSnapshot: Equatable {
         let style: LockScreenGlassStyle
+        let customizationMode: LockScreenGlassCustomizationMode
+        let variantRawValue: Int
         let usesLiquidGlass: Bool
     }
 
@@ -32,6 +34,8 @@ struct LockScreenMusicPanel: View {
     @State private var isParallaxSuspended = false
     @State private var lastLoggedGlassSnapshot: GlassLogSnapshot?
     @Default(.lockScreenGlassStyle) var lockScreenGlassStyle
+    @Default(.lockScreenGlassCustomizationMode) private var glassCustomizationMode
+    @Default(.lockScreenMusicLiquidGlassVariant) private var musicGlassVariant
     @Default(.lockScreenShowAppIcon) var showAppIcon
     @Default(.lockScreenPanelShowsBorder) var showPanelBorder
     @Default(.lockScreenPanelUsesBlur) var enableBlur
@@ -70,11 +74,20 @@ struct LockScreenMusicPanel: View {
         isExpanded ? expandedPanelCornerRadius : collapsedPanelCornerRadius
     }
 
-    private var usesLiquidGlass: Bool {
+    private var usesCustomLiquidGlass: Bool {
+        glassCustomizationMode == .customLiquid
+    }
+
+    private var usesStandardLiquidGlass: Bool {
+        guard glassCustomizationMode == .standard else { return false }
         if #available(macOS 26.0, *) {
             return lockScreenGlassStyle == .liquid
         }
         return false
+    }
+
+    private var usesLiquidGlass: Bool {
+        usesCustomLiquidGlass || usesStandardLiquidGlass
     }
     
     var body: some View {
@@ -137,6 +150,14 @@ struct LockScreenMusicPanel: View {
         }
         .onChange(of: lockScreenGlassStyle) { _, _ in
             logGlassState(reason: "Glass style updated")
+        }
+        .onChange(of: glassCustomizationMode) { _, _ in
+            logGlassState(reason: "Glass mode updated")
+        }
+        .onChange(of: musicGlassVariant) { _, _ in
+            if usesCustomLiquidGlass {
+                logGlassState(reason: "Liquid variant updated")
+            }
         }
         .scaleEffect(animator.isPresented ? 1 : 0.9, anchor: .center)
         .opacity(animator.isPresented ? 1 : 0)
@@ -723,8 +744,10 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private var panelBackgroundLayer: some View {
-        if usesLiquidGlass {
-            liquidPanelBackdrop
+        if usesCustomLiquidGlass {
+            customLiquidPanelBackdrop
+        } else if usesStandardLiquidGlass {
+            standardLiquidPanelBackdrop
         } else if shouldUseFrostedBlur {
             frostedPanelBackground
         } else {
@@ -733,13 +756,23 @@ struct LockScreenMusicPanel: View {
     }
 
     @ViewBuilder
-    private var liquidPanelBackdrop: some View {
+    private var standardLiquidPanelBackdrop: some View {
         if #available(macOS 26.0, *) {
             GlassTextBackdrop(cornerRadius: panelCornerRadius)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
+    }
+
+    @ViewBuilder
+    private var customLiquidPanelBackdrop: some View {
+        LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: panelCornerRadius) {
+            Color.white.opacity(0.04)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var frostedPanelBackground: some View {
@@ -768,7 +801,9 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private func albumArtBackground(cornerRadius: CGFloat) -> some View {
-        if usesLiquidGlass {
+        if usesCustomLiquidGlass {
+            customLiquidAlbumArtBackground(cornerRadius: cornerRadius)
+        } else if usesStandardLiquidGlass {
             if #available(macOS 26.0, *) {
                 clearLiquidGlassSurface(cornerRadius: cornerRadius)
             }
@@ -809,8 +844,20 @@ struct LockScreenMusicPanel: View {
             )
     }
 
+    @ViewBuilder
+    private func customLiquidAlbumArtBackground(cornerRadius: CGFloat) -> some View {
+        LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: cornerRadius) {
+            Color.clear
+        }
+    }
+
     private func logGlassState(reason: String) {
-        let snapshot = GlassLogSnapshot(style: lockScreenGlassStyle, usesLiquidGlass: usesLiquidGlass)
+        let snapshot = GlassLogSnapshot(
+            style: lockScreenGlassStyle,
+            customizationMode: glassCustomizationMode,
+            variantRawValue: musicGlassVariant.rawValue,
+            usesLiquidGlass: usesLiquidGlass
+        )
         guard snapshot != lastLoggedGlassSnapshot else { return }
         lastLoggedGlassSnapshot = snapshot
 
@@ -831,9 +878,18 @@ struct LockScreenMusicPanel: View {
             return "\(entry.name)=\(mode)"
         }.joined(separator: ", ")
 
-        print("[LockScreenMusicPanel] \(reason) – style=\(lockScreenGlassStyle.rawValue), usesLiquidGlass=\(usesLiquidGlass), components[\(componentSummary)], macOS \(currentOSVersionDescription())")
+        let modeDescription: String
+        if usesCustomLiquidGlass {
+            modeDescription = "Custom Liquid (variant \(musicGlassVariant.rawValue))"
+        } else if usesStandardLiquidGlass {
+            modeDescription = "Standard Liquid"
+        } else {
+            modeDescription = lockScreenGlassStyle.rawValue
+        }
 
-        if lockScreenGlassStyle == .liquid && !usesLiquidGlass {
+        print("[LockScreenMusicPanel] \(reason) – customization=\(glassCustomizationMode.rawValue), mode=\(modeDescription), components[\(componentSummary)], macOS \(currentOSVersionDescription())")
+
+        if glassCustomizationMode == .standard && lockScreenGlassStyle == .liquid && !usesStandardLiquidGlass {
             print("[LockScreenMusicPanel] Liquid Glass requested but unavailable on this macOS build. Falling back to frosted visuals.")
         }
     }

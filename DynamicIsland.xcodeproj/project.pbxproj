@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7E1ADF1D2EA209B1001DA867 /* SkyLightWindow in Frameworks */ = {isa = PBXBuildFile; productRef = 7E61181E2E24071E0050006C /* SkyLightWindow */; };
+		7E288D122F1659EF0020C117 /* AtollExtensionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7E288D112F1659EF0020C117 /* AtollExtensionKit */; };
 		7E6118142E24071E0050006C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 14D032192C68F32E0096E6A1 /* LaunchAtLogin */; };
 		7E6118152E24071E0050006C /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 14D0321C2C68F3350096E6A1 /* Sparkle */; };
 		7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654382C6F4990000B926A /* KeyboardShortcuts */; };
@@ -26,6 +27,7 @@
 		7E9918722EFDAE5B002EDFD5 /* MediaRemoteAdapter.framework in Resources */ = {isa = PBXBuildFile; fileRef = F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */; };
 		7EE1D73D2E6B1E0B00997219 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */; };
 		7EE1D73F2E6B1E1200997219 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73E2E6B1E1200997219 /* IOKit.framework */; };
+		7EF1D4B92FFFCE3C008D2C32 /* ExtensionEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF1D4B82FFFCE3C008D2C32 /* ExtensionEventBridge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +43,7 @@
 		7E9911AF2EFD7D1B002EDFD5 /* Reindeer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Reindeer.json; sourceTree = "<group>"; };
 		7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		7EE1D73E2E6B1E1200997219 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		7EF1D4B82FFFCE3C008D2C32 /* ExtensionEventBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ExtensionEventBridge.swift; path = DynamicIsland/managers/Extensions/ExtensionEventBridge.swift; sourceTree = SOURCE_ROOT; };
 		F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaRemoteAdapter.framework; path = Frameworks/MediaRemoteAdapter.framework; sourceTree = SOURCE_ROOT; };
 		F54406E72CD4987A00C7AFD9 /* Atoll.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atoll.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -68,6 +71,7 @@
 				7E6118172E24071E0050006C /* Collections in Frameworks */,
 				7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */,
 				7E6118152E24071E0050006C /* Sparkle in Frameworks */,
+				7E288D122F1659EF0020C117 /* AtollExtensionKit in Frameworks */,
 				7E6118142E24071E0050006C /* LaunchAtLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,6 +79,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7E07AFF12F181892003A8B1B /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				7EF1D4B82FFFCE3C008D2C32 /* ExtensionEventBridge.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		7E81303F2E3FB40500E08F3F /* mediaremote-adapter */ = {
 			isa = PBXGroup;
 			children = (
@@ -117,6 +129,7 @@
 				7E81303F2E3FB40500E08F3F /* mediaremote-adapter */,
 				F54406E92CD4987A00C7AFD9 /* DynamicIsland */,
 				F54406E82CD4987A00C7AFD9 /* Products */,
+				7E07AFF12F181892003A8B1B /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -157,6 +170,7 @@
 				B194240A2CD10017003E5DC2 /* LottieUI */,
 				146BC4362D366E9B0047C66A /* MacroVisionKit */,
 				7E61181E2E24071E0050006C /* SkyLightWindow */,
+				7E288D112F1659EF0020C117 /* AtollExtensionKit */,
 			);
 			productName = DynamicIsland;
 			productReference = F54406E72CD4987A00C7AFD9 /* Atoll.app */;
@@ -201,6 +215,7 @@
 				146BC4352D366E9B0047C66A /* XCRemoteSwiftPackageReference "MacroVisionKit" */,
 				7E61181F2E24071E0050006C /* XCRemoteSwiftPackageReference "SkyLightWindow" */,
 				7E09D5962EB7B497005AF41D /* XCRemoteSwiftPackageReference "open-meteo" */,
+				7E288D102F1659EF0020C117 /* XCRemoteSwiftPackageReference "AtollExtensionKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54406E82CD4987A00C7AFD9 /* Products */;
@@ -235,6 +250,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7EF1D4B92FFFCE3C008D2C32 /* ExtensionEventBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -557,6 +573,14 @@
 				minimumVersion = 1.4.16;
 			};
 		};
+		7E288D102F1659EF0020C117 /* XCRemoteSwiftPackageReference "AtollExtensionKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Ebullioscopic/AtollExtensionKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		7E61181F2E24071E0050006C /* XCRemoteSwiftPackageReference "SkyLightWindow" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Lakr233/SkyLightWindow";
@@ -630,6 +654,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 14D0321B2C68F3350096E6A1 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		7E288D112F1659EF0020C117 /* AtollExtensionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7E288D102F1659EF0020C117 /* XCRemoteSwiftPackageReference "AtollExtensionKit" */;
+			productName = AtollExtensionKit;
 		};
 		7E61181E2E24071E0050006C /* SkyLightWindow */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -378,6 +378,7 @@ struct NotchHomeView: View {
     @ObservedObject var webcamManager = WebcamManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
+    @ObservedObject private var extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
     let albumArtNamespace: Namespace.ID
     
     var body: some View {
@@ -392,8 +393,14 @@ struct NotchHomeView: View {
     private var mainContent: some View {
         HStack(alignment: .top, spacing: 20) {
             if Defaults[.enableMinimalisticUI] {
-                // Minimalistic mode: Only show compact music player
-                MinimalisticMusicPlayerView(albumArtNamespace: albumArtNamespace)
+                if let overridePayload = minimalisticOverridePayload {
+                    ExtensionMinimalisticExperienceView(
+                        payload: overridePayload,
+                        albumArtNamespace: albumArtNamespace
+                    )
+                } else {
+                    MinimalisticMusicPlayerView(albumArtNamespace: albumArtNamespace)
+                }
             } else {
                 // Normal mode: Show full music player with optional calendar and webcam
                 MusicPlayerView(albumArtNamespace: albumArtNamespace)
@@ -421,6 +428,10 @@ struct NotchHomeView: View {
             .combined(with: .blurReplace.animation(.smooth.speed(0.9)))
             .combined(with: .move(edge: .top)))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
+    }
+
+    private var minimalisticOverridePayload: ExtensionNotchExperiencePayload? {
+        extensionNotchExperienceManager.minimalisticReplacementPayload()
     }
 }
 

@@ -7,8 +7,10 @@ struct LockScreenTimerWidget: View {
 
     @ObservedObject private var animator: LockScreenTimerWidgetAnimator
     @ObservedObject private var timerManager = TimerManager.shared
-    @Default(.lockScreenGlassStyle) private var glassStyle
-    @Default(.lockScreenTimerWidgetUsesBlur) private var enableTimerBlur
+    @Default(.lockScreenTimerGlassStyle) private var timerGlassStyle
+    @Default(.lockScreenTimerGlassCustomizationMode) private var timerGlassCustomizationMode
+    @Default(.lockScreenTimerLiquidGlassVariant) private var timerGlassVariant
+    @Default(.lockScreenTimerWidgetUsesBlur) private var timerGlassModeIsGlass
     @Default(.timerPresets) private var timerPresets
 
     @MainActor
@@ -78,29 +80,45 @@ struct LockScreenTimerWidget: View {
         )
     }
 
-    private var usesLiquidGlass: Bool {
+    private var timerSurfaceMode: LockScreenTimerSurfaceMode {
+        timerGlassModeIsGlass ? .glass : .classic
+    }
+
+    private var usesGlassBackground: Bool {
+        timerSurfaceMode == .glass
+    }
+
+    private var usesCustomLiquidGlass: Bool {
+        guard usesGlassBackground else { return false }
+        return timerGlassStyle == .liquid && timerGlassCustomizationMode == .customLiquid
+    }
+
+    private var usesStandardLiquidGlass: Bool {
+        guard usesGlassBackground else { return false }
+        guard timerGlassStyle == .liquid else { return false }
         if #available(macOS 26.0, *) {
-            return glassStyle == .liquid
+            return timerGlassCustomizationMode == .standard
         }
         return false
     }
 
     @ViewBuilder
     private var widgetBackground: some View {
-        if enableTimerBlur {
-            if usesLiquidGlass {
-                liquidBackground
+        if usesGlassBackground {
+            if usesCustomLiquidGlass {
+                customLiquidBackground
+            } else if timerGlassStyle == .liquid {
+                standardLiquidBackground
             } else {
                 frostedBackground
             }
         } else {
-            RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
-                .fill(Color.black.opacity(0.65))
+            classicBackground
         }
     }
 
     @ViewBuilder
-    private var liquidBackground: some View {
+    private var standardLiquidBackground: some View {
         if #available(macOS 26.0, *) {
             RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
                 .glassEffect(
@@ -112,9 +130,20 @@ struct LockScreenTimerWidget: View {
         }
     }
 
+    private var customLiquidBackground: some View {
+        LiquidGlassBackground(variant: timerGlassVariant, cornerRadius: Self.cornerRadius) {
+            Color.black.opacity(0.12)
+        }
+    }
+
     private var frostedBackground: some View {
         RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
             .fill(.ultraThinMaterial)
+    }
+
+    private var classicBackground: some View {
+        RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+            .fill(Color.black.opacity(0.65))
     }
 
     private var pauseIcon: String {

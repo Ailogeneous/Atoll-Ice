@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import SwiftUI
 
 enum LogCategory: String {
@@ -11,9 +12,42 @@ enum LogCategory: String {
     case warning = "⚠️"
     case success = "✅"
     case debug = "🔍"
+    case extensions = "🧩"
+
+    var osCategoryName: String {
+        switch self {
+        case .lifecycle: return "lifecycle"
+        case .memory: return "memory"
+        case .performance: return "performance"
+        case .ui: return "ui"
+        case .network: return "network"
+        case .error: return "error"
+        case .warning: return "warning"
+        case .success: return "success"
+        case .debug: return "debug"
+        case .extensions: return "extensions"
+        }
+    }
 }
 
 struct Logger {
+    private static let subsystem = "com.ebullioscopic.Atoll"
+    private static let dateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static var osLoggerCache: [LogCategory: OSLog] = [:]
+
+    private static func osLogger(for category: LogCategory) -> OSLog {
+        if let cached = osLoggerCache[category] {
+            return cached
+        }
+        let logger = OSLog(subsystem: subsystem, category: category.osCategoryName)
+        osLoggerCache[category] = logger
+        return logger
+    }
+
     static func log(
         _ message: String,
         category: LogCategory,
@@ -22,8 +56,14 @@ struct Logger {
         line: Int = #line
     ) {
         let fileName = (file as NSString).lastPathComponent
-        let timestamp = ISO8601DateFormatter().string(from: Date())
-        print("\(category.rawValue) [\(timestamp)] [\(fileName):\(line)] \(function) - \(message)")
+        let timestamp = dateFormatter.string(from: Date())
+        let entry = "\(category.rawValue) [\(timestamp)] [\(fileName):\(line)] \(function) - \(message)"
+        let logger = osLogger(for: category)
+        os_log("%{public}@", log: logger, type: .default, entry)
+
+#if DEBUG
+        Swift.print(entry)
+#endif
     }
     
     static func trackMemory(

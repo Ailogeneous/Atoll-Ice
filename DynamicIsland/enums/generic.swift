@@ -33,6 +33,7 @@ public enum NotchViews {
     case colorPicker
     case notes
     case clipboard
+    case extensionExperience
 }
 
 enum NotesLayoutState: Equatable {
@@ -95,6 +96,24 @@ enum SliderColorEnum: String, CaseIterable, Defaults.Serializable {
 enum LockScreenGlassStyle: String, CaseIterable, Defaults.Serializable, Identifiable {
     case liquid = "Liquid Glass"
     case frosted = "Frosted Glass"
+
+    var id: String { rawValue }
+}
+
+enum LockScreenGlassCustomizationMode: String, CaseIterable, Defaults.Serializable, Identifiable {
+    case standard = "Standard"
+    case customLiquid = "Custom Liquid"
+
+    var id: String { rawValue }
+
+    var allowsVariantSelection: Bool {
+        self == .customLiquid
+    }
+}
+
+enum LockScreenTimerSurfaceMode: String, CaseIterable, Defaults.Serializable, Identifiable {
+    case classic = "Classic"
+    case glass = "Glass"
 
     var id: String { rawValue }
 }

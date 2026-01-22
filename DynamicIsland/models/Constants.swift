@@ -8,6 +8,7 @@
 import SwiftUI
 import Defaults
 import Lottie
+import Foundation
 
 private let availableDirectories = FileManager
     .default
@@ -94,6 +95,118 @@ enum AnimationSource: Codable, Hashable, Equatable {
         case .lottieURL: return "Remote"
         case .builtInFace: return "Built-in"
         }
+    }
+}
+
+// MARK: - Extension Authorization Models
+
+enum ExtensionPermissionScope: String, CaseIterable, Codable, Defaults.Serializable {
+    case liveActivities
+    case lockScreenWidgets
+    case notchExperiences
+
+    var displayName: String {
+        switch self {
+        case .liveActivities: return "Live Activities"
+        case .lockScreenWidgets: return "Lock Screen Widgets"
+        case .notchExperiences: return "Notch Experiences"
+        }
+    }
+}
+
+enum ExtensionAuthorizationStatus: String, CaseIterable, Codable, Defaults.Serializable {
+    case pending
+    case authorized
+    case denied
+    case revoked
+
+    var isActive: Bool {
+        switch self {
+        case .authorized: return true
+        case .pending, .denied, .revoked: return false
+        }
+    }
+}
+
+struct ExtensionAuthorizationEntry: Codable, Defaults.Serializable, Identifiable, Hashable {
+    let bundleIdentifier: String
+    var appName: String
+    var status: ExtensionAuthorizationStatus
+    var allowedScopes: Set<ExtensionPermissionScope>
+    var requestedAt: Date
+    var grantedAt: Date?
+    var lastActivityAt: Date?
+    var lastDeniedReason: String?
+    var notes: String?
+
+    var id: String { bundleIdentifier }
+
+    init(
+        bundleIdentifier: String,
+        appName: String,
+        status: ExtensionAuthorizationStatus,
+        allowedScopes: Set<ExtensionPermissionScope> = Set(ExtensionPermissionScope.allCases),
+        requestedAt: Date = .now,
+        grantedAt: Date? = nil,
+        lastActivityAt: Date? = nil,
+        lastDeniedReason: String? = nil,
+        notes: String? = nil
+    ) {
+        self.bundleIdentifier = bundleIdentifier
+        self.appName = appName
+        self.status = status
+        self.allowedScopes = allowedScopes
+        self.requestedAt = requestedAt
+        self.grantedAt = grantedAt
+        self.lastActivityAt = lastActivityAt
+        self.lastDeniedReason = lastDeniedReason
+        self.notes = notes
+    }
+
+    var isAuthorized: Bool { status.isActive }
+}
+
+struct ExtensionRateLimitRecord: Codable, Defaults.Serializable, Hashable, Identifiable {
+    let bundleIdentifier: String
+    var activityTimestamps: [Date]
+    var widgetTimestamps: [Date]
+    var notchExperienceTimestamps: [Date]
+
+    var id: String { bundleIdentifier }
+
+    init(
+        bundleIdentifier: String,
+        activityTimestamps: [Date] = [],
+        widgetTimestamps: [Date] = [],
+        notchExperienceTimestamps: [Date] = []
+    ) {
+        self.bundleIdentifier = bundleIdentifier
+        self.activityTimestamps = activityTimestamps
+        self.widgetTimestamps = widgetTimestamps
+        self.notchExperienceTimestamps = notchExperienceTimestamps
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case bundleIdentifier
+        case activityTimestamps
+        case widgetTimestamps
+        case notchExperienceTimestamps
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        bundleIdentifier = try container.decode(String.self, forKey: .bundleIdentifier)
+        activityTimestamps = try container.decodeIfPresent([Date].self, forKey: .activityTimestamps) ?? []
+        widgetTimestamps = try container.decodeIfPresent([Date].self, forKey: .widgetTimestamps) ?? []
+        notchExperienceTimestamps = try container.decodeIfPresent([Date].self, forKey: .notchExperienceTimestamps) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(bundleIdentifier, forKey: .bundleIdentifier)
+        try container.encode(activityTimestamps, forKey: .activityTimestamps)
+        try container.encode(widgetTimestamps, forKey: .widgetTimestamps)
+        try container.encode(notchExperienceTimestamps, forKey: .notchExperienceTimestamps)
     }
 }
 
@@ -590,6 +703,23 @@ extension Defaults.Keys {
     static let lockScreenMusicAlbumParallaxEnabled = Key<Bool>("lockScreenMusicAlbumParallaxEnabled", default: false)
     static let lockScreenTimerVerticalOffset = Key<Double>("lockScreenTimerVerticalOffset", default: 0)
     static let lockScreenGlassStyle = Key<LockScreenGlassStyle>("lockScreenGlassStyle", default: .liquid)
+    static let lockScreenGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "lockScreenGlassCustomizationMode",
+        default: .standard
+    )
+    static let lockScreenTimerGlassStyle = Key<LockScreenGlassStyle>("lockScreenTimerGlassStyle", default: .frosted)
+    static let lockScreenTimerGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "lockScreenTimerGlassCustomizationMode",
+        default: .standard
+    )
+    static let lockScreenMusicLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "lockScreenMusicLiquidGlassVariant",
+        default: .defaultVariant
+    )
+    static let lockScreenTimerLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "lockScreenTimerLiquidGlassVariant",
+        default: .defaultVariant
+    )
     static let lockScreenShowAppIcon = Key<Bool>("lockScreenShowAppIcon", default: false)
     static let lockScreenPanelShowsBorder = Key<Bool>("lockScreenPanelShowsBorder", default: false)
     static let lockScreenPanelUsesBlur = Key<Bool>("lockScreenPanelUsesBlur", default: true)
@@ -714,6 +844,21 @@ extension Defaults.Keys {
     static let selectedAIModel = Key<AIModel?>("selectedAIModel", default: nil)
     static let enableThinkingMode = Key<Bool>("enableThinkingMode", default: false)
     static let localModelEndpoint = Key<String>("localModelEndpoint", default: "http://localhost:11434")
+
+    // MARK: Third-Party Extensions
+    static let enableThirdPartyExtensions = Key<Bool>("enableThirdPartyExtensions", default: true)
+    static let enableExtensionLiveActivities = Key<Bool>("enableExtensionLiveActivities", default: true)
+    static let enableExtensionLockScreenWidgets = Key<Bool>("enableExtensionLockScreenWidgets", default: true)
+    static let enableExtensionNotchExperiences = Key<Bool>("enableExtensionNotchExperiences", default: true)
+    static let enableExtensionNotchTabs = Key<Bool>("enableExtensionNotchTabs", default: true)
+    static let enableExtensionNotchMinimalisticOverrides = Key<Bool>("enableExtensionNotchMinimalisticOverrides", default: true)
+    static let enableExtensionNotchInteractiveWebViews = Key<Bool>("enableExtensionNotchInteractiveWebViews", default: true)
+    static let extensionAuthorizationEntries = Key<[ExtensionAuthorizationEntry]>("extensionAuthorizationEntries", default: [])
+    static let extensionRateLimitRecords = Key<[ExtensionRateLimitRecord]>("extensionRateLimitRecords", default: [])
+    static let extensionDiagnosticsLoggingEnabled = Key<Bool>("extensionDiagnosticsLoggingEnabled", default: true)
+    static let extensionLiveActivityCapacity = Key<Int>("extensionLiveActivityCapacity", default: 4)
+    static let extensionLockScreenWidgetCapacity = Key<Int>("extensionLockScreenWidgetCapacity", default: 4)
+    static let extensionNotchExperienceCapacity = Key<Int>("extensionNotchExperienceCapacity", default: 2)
     
     // MARK: Keyboard Shortcuts
     static let enableShortcuts = Key<Bool>("enableShortcuts", default: true)

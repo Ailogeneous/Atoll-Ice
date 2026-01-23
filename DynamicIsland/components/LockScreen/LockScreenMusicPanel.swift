@@ -781,7 +781,7 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private var customLiquidPanelBackdrop: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
             LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: panelCornerRadius, trigger: context.date.timeIntervalSinceReferenceDate) {
                 Color.white.opacity(0.04)
             }
@@ -862,7 +862,7 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private func customLiquidAlbumArtBackground(cornerRadius: CGFloat) -> some View {
-        TimelineView(.animation) { context in
+        TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
             LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: cornerRadius, trigger: context.date.timeIntervalSinceReferenceDate) {
                 Color.clear
             }

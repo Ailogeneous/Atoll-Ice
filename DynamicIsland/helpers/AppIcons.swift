@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import Defaults
 
 struct AppIcons {
     
@@ -56,5 +57,20 @@ func AppIconAsNSImage(for bundleID: String) -> NSImage? {
         return appIcon
     }
     return nil
+}
+
+func applySelectedAppIcon() {
+    let customIcons = Defaults[.customAppIcons]
+    if let selectedID = Defaults[.selectedAppIconID],
+       let icon = customIcons.first(where: { $0.id.uuidString == selectedID }),
+       let image = NSImage(contentsOf: icon.fileURL) {
+        NSApp.applicationIconImage = image
+        return
+    }
+
+    let fallbackName = Bundle.main.iconFileName ?? "AppIcon"
+    if let image = NSImage(named: fallbackName) {
+        NSApp.applicationIconImage = image
+    }
 }
 

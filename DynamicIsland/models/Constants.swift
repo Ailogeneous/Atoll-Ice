@@ -27,6 +27,32 @@ struct CustomVisualizer: Codable, Hashable, Equatable, Defaults.Serializable {
     var speed: CGFloat = 1.0
 }
 
+struct CustomAppIcon: Codable, Hashable, Equatable, Defaults.Serializable, Identifiable {
+    let id: UUID
+    var name: String
+    var fileName: String
+    var addedAt: Date
+
+    init(id: UUID = UUID(), name: String, fileName: String, addedAt: Date = .now) {
+        self.id = id
+        self.name = name
+        self.fileName = fileName
+        self.addedAt = addedAt
+    }
+
+    static let iconDirectory: URL = {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = base.appendingPathComponent("DynamicIsland", isDirectory: true)
+            .appendingPathComponent("AppIcons", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }()
+
+    var fileURL: URL {
+        Self.iconDirectory.appendingPathComponent(fileName)
+    }
+}
+
 // MARK: - Custom Idle Animation Models
 struct CustomIdleAnimation: Codable, Hashable, Equatable, Defaults.Serializable, Identifiable {
     let id: UUID
@@ -656,6 +682,8 @@ extension Defaults.Keys {
     static let useMusicVisualizer = Key<Bool>("useMusicVisualizer", default: true)
     static let customVisualizers = Key<[CustomVisualizer]>("customVisualizers", default: [])
     static let selectedVisualizer = Key<CustomVisualizer?>("selectedVisualizer", default: nil)
+    static let customAppIcons = Key<[CustomAppIcon]>("customAppIcons", default: [])
+    static let selectedAppIconID = Key<String?>("selectedAppIconID", default: nil)
     
         // MARK: Gestures
     static let enableGestures = Key<Bool>("enableGestures", default: true)

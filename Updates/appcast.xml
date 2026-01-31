@@ -3,28 +3,20 @@
     <channel>
         <title>Atoll</title>
         <item>
-            <title>1.2.2-beta</title>
-            <pubDate>Thu, 25 Dec 2025 23:48:51 +0530</pubDate>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>1.2.2-beta</sparkle:shortVersionString>
+            <title>1.3.0-beta</title>
+            <pubDate>Sat, 31 Jan 2026 23:54:50 +0530</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.3.0-beta</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/Ebullioscopic/Atoll/releases/download/v1.2.2-beta/Atoll.1.2.2-beta.dmg" length="16752120" type="application/octet-stream" sparkle:edSignature="ForeteqM3Y3zRh01AlaY0IHAKB8dT6S9RcnEB/kywMRennifpduCZV99kSOLBpHKMcOioHVldiNI3FhYqXGlCA=="/>
+            <enclosure url="https://github.com/Ebullioscopic/Atoll/releases/download/v1.3.0-beta/Atoll.1.3.0-beta.dmg" length="17942376" type="application/octet-stream" sparkle:edSignature="O012jRM9CGzWj5TPY00dshyXmBgXJ6Km4P72SVjftxCfiAUc+SWBOHPCOK8Tdhh6Q9yV8ignA+V+5Q+dsD8lAg=="/>
         </item>
         <!-- <item>
-            <title>1.2.1-beta</title>
-            <pubDate>Sat, 14 Dec 2025 07:13:00 +0530</pubDate>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>1.2.1-beta</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/Ebullioscopic/Atoll/releases/download/v1.2.1-beta/Atoll.1.2.1-beta.dmg" length="19794214" type="application/octet-stream" sparkle:edSignature="Vt0NevXKUExR57f83sVIVgSXyUdq3kGXHDKRyhMxQhdPggYk5Rr7yexHMX8kecVx+sw4ZNoQVef8E/egV0IoAQ=="/>
-        </item>
-        <item>
-            <title>1.2-beta</title>
-            <pubDate>Fri, 05 Dec 2025 13:17:08 +0530</pubDate>
+            <title>1.2.2-beta</title>
+            <pubDate>Thu, 25 Dec 2025 23:48:51 +0530</pubDate>
             <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>1.2-beta</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://raw.githubusercontent.com/Ebullioscopic/Atoll/main/Updates/Atoll%201.2-beta.dmg" length="18642133" type="application/octet-stream" sparkle:edSignature="QD2rO+4IjiEbo7l4pkiikRwQ01/Yc/1qC3ML0Xby4QZzHDf4Wnuw//uE9WIgz8KoHha/CHxJN+z3HpwaF9FRBg=="/>
+            <sparkle:shortVersionString>1.2.2-beta</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
+            <enclosure url="https://raw.githubusercontent.com/Ebullioscopic/Atoll/main/Updates/Atoll%201.2.2-beta.dmg" length="16752120" type="application/octet-stream" sparkle:edSignature="ForeteqM3Y3zRh01AlaY0IHAKB8dT6S9RcnEB/kywMRennifpduCZV99kSOLBpHKMcOioHVldiNI3FhYqXGlCA=="/>
         </item> -->
     </channel>
 </rss>

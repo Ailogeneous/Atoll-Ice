@@ -592,32 +592,91 @@ struct SettingsView: View {
     private var settingsSearchIndex: [SettingsSearchEntry] {
         [
             // General
-            SettingsSearchEntry(tab: .general, title: "Enable Minimalistic UI", keywords: ["minimalistic", "ui mode", "general"], highlightID: SettingsTab.general.highlightID(for: "Enable Minimalistic UI")),
-            SettingsSearchEntry(tab: .general, title: "Menubar icon", keywords: ["menu bar", "status bar", "icon"], highlightID: SettingsTab.general.highlightID(for: "Menubar icon")),
-            SettingsSearchEntry(tab: .general, title: "Launch at login", keywords: ["autostart", "startup"], highlightID: SettingsTab.general.highlightID(for: "Launch at login")),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Enable Minimalistic UI"),
+                keywords: [ String(localized: "minimalistic"), String(localized: "ui mode"), String(localized: "general") ],
+                highlightID: SettingsTab.general.highlightID(for: "Enable Minimalistic UI")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized:"Menubar icon"),
+                keywords: [ String(localized:"menu bar"), String(localized:"status bar"), String(localized:"icon") ],
+                highlightID: SettingsTab.general.highlightID(for: "Menubar icon")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized:"Launch at login"),
+                keywords: [ String(localized:"autostart"), String(localized:"startup")],
+                highlightID: SettingsTab.general.highlightID(for: "Launch at login")
+            ),
             SettingsSearchEntry(tab: .general, title: "Show on all displays", keywords: ["multi-display", "external monitor"], highlightID: SettingsTab.general.highlightID(for: "Show on all displays")),
-            SettingsSearchEntry(tab: .general, title: "Show on a specific display", keywords: ["preferred screen", "display picker"], highlightID: SettingsTab.general.highlightID(for: "Show on a specific display")),
-            SettingsSearchEntry(tab: .general, title: "Automatically switch displays", keywords: ["auto switch", "displays"], highlightID: SettingsTab.general.highlightID(for: "Automatically switch displays")),
-            SettingsSearchEntry(tab: .general, title: "Hide Dynamic Island during screenshots & recordings", keywords: ["privacy", "screenshot", "recording"], highlightID: SettingsTab.general.highlightID(for: "Hide Dynamic Island during screenshots & recordings")),
-            SettingsSearchEntry(tab: .general, title: "Enable gestures", keywords: ["gestures", "trackpad"], highlightID: SettingsTab.general.highlightID(for: "Enable gestures")),
-            SettingsSearchEntry(tab: .general, title: "Close gesture", keywords: ["pinch", "swipe"], highlightID: SettingsTab.general.highlightID(for: "Close gesture")),
-            SettingsSearchEntry(tab: .general, title: "Reverse swipe gestures", keywords: ["reverse", "swipe", "media"], highlightID: SettingsTab.general.highlightID(for: "Reverse swipe gestures")),
-            SettingsSearchEntry(tab: .general, title: "Reverse scroll gestures", keywords: ["reverse", "scroll", "open", "close"], highlightID: SettingsTab.general.highlightID(for: "Reverse scroll gestures")),
-            SettingsSearchEntry(tab: .general, title: "Extend hover area", keywords: ["hover", "cursor"], highlightID: SettingsTab.general.highlightID(for: "Extend hover area")),
-            SettingsSearchEntry(tab: .general, title: "Enable haptics", keywords: ["haptic", "feedback"], highlightID: SettingsTab.general.highlightID(for: "Enable haptics")),
-            SettingsSearchEntry(tab: .general, title: "Open notch on hover", keywords: ["hover to open", "auto open"], highlightID: SettingsTab.general.highlightID(for: "Open notch on hover")),
-            SettingsSearchEntry(tab: .general, title: "Notch display height", keywords: ["display height", "menu bar size"], highlightID: SettingsTab.general.highlightID(for: "Notch display height")),
-
-            // Live Activities
-            SettingsSearchEntry(tab: .liveActivities, title: "Enable Screen Recording Detection", keywords: ["screen recording", "indicator"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable Screen Recording Detection")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Show Recording Indicator", keywords: ["recording indicator", "red dot"], highlightID: SettingsTab.liveActivities.highlightID(for: "Show Recording Indicator")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Enable Focus Detection", keywords: ["focus", "do not disturb", "dnd"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable Focus Detection")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Show Focus Indicator", keywords: ["focus icon", "moon"], highlightID: SettingsTab.liveActivities.highlightID(for: "Show Focus Indicator")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Show Focus Label", keywords: ["focus label", "text"], highlightID: SettingsTab.liveActivities.highlightID(for: "Show Focus Label")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Enable Camera Detection", keywords: ["camera", "privacy indicator"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable Camera Detection")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Enable Microphone Detection", keywords: ["microphone", "privacy"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable Microphone Detection")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Enable music live activity", keywords: ["music", "now playing"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable music live activity")),
-            SettingsSearchEntry(tab: .liveActivities, title: "Enable reminder live activity", keywords: ["reminder", "live activity"], highlightID: SettingsTab.liveActivities.highlightID(for: "Enable reminder live activity")),
+            SettingsSearchEntry(
+                tab: .general,
+                title: "Show on a specific display",
+                keywords: ["preferred screen", "display picker"],
+                highlightID: SettingsTab.general.highlightID(for: "Show on a specific display")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized:"Automatically switch displays"),
+                keywords: [String(localized:"auto switch"), String(localized:"displays")],
+                highlightID: SettingsTab.general.highlightID(for: "Automatically switch displays")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized:"Hide Dynamic Island during screenshots & recordings"),
+                keywords: [String(localized:"privacy"), String(localized:"screenshot"), String(localized:"recording")],
+                highlightID: SettingsTab.general.highlightID(for: "Hide Dynamic Island during screenshots & recordings")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Enable gestures"),
+                keywords: [String(localized: "gestures"), String(localized: "trackpad")],
+                highlightID: SettingsTab.general.highlightID(for: "Enable gestures")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Close gesture"),
+                keywords: [String(localized: "pinch"), String(localized: "swipe")],
+                highlightID: SettingsTab.general.highlightID(for: "Close gesture")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Reverse swipe gestures"),
+                keywords: [String(localized: "reverse"), String(localized: "swipe"), String(localized: "media")],
+                highlightID: SettingsTab.general.highlightID(for: "Reverse swipe gestures")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Reverse scroll gestures"),
+                keywords: [String(localized: "reverse"), String(localized: "scroll"), String(localized: "open"), String(localized: "close")],
+                highlightID: SettingsTab.general.highlightID(for: "Reverse scroll gestures")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Extend hover area"),
+                keywords: [String(localized: "hover"), String(localized: "cursor")],
+                highlightID: SettingsTab.general.highlightID(for: "Extend hover area")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Enable haptics"),
+                keywords: [String(localized: "haptic"), String(localized: "feedback")],
+                highlightID: SettingsTab.general.highlightID(for: "Enable haptics")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Open notch on hover"),
+                keywords: [String(localized: "hover to open"), String(localized: "auto open")],
+                highlightID: SettingsTab.general.highlightID(for: "Open notch on hover")
+            ),
+            SettingsSearchEntry(
+                tab: .general,
+                title: String(localized: "Notch display height"),
+                keywords: [String(localized: "display height"), String(localized: "menu bar size")],
+                highlightID: SettingsTab.general.highlightID(for: "Notch display height")
+            ),
 
             // Battery (Charge)
             SettingsSearchEntry(tab: .battery, title: "Show battery indicator", keywords: ["battery hud", "charge"], highlightID: SettingsTab.battery.highlightID(for: "Show battery indicator")),
@@ -899,7 +958,7 @@ struct GeneralSettings: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable Minimalistic UI", key: .enableMinimalisticUI)
+                Defaults.Toggle(String(localized: "Enable Minimalistic UI"), key: .enableMinimalisticUI)
                     .onChange(of: enableMinimalisticUI) { _, newValue in
                         if newValue {
                             // Auto-enable simpler animation mode
@@ -914,9 +973,9 @@ struct GeneralSettings: View {
             }
             
             Section {
-                Defaults.Toggle("Menubar icon", key: .menubarIcon)
-                    .settingsHighlight(id: highlightID("Menubar icon"))
-                LaunchAtLogin.Toggle("Launch at login")
+                Defaults.Toggle(String(localized:"Menubar icon"), key: .menubarIcon)
+                    .settingsHighlight(id: highlightID("Menubar icon"));
+                LaunchAtLogin.Toggle(String(localized:"Launch at login"))
                     .settingsHighlight(id: highlightID("Launch at login"))
                 Defaults.Toggle(key: .showOnAllDisplays) {
                     Text("Show on all displays")
@@ -935,13 +994,13 @@ struct GeneralSettings: View {
                 }
                 .disabled(showOnAllDisplays)
                 .settingsHighlight(id: highlightID("Show on a specific display"))
-                Defaults.Toggle("Automatically switch displays", key: .automaticallySwitchDisplay)
+                Defaults.Toggle(String(localized:"Automatically switch displays"), key: .automaticallySwitchDisplay)
                 .onChange(of: automaticallySwitchDisplay) {
                     NotificationCenter.default.post(name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
                 }
                 .disabled(showOnAllDisplays)
                 .settingsHighlight(id: highlightID("Automatically switch displays"))
-                Defaults.Toggle("Hide Dynamic Island during screenshots & recordings", key: .hideDynamicIslandFromScreenCapture)
+                Defaults.Toggle(String(localized:"Hide Dynamic Island during screenshots & recordings"), key: .hideDynamicIslandFromScreenCapture)
                     .settingsHighlight(id: highlightID("Hide Dynamic Island during screenshots & recordings"))
             } header: {
                 Text("System features")
@@ -1029,11 +1088,11 @@ struct GeneralSettings: View {
     @ViewBuilder
     func gestureControls() -> some View {
         Section {
-            Defaults.Toggle("Enable gestures", key: .enableGestures)
+            Defaults.Toggle(String(localized:"Enable gestures"), key: .enableGestures)
                 .disabled(!openNotchOnHover)
                 .settingsHighlight(id: highlightID("Enable gestures"))
             if enableGestures {
-                Defaults.Toggle("Media change with horizontal gestures", key: .enableHorizontalMusicGestures)
+                Defaults.Toggle(String(localized:"Media change with horizontal gestures"), key: .enableHorizontalMusicGestures)
                     .settingsHighlight(id: highlightID("Horizontal media gestures"))
 
                 if enableHorizontalMusicGestures {
@@ -1050,11 +1109,11 @@ struct GeneralSettings: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Defaults.Toggle("Reverse swipe gestures", key: .reverseSwipeGestures)
+                    Defaults.Toggle(String(localized:"Reverse swipe gestures"), key: .reverseSwipeGestures)
                         .settingsHighlight(id: highlightID("Reverse swipe gestures"))
                 }
 
-                Defaults.Toggle("Close gesture", key: .closeGestureEnabled)
+                Defaults.Toggle(String(localized:"Close gesture"), key: .closeGestureEnabled)
                     .settingsHighlight(id: highlightID("Close gesture"))
                 Slider(value: $gestureSensitivity, in: 100...300, step: 100) {
                     HStack {
@@ -1065,7 +1124,7 @@ struct GeneralSettings: View {
                     }
                 }
 
-                Defaults.Toggle("Reverse open/close scroll gestures", key: .reverseScrollGestures)
+                Defaults.Toggle(String(localized:"Reverse open/close scroll gestures"), key: .reverseScrollGestures)
                     .settingsHighlight(id: highlightID("Reverse scroll gestures"))
             }
         } header: {
@@ -1084,11 +1143,11 @@ struct GeneralSettings: View {
     @ViewBuilder
     func NotchBehaviour() -> some View {
         Section {
-            Defaults.Toggle("Extend hover area", key: .extendHoverArea)
+            Defaults.Toggle(String(localized:"Extend hover area"), key: .extendHoverArea)
                 .settingsHighlight(id: highlightID("Extend hover area"))
-            Defaults.Toggle("Enable haptics", key: .enableHaptics)
+            Defaults.Toggle(String(localized:"Enable haptics"), key: .enableHaptics)
                 .settingsHighlight(id: highlightID("Enable haptics"))
-            Defaults.Toggle("Open notch on hover", key: .openNotchOnHover)
+            Defaults.Toggle(String(localized:"Open notch on hover"), key: .openNotchOnHover)
                 .settingsHighlight(id: highlightID("Open notch on hover"))
             Toggle("Remember last tab", isOn: $coordinator.openLastTabByDefault)
             if openNotchOnHover {

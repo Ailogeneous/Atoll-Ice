@@ -162,6 +162,15 @@ enum LockScreenTimerSurfaceMode: String, CaseIterable, Defaults.Serializable, Id
     case glass = "Glass"
 
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .classic:
+            return String(localized: "Classic")
+        case .glass:
+            return String(localized: "Glass")
+        }
+    }
 }
 
 enum LockScreenWeatherWidgetStyle: String, CaseIterable, Defaults.Serializable, Identifiable {
@@ -169,6 +178,15 @@ enum LockScreenWeatherWidgetStyle: String, CaseIterable, Defaults.Serializable, 
     case circular = "Circular"
 
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .inline:
+            return String(localized: "Inline")
+        case .circular:
+            return String(localized: "Circular")
+        }
+    }
 }
 
 enum LockScreenWeatherProviderSource: String, CaseIterable, Defaults.Serializable, Identifiable {
@@ -223,18 +241,18 @@ enum LockScreenWeatherAirQualityScale: String, CaseIterable, Defaults.Serializab
     var compactLabel: String {
         switch self {
         case .us:
-            return "AQI"
+            return String(localized: "AQI")
         case .european:
-            return "EAQI"
+            return String(localized: "EAQI")
         }
     }
 
     var accessibilityLabel: String {
         switch self {
         case .us:
-            return "AQI"
+            return String(localized: "AQI")
         case .european:
-            return "EAQI"
+            return String(localized: "EAQI")
         }
     }
 

@@ -4189,9 +4189,9 @@ struct LockScreenSettings: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable lock screen live activity", key: .enableLockScreenLiveActivity)
+                Defaults.Toggle(String(localized: "Enable lock screen live activity"), key: .enableLockScreenLiveActivity)
                     .settingsHighlight(id: highlightID("Enable lock screen live activity"))
-                Defaults.Toggle("Play lock/unlock sounds", key: .enableLockSounds)
+                Defaults.Toggle(String(localized: "Play lock/unlock sounds"), key: .enableLockSounds)
                     .settingsHighlight(id: highlightID("Play lock/unlock sounds"))
             } header: {
                 Text("Live Activity & Feedback")
@@ -4246,12 +4246,12 @@ struct LockScreenSettings: View {
             }
 
             Section {
-                Defaults.Toggle("Show lock screen media panel", key: .enableLockScreenMediaWidget)
+                Defaults.Toggle(String(localized: "Show lock screen media panel"), key: .enableLockScreenMediaWidget)
                     .settingsHighlight(id: highlightID("Show lock screen media panel"))
-                Defaults.Toggle("Show media app icon", key: .lockScreenShowAppIcon)
+                Defaults.Toggle(String(localized: "Show media app icon"), key: .lockScreenShowAppIcon)
                     .disabled(!enableLockScreenMediaWidget)
                     .settingsHighlight(id: highlightID("Show media app icon"))
-                Defaults.Toggle("Show panel border", key: .lockScreenPanelShowsBorder)
+                Defaults.Toggle(String(localized: "Show panel border"), key: .lockScreenPanelShowsBorder)
                     .disabled(!enableLockScreenMediaWidget)
                     .settingsHighlight(id: highlightID("Show panel border"))
                 if lockScreenGlassCustomizationMode == .customLiquid {
@@ -4287,11 +4287,11 @@ struct LockScreenSettings: View {
             .opacity(showStandardMediaControls ? 1 : 0.5)
 
             Section {
-                Defaults.Toggle("Show lock screen timer", key: .enableLockScreenTimerWidget)
+                Defaults.Toggle(String(localized: "Show lock screen timer"), key: .enableLockScreenTimerWidget)
                     .settingsHighlight(id: highlightID("Show lock screen timer"))
                 Picker("Timer surface", selection: timerSurfaceBinding) {
                     ForEach(LockScreenTimerSurfaceMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(mode.localizedName).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -4349,13 +4349,13 @@ struct LockScreenSettings: View {
             }
 
             Section {
-                Defaults.Toggle("Show lock screen weather", key: .enableLockScreenWeatherWidget)
+                Defaults.Toggle(String(localized: "Show lock screen weather"), key: .enableLockScreenWeatherWidget)
                     .settingsHighlight(id: highlightID("Show lock screen weather"))
 
                 if enableLockScreenWeatherWidget {
                     Picker("Layout", selection: $lockScreenWeatherWidgetStyle) {
                         ForEach(LockScreenWeatherWidgetStyle.allCases) { style in
-                            Text(style.rawValue).tag(style)
+                            Text(style.localizedName).tag(style)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -4377,15 +4377,15 @@ struct LockScreenSettings: View {
                     .pickerStyle(.segmented)
                     .settingsHighlight(id: highlightID("Temperature unit"))
 
-                    Defaults.Toggle("Show location label", key: .lockScreenWeatherShowsLocation)
+                    Defaults.Toggle(String(localized: "Show location label"), key: .lockScreenWeatherShowsLocation)
                         .disabled(lockScreenWeatherWidgetStyle == .circular)
                         .settingsHighlight(id: highlightID("Show location label"))
 
-                    Defaults.Toggle("Show sunrise time", key: .lockScreenWeatherShowsSunrise)
+                    Defaults.Toggle(String(localized: "Show sunrise time"), key: .lockScreenWeatherShowsSunrise)
                         .disabled(lockScreenWeatherWidgetStyle != .inline)
                         .settingsHighlight(id: highlightID("Show sunrise time"))
 
-                    Defaults.Toggle("Show AQI widget", key: .lockScreenWeatherShowsAQI)
+                    Defaults.Toggle(String(localized: "Show AQI widget"), key: .lockScreenWeatherShowsAQI)
                         .disabled(!lockScreenWeatherProviderSource.supportsAirQuality)
                         .settingsHighlight(id: highlightID("Show AQI widget"))
 
@@ -4405,7 +4405,7 @@ struct LockScreenSettings: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Defaults.Toggle("Use colored gauges", key: .lockScreenWeatherUsesGaugeTint)
+                    Defaults.Toggle(String(localized: "Use colored gauges"), key: .lockScreenWeatherUsesGaugeTint)
                         .settingsHighlight(id: highlightID("Use colored gauges"))
                 }
             } header: {
@@ -4416,22 +4416,22 @@ struct LockScreenSettings: View {
             
             if BatteryActivityManager.shared.hasBattery() {
                 Section {
-                    Defaults.Toggle("Show battery indicator", key: .lockScreenBatteryShowsBatteryGauge)
+                    Defaults.Toggle(String(localized: "Show battery indicator"), key: .lockScreenBatteryShowsBatteryGauge)
                         .settingsHighlight(id: highlightID("Show battery indicator"))
                     
                     if lockScreenWeatherShowsBatteryGauge {
-                        Defaults.Toggle("Use MacBook icon when on battery", key: .lockScreenBatteryUsesLaptopSymbol)
+                        Defaults.Toggle(String(localized: "Use MacBook icon when on battery"), key: .lockScreenBatteryUsesLaptopSymbol)
                             .settingsHighlight(id: highlightID("Use MacBook icon when on battery"))
                         
-                        Defaults.Toggle("Show charging status", key: .lockScreenBatteryShowsCharging)
+                        Defaults.Toggle(String(localized: "Show charging status"), key: .lockScreenBatteryShowsCharging)
                             .settingsHighlight(id: highlightID("Show charging status"))
                         
                         if lockScreenWeatherShowsCharging {
-                            Defaults.Toggle("Show charging percentage", key: .lockScreenBatteryShowsChargingPercentage)
+                            Defaults.Toggle(String(localized: "Show charging percentage"), key: .lockScreenBatteryShowsChargingPercentage)
                                 .settingsHighlight(id: highlightID("Show charging percentage"))
                         }
                         
-                        Defaults.Toggle("Show Bluetooth battery", key: .lockScreenBatteryShowsBluetooth)
+                        Defaults.Toggle(String(localized: "Show Bluetooth battery"), key: .lockScreenBatteryShowsBluetooth)
                             .settingsHighlight(id: highlightID("Show Bluetooth battery"))
                     }
                 } header: {
@@ -4442,7 +4442,7 @@ struct LockScreenSettings: View {
             }
 
             Section {
-                Defaults.Toggle("Show focus widget", key: .enableLockScreenFocusWidget)
+                Defaults.Toggle(String(localized: "Show focus widget"), key: .enableLockScreenFocusWidget)
                     .settingsHighlight(id: highlightID("Show focus widget"))
             } header: {
                 Text("Focus Widget")
@@ -4593,9 +4593,9 @@ private struct LockScreenPositioningControls: View {
 
             HStack(alignment: .top, spacing: 24) {
                 offsetColumn(
-                    title: "Weather",
+                    title: String(localized: "Weather"),
                     value: weatherOffset,
-                    resetTitle: "Reset Weather",
+                    resetTitle: String(localized: "Reset Weather"),
                     resetAction: resetWeatherOffset
                 )
 
@@ -4603,9 +4603,9 @@ private struct LockScreenPositioningControls: View {
                     .frame(height: 64)
 
                 offsetColumn(
-                    title: "Timer",
+                    title: String(localized: "Timer"),
                     value: timerOffset,
-                    resetTitle: "Reset Timer",
+                    resetTitle: String(localized: "Reset Timer"),
                     resetAction: resetTimerOffset
                 )
 
@@ -4613,9 +4613,9 @@ private struct LockScreenPositioningControls: View {
                     .frame(height: 64)
 
                 offsetColumn(
-                    title: "Music",
+                    title: String(localized: "Music"),
                     value: musicOffset,
-                    resetTitle: "Reset Music",
+                    resetTitle: String(localized: "Reset Music"),
                     resetAction: resetMusicOffset
                 )
 
@@ -4627,21 +4627,21 @@ private struct LockScreenPositioningControls: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 widthSlider(
-                    title: "Media Panel Width",
+                    title: String(localized: "Media Panel Width"),
                     value: musicWidthBinding,
                     range: musicWidthRange,
-                    resetTitle: "Reset Media Width",
+                    resetTitle: String(localized: "Reset Media Width"),
                     resetAction: resetMusicWidth,
-                    helpText: "Shrinks the lock screen media panel while keeping the expanded view full width."
+                    helpText: String(localized: "Shrinks the lock screen media panel while keeping the expanded view full width.")
                 )
 
                 widthSlider(
-                    title: "Timer Widget Width",
+                    title: String(localized: "Timer Widget Width"),
                     value: timerWidthBinding,
                     range: timerWidthRange,
-                    resetTitle: "Reset Timer Width",
+                    resetTitle: String(localized: "Reset Timer Width"),
                     resetAction: resetTimerWidth,
-                    helpText: "Adjusts the lock screen timer widget width without affecting button sizing."
+                    helpText: String(localized: "Adjusts the lock screen timer widget width without affecting button sizing.")
                 )
             }
         } header: {

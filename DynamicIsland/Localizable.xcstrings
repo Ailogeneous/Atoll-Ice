@@ -99,7 +99,8 @@
             "value" : ""
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     " – %lld" : {
       "localizations" : {
@@ -2374,6 +2375,16 @@
         }
       }
     },
+    "Adjusts the lock screen timer widget width without affecting button sizing." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajusta a largura do widget do temporizador da tela de bloqueio sem afetar o tamanho do botão."
+          }
+        }
+      }
+    },
     "ai" : {
       "localizations" : {
         "pt-BR" : {
@@ -3526,6 +3537,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iqa"
+          }
+        }
+      }
+    },
+    "AQI" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IQA"
           }
         }
       }
@@ -5492,8 +5513,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "chime"
+            "state" : "translated",
+            "value" : "toque de notificação"
           }
         }
       }
@@ -5878,6 +5899,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "clássico"
+          }
+        }
+      }
+    },
+    "Classic" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clássico"
           }
         }
       }
@@ -8458,8 +8489,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Exibe o estado atual do Foco acima da cápsula climática sempre que a detecção de Foco está ativada."
+            "state" : "translated",
+            "value" : "Exibe o estado atual do Foco acima da cápsula de clima quando a detecção de Foco estiver ativada."
           }
         }
       }
@@ -8947,6 +8978,9 @@
           }
         }
       }
+    },
+    "EAQI" : {
+      "shouldTranslate" : false
     },
     "Easily copy, store, and manage your most-used content. Upgrade now for advanced features like multi-item storage and quick access!" : {
       "localizations" : {
@@ -9510,8 +9544,8 @@
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Enable haptics"
+            "state" : "translated",
+            "value" : "Ativar feedback tátil"
           }
         },
         "ru" : {
@@ -9812,8 +9846,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ative a cápsula da bateria e configure seu layout."
+            "state" : "translated",
+            "value" : "Ative a cápsula da bateria e configura seu layout."
           }
         }
       }
@@ -9914,8 +9948,8 @@
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Utilização do motor"
+            "state" : "translated",
+            "value" : "Utilização da GPU"
           }
         }
       }
@@ -10576,8 +10610,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "eyedropper"
+            "state" : "translated",
+            "value" : "conta-gotas"
           }
         }
       }
@@ -11437,6 +11471,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "vidro"
+          }
+        }
+      }
+    },
+    "Glass" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vidro"
           }
         }
       }
@@ -12897,8 +12941,8 @@
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Inline"
+            "state" : "translated",
+            "value" : "em linha"
           }
         },
         "ru" : {
@@ -12931,8 +12975,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Inline snapshot preview"
+            "state" : "translated",
+            "value" : "Pré-visualização de snapshot em linha"
           }
         }
       }
@@ -13056,8 +13100,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Os rótulos são forçados a compactar o texto ligado/desligado enquanto o modo brief toast está ativado."
+            "state" : "translated",
+            "value" : "Os rótulos usam textos compactos de ligado/desligado enquanto o modo de notificação breve estiver ativado."
           }
         }
       }
@@ -13691,7 +13735,8 @@
             "value" : "Lottie JSON 链接"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "Low" : {
       "comment" : "Low battery level label",
@@ -14009,8 +14054,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "marquee"
+            "state" : "translated",
+            "value" : "texto rolante"
           }
         }
       }
@@ -14799,6 +14844,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Painel de Mídia"
+          }
+        }
+      }
+    },
+    "Media Panel Width" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Largura do Painel de Mídia"
           }
         }
       }
@@ -15926,6 +15981,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mover para Cima"
+          }
+        }
+      }
+    },
+    "Music" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Música"
           }
         }
       }
@@ -17923,7 +17988,8 @@
             "value" : "open meteo"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "Open Model Settings" : {
       "localizations" : {
@@ -19602,6 +19668,26 @@
         }
       }
     },
+    "Reset Media Width" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir a largura da mídia"
+          }
+        }
+      }
+    },
+    "Reset Music" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir Música"
+          }
+        }
+      }
+    },
     "Reset Notch Experiences" : {
       "comment" : "A menu item that resets all notch experiences for a particular app.",
       "isCommentAutoGenerated" : true,
@@ -19622,6 +19708,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redefinir Limites de Taxa"
+          }
+        }
+      }
+    },
+    "Reset Timer" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir Temporizador"
+          }
+        }
+      }
+    },
+    "Reset Timer Width" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir Largura do Temporizador"
           }
         }
       }
@@ -19650,6 +19756,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Redefinir para os padrões"
+          }
+        }
+      }
+    },
+    "Reset Weather" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir Tempo"
           }
         }
       }
@@ -19999,8 +20115,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Screen Padding: %lldpx"
+            "state" : "translated",
+            "value" : "Espaçamento da tela: %lldpx"
           }
         }
       }
@@ -21240,6 +21356,16 @@
         }
       }
     },
+    "Show focus widget" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir Widget de Foco"
+          }
+        }
+      }
+    },
     "Show full event titles" : {
       "comment" : "A toggle that shows or hides the full event titles in the calendar view",
       "isCommentAutoGenerated" : true,
@@ -21616,6 +21742,16 @@
         }
       }
     },
+    "Show sunrise time" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar a hora do nascer do sol"
+          }
+        }
+      }
+    },
     "Show the active Focus name inside the indicator." : {
       "comment" : "A description of why the \"Show Focus Label\" toggle is disabled when the \"Show Focus as brief toast\" toggle is enabled.",
       "isCommentAutoGenerated" : true,
@@ -21670,6 +21806,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostra o temporizador do relógio do sistema no notch quando disponível. Requer permissão de Acessibilidade para ler o item de status."
+          }
+        }
+      }
+    },
+    "Shrinks the lock screen media panel while keeping the expanded view full width." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encolhe o painel de mídia da tela de bloqueio, mantendo a largura total da visualização expandida."
           }
         }
       }
@@ -22060,8 +22206,8 @@
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Sneak Peek Style"
+            "state" : "translated",
+            "value" : "Estilo de prévia rápida"
           }
         },
         "ru" : {
@@ -23447,8 +23593,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Timer glass material"
+            "state" : "translated",
+            "value" : "Material do vidro do temporizador"
           }
         }
       }
@@ -23459,8 +23605,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Timer liquid mode"
+            "state" : "translated",
+            "value" : "Modo fluido do temporizador"
           }
         }
       }
@@ -23563,6 +23709,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Variante do widget do temporizador"
+          }
+        }
+      }
+    },
+    "Timer Widget Width" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Largura do Widget do Temporizador"
           }
         }
       }
@@ -24525,8 +24681,8 @@
         },
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Use o espectrograma visualizador de música"
+            "state" : "translated",
+            "value" : "Usar espectrograma no visualizador de música"
           }
         },
         "ru" : {
@@ -24639,8 +24795,8 @@
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Usa o tratamento de desfoque fosco enquanto o modo de vidro está ativado."
+            "state" : "translated",
+            "value" : "Aplica o efeito de desfoque fosco quando o modo vidro está ativado."
           }
         }
       }
@@ -25489,14 +25645,7 @@
       }
     },
     "wttr" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "wttr"
-          }
-        }
-      }
+      "shouldTranslate" : false
     },
     "You" : {
       "localizations" : {

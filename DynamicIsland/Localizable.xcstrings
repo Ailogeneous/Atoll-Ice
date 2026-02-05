@@ -9217,6 +9217,16 @@
         }
       }
     },
+    "Enable download detection" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilitar detecção de download"
+          }
+        }
+      }
+    },
     "Enable Dynamic Island media controls to manage the lock screen panel." : {
       "localizations" : {
         "pt-BR" : {
@@ -17855,6 +17865,16 @@
         }
       }
     },
+    "Percentage" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porcentagem"
+          }
+        }
+      }
+    },
     "percentages" : {
       "localizations" : {
         "pt-BR" : {
@@ -18359,6 +18379,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "progresso"
+          }
+        }
+      }
+    },
+    "Progress" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progresso"
           }
         }
       }

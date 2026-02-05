@@ -83,6 +83,17 @@ enum DownloadIndicatorStyle: String, Defaults.Serializable {
     case progress = "Progress"
     case percentage = "Percentage"
     case circle = "Circle"
+    
+    var localizedName: String {
+        switch self {
+            case .progress:
+                return String(localized: "Progress")
+            case .percentage:
+                return String(localized: "Percentage")
+            case .circle:
+                return String(localized: "Circle")
+        }
+    }
 }
 
 enum DownloadIconStyle: String, Defaults.Serializable {

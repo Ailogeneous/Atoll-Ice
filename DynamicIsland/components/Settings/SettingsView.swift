@@ -1805,10 +1805,10 @@ struct Downloads: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable download detection", key: .enableDownloadListener)
+                Defaults.Toggle(String(localized: "Enable download detection"), key: .enableDownloadListener)
                     .settingsHighlight(id: highlightID("Enable download detection"))
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Download indicator style")
+                    Text(String(localized: "Download indicator style"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                     
@@ -1876,7 +1876,7 @@ struct Downloads: View {
                     }
                 }
                 
-                Text(style.rawValue)
+                Text(style.localizedName)
                     .font(.caption)
                     .fontWeight(.medium)
                     .lineLimit(2)

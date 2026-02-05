@@ -1710,6 +1710,16 @@
         }
       }
     },
+    "Accent" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destaque"
+          }
+        }
+      }
+    },
     "Accent color" : {
       "localizations" : {
         "pt-BR" : {
@@ -7251,6 +7261,16 @@
         }
       }
     },
+    "Custom Focus metadata" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metadados de Foco Customizado"
+          }
+        }
+      }
+    },
     "Custom height" : {
       "localizations" : {
         "ar" : {
@@ -9208,6 +9228,16 @@
         }
       }
     },
+    "Enable Camera Detection" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar Detecção de Câmera"
+          }
+        }
+      }
+    },
     "Enable Clipboard Manager" : {
       "localizations" : {
         "pt-BR" : {
@@ -9344,6 +9374,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ative extensões para permitir que aplicativos de terceiros exibam atividades ao vivo e widgets de tela de bloqueio no Atoll."
+          }
+        }
+      }
+    },
+    "Enable Focus Detection" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar Detecção de Foco"
           }
         }
       }
@@ -9532,6 +9572,16 @@
         }
       }
     },
+    "Enable Microphone Detection" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilitar Detecção de Microfone"
+          }
+        }
+      }
+    },
     "Enable Minimalistic UI" : {
       "localizations" : {
         "pt-BR" : {
@@ -9698,6 +9748,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ative a funcionalidade de seleção de cores da tela. Use Cmd+Shift+P para acessar rapidamente o seletor de cores."
+          }
+        }
+      }
+    },
+    "Enable Screen Recording Detection" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar Detecção de Gravação de Tela"
           }
         }
       }
@@ -10765,6 +10825,16 @@
         }
       }
     },
+    "Full Disk Access unlocks custom Focus icons, colors, and labels. Standard Focus detection still works without it—grant access only if you need personalized indicators." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Acesso Total ao Disco desbloqueia ícones, cores e rótulos personalizados do Foco. A detecção de foco padrão ainda funciona sem ele - conceda acesso apenas se você precisar de indicadores personalizados."
+          }
+        }
+      }
+    },
     "Fully charged" : {
       "comment" : "Charging fallback label when already charged",
       "localizations" : {
@@ -11684,6 +11754,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "cinza"
+          }
+        }
+      }
+    },
+    "Green" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verde"
           }
         }
       }
@@ -20994,6 +21074,26 @@
         }
       }
     },
+    "Show Caps Lock Indicator" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Indicador de Caps Lock"
+          }
+        }
+      }
+    },
+    "Show Caps Lock label" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar rótulo Caps Lock"
+          }
+        }
+      }
+    },
     "Show Change Media Output control" : {
       "localizations" : {
         "pt-BR" : {
@@ -21106,6 +21206,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostrar controles flutuantes de pausa/parada"
+          }
+        }
+      }
+    },
+    "Show Focus as brief toast" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Foco como um breve visualização"
+          }
+        }
+      }
+    },
+    "Show Focus Indicator" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Indicador de Foco"
+          }
+        }
+      }
+    },
+    "Show Focus Label" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Rótulo do Foco"
           }
         }
       }
@@ -21460,6 +21590,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostrar o progresso"
+          }
+        }
+      }
+    },
+    "Show Recording Indicator" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Indicador de Gravação"
           }
         }
       }

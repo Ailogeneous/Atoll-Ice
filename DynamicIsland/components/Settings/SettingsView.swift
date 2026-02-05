@@ -3298,10 +3298,10 @@ struct LiveActivitiesSettings: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable Screen Recording Detection", key: .enableScreenRecordingDetection)
+                Defaults.Toggle(String(localized: "Enable Screen Recording Detection"), key: .enableScreenRecordingDetection)
                     .settingsHighlight(id: highlightID("Enable Screen Recording Detection"))
 
-                Defaults.Toggle("Show Recording Indicator", key: .showRecordingIndicator)
+                Defaults.Toggle(String(localized: "Show Recording Indicator"), key: .showRecordingIndicator)
                     .disabled(!enableScreenRecordingDetection)
                     .settingsHighlight(id: highlightID("Show Recording Indicator"))
 
@@ -3332,30 +3332,30 @@ struct LiveActivitiesSettings: View {
             Section {
                 if !fullDiskAccessPermission.isAuthorized {
                     SettingsPermissionCallout(
-                        title: "Custom Focus metadata",
-                        message: "Full Disk Access unlocks custom Focus icons, colors, and labels. Standard Focus detection still works without it—grant access only if you need personalized indicators.",
+                        title: String(localized: "Custom Focus metadata"),
+                        message: String(localized: "Full Disk Access unlocks custom Focus icons, colors, and labels. Standard Focus detection still works without it—grant access only if you need personalized indicators."),
                         icon: "externaldrive.fill",
                         iconColor: .purple,
-                        requestButtonTitle: "Request Full Disk Access",
-                        openSettingsButtonTitle: "Open Privacy & Security",
+                        requestButtonTitle: String(localized: "Request Full Disk Access"),
+                        openSettingsButtonTitle: String(localized: "Open Privacy & Security"),
                         requestAction: { fullDiskAccessPermission.requestAccessPrompt() },
                         openSettingsAction: { fullDiskAccessPermission.openSystemSettings() }
                     )
                 }
 
-                Defaults.Toggle("Enable Focus Detection", key: .enableDoNotDisturbDetection)
+                Defaults.Toggle(String(localized: "Enable Focus Detection"), key: .enableDoNotDisturbDetection)
                     .settingsHighlight(id: highlightID("Enable Focus Detection"))
 
-                Defaults.Toggle("Show Focus Indicator", key: .showDoNotDisturbIndicator)
+                Defaults.Toggle(String(localized: "Show Focus Indicator"), key: .showDoNotDisturbIndicator)
                     .disabled(!enableDoNotDisturbDetection)
                     .settingsHighlight(id: highlightID("Show Focus Indicator"))
 
-                Defaults.Toggle("Show Focus Label", key: .showDoNotDisturbLabel)
+                Defaults.Toggle(String(localized: "Show Focus Label"), key: .showDoNotDisturbLabel)
                     .disabled(!enableDoNotDisturbDetection || focusIndicatorNonPersistent)
                     .help(focusIndicatorNonPersistent ? "Labels are forced to compact on/off text while brief toast mode is enabled." : "Show the active Focus name inside the indicator.")
                     .settingsHighlight(id: highlightID("Show Focus Label"))
 
-                Defaults.Toggle("Show Focus as brief toast", key: .focusIndicatorNonPersistent)
+                Defaults.Toggle(String(localized: "Show Focus as brief toast"), key: .focusIndicatorNonPersistent)
                     .disabled(!enableDoNotDisturbDetection)
                     .settingsHighlight(id: highlightID("Show Focus as brief toast"))
                     .help("When enabled, Focus appears briefly (on/off) and then collapses instead of staying visible.")
@@ -3392,10 +3392,10 @@ struct LiveActivitiesSettings: View {
             }
 
             Section {
-                Defaults.Toggle("Show Caps Lock Indicator", key: .enableCapsLockIndicator)
+                Defaults.Toggle(String(localized: "Show Caps Lock Indicator"), key: .enableCapsLockIndicator)
                     .settingsHighlight(id: highlightID("Show Caps Lock Indicator"))
 
-                Defaults.Toggle("Show Caps Lock label", key: .showCapsLockLabel)
+                Defaults.Toggle(String(localized: "Show Caps Lock label"), key: .showCapsLockLabel)
                     .disabled(!Defaults[.enableCapsLockIndicator])
                     .settingsHighlight(id: highlightID("Show Caps Lock label"))
 
@@ -3414,9 +3414,9 @@ struct LiveActivitiesSettings: View {
             }
 
             Section {
-                Defaults.Toggle("Enable Camera Detection", key: .enableCameraDetection)
+                Defaults.Toggle(String(localized: "Enable Camera Detection"), key: .enableCameraDetection)
                     .settingsHighlight(id: highlightID("Enable Camera Detection"))
-                Defaults.Toggle("Enable Microphone Detection", key: .enableMicrophoneDetection)
+                Defaults.Toggle(String(localized: "Enable Microphone Detection"), key: .enableMicrophoneDetection)
                     .settingsHighlight(id: highlightID("Enable Microphone Detection"))
 
                 if privacyManager.isMonitoring {
@@ -3473,7 +3473,7 @@ struct LiveActivitiesSettings: View {
             }
 
             Section {
-                Defaults.Toggle("Enable reminder live activity", key: .enableReminderLiveActivity)
+                Defaults.Toggle(String(localized: "Enable reminder live activity"), key: .enableReminderLiveActivity)
                     .settingsHighlight(id: highlightID("Enable reminder live activity"))
             } header: {
                 Text("Reminder Live Activity")

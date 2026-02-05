@@ -355,11 +355,11 @@ enum CapsLockIndicatorTintMode: String, CaseIterable, Identifiable, Defaults.Ser
     var displayName: String {
         switch self {
         case .green:
-            return "Green"
+            return String(localized: "Green")
         case .accent:
-            return "Accent"
+            return String(localized: "Accent")
         case .white:
-            return "White"
+            return String(localized: "White")
         }
     }
 

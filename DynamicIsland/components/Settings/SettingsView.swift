@@ -2014,6 +2014,15 @@ private struct HUDAndOSDSettingsView: View {
         case circular = "Circular"
         
         var id: String { rawValue }
+        
+        var title: String {
+            switch self {
+                case .hud: return String(localized: "Dynamic Island HUD")
+                case .osd: return String(localized: "Custom OSD")
+                case .vertical: return String(localized: "Vertical Bar")
+                case .circular: return String(localized: "Circular")
+            }
+        }
     }
 
     private var paneBackgroundColor: Color {
@@ -2024,7 +2033,7 @@ private struct HUDAndOSDSettingsView: View {
         VStack(spacing: 20) {
             HStack(spacing: 16) {
                 HUDSelectionCard(
-                    title: "Dynamic Island",
+                    title: String(localized: "Dynamic Island"),
                     isSelected: selectedTab == .hud,
                     action: {
                         selectedTab = .hud
@@ -2064,7 +2073,7 @@ private struct HUDAndOSDSettingsView: View {
                 }
                 
                 HUDSelectionCard(
-                    title: "Custom OSD",
+                    title: String(localized: "Custom OSD"),
                     isSelected: selectedTab == .osd,
                     action: {
                         selectedTab = .osd
@@ -2106,7 +2115,7 @@ private struct HUDAndOSDSettingsView: View {
                 }
                 
                 HUDSelectionCard(
-                    title: "Vertical Bar",
+                    title: String(localized: "Vertical Bar"),
                     isSelected: selectedTab == .vertical,
                     action: {
                         selectedTab = .vertical
@@ -2149,7 +2158,7 @@ private struct HUDAndOSDSettingsView: View {
                 }
 
                 HUDSelectionCard(
-                    title: "Circular",
+                    title: String(localized: "Circular"),
                     isSelected: selectedTab == .circular,
                     action: {
                         selectedTab = .circular
@@ -2489,7 +2498,7 @@ struct HUD: View {
             if !hasAccessibilityPermission {
                 Section {
                     SettingsPermissionCallout(
-                        message: "Accessibility permission lets Dynamic Island replace the native volume, brightness, and keyboard HUDs.",
+                        message: String(localized: "Accessibility permission lets Dynamic Island replace the native volume, brightness, and keyboard HUDs."),
                         requestAction: { accessibilityPermission.requestAuthorizationPrompt() },
                         openSettingsAction: { accessibilityPermission.openSystemSettings() }
                     )
@@ -2515,7 +2524,7 @@ struct HUD: View {
             }
 
             Section {
-                Defaults.Toggle("Play feedback when volume is changed", key: .playVolumeChangeFeedback)
+                Defaults.Toggle(String(localized: "Play feedback when volume is changed"), key: .playVolumeChangeFeedback)
                     .settingsHighlight(id: highlightID("Play feedback when volume is changed"))
                     .help("Plays the supplied feedback clip whenever you press the hardware volume keys.")
             } header: {
@@ -2527,16 +2536,16 @@ struct HUD: View {
             }
 
             Section {
-                Defaults.Toggle("Color-coded volume display", key: .useColorCodedVolumeDisplay)
+                Defaults.Toggle(String(localized: "Color-coded volume display"), key: .useColorCodedVolumeDisplay)
                     .disabled(colorCodingDisabled)
                     .settingsHighlight(id: highlightID("Color-coded volume display"))
 
                 if !colorCodingDisabled && (Defaults[.useColorCodedBatteryDisplay] || Defaults[.useColorCodedVolumeDisplay]) {
-                    Defaults.Toggle("Smooth color transitions", key: .useSmoothColorGradient)
+                    Defaults.Toggle(String(localized: "Smooth color transitions"), key: .useSmoothColorGradient)
                         .settingsHighlight(id: highlightID("Smooth color transitions"))
                 }
 
-                Defaults.Toggle("Show percentages beside progress bars", key: .showProgressPercentages)
+                Defaults.Toggle(String(localized: "Show percentages beside progress bars"), key: .showProgressPercentages)
                     .settingsHighlight(id: highlightID("Show percentages beside progress bars"))
             } header: {
                 Text("Dynamic Island Progress Bars")
@@ -2581,9 +2590,9 @@ struct HUD: View {
                         .tag(ProgressBarStyle.segmented)
                 }
                 .settingsHighlight(id: highlightID("Progressbar style"))
-                Defaults.Toggle("Enable glowing effect", key: .systemEventIndicatorShadow)
+                Defaults.Toggle(String(localized: "Enable glowing effect"), key: .systemEventIndicatorShadow)
                     .settingsHighlight(id: highlightID("Enable glowing effect"))
-                Defaults.Toggle("Use accent color", key: .systemEventIndicatorUseAccent)
+                Defaults.Toggle(String(localized: "Use accent color"), key: .systemEventIndicatorUseAccent)
                     .settingsHighlight(id: highlightID("Use accent color"))
             } header: {
                 HStack {
@@ -3163,12 +3172,12 @@ struct Shelf: View {
             if !fullDiskAccessPermission.isAuthorized {
                 Section {
                     SettingsPermissionCallout(
-                        title: "Full Disk Access required",
-                        message: "Grant Full Disk Access so the Shelf can index and move files outside the app sandbox.",
+                        title: String(localized: "Full Disk Access required"),
+                        message: String(localized: "Grant Full Disk Access so the Shelf can index and move files outside the app sandbox."),
                         icon: "externaldrive.fill",
                         iconColor: .purple,
-                        requestButtonTitle: "Request Full Disk Access",
-                        openSettingsButtonTitle: "Open Privacy & Security",
+                        requestButtonTitle: String(localized: "Request Full Disk Access"),
+                        openSettingsButtonTitle: String(localized: "Open Privacy & Security"),
                         requestAction: { fullDiskAccessPermission.requestAccessPrompt() },
                         openSettingsAction: { fullDiskAccessPermission.openSystemSettings() }
                     )
@@ -3178,11 +3187,11 @@ struct Shelf: View {
             }
 
             Section {
-                Defaults.Toggle("Enable shelf", key: .dynamicShelf)
+                Defaults.Toggle(String(localized: "Enable shelf"), key: .dynamicShelf)
                     .disabled(!fullDiskAccessPermission.isAuthorized)
                     .settingsHighlight(id: highlightID("Enable shelf"))
 
-                Defaults.Toggle("Open shelf tab by default if items added", key: .openShelfByDefault)
+                Defaults.Toggle(String(localized: "Open shelf tab by default if items added"), key: .openShelfByDefault)
                     .settingsHighlight(id: highlightID("Open shelf tab by default if items added"))
 
                 Defaults.Toggle(key: .expandedDragDetection) {
@@ -5043,7 +5052,7 @@ struct Shortcuts: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable global keyboard shortcuts", key: .enableShortcuts)
+                Defaults.Toggle(String(localized: "Enable global keyboard shortcuts"), key: .enableShortcuts)
                     .settingsHighlight(id: highlightID("Enable global keyboard shortcuts"))
             } header: {
                 Text("General")
@@ -6702,12 +6711,12 @@ struct SettingsPermissionCallout: View {
     let openSettingsAction: () -> Void
 
     init(
-        title: String = "Accessibility permission required",
+        title: String = String(localized: "Accessibility permission required"),
         message: String,
         icon: String = "exclamationmark.triangle.fill",
         iconColor: Color = .orange,
-        requestButtonTitle: String = "Request Access",
-        openSettingsButtonTitle: String = "Open Settings",
+        requestButtonTitle: String = String(localized: "Request Access"),
+        openSettingsButtonTitle: String = String(localized: "Open Settings"),
         requestAction: @escaping () -> Void,
         openSettingsAction: @escaping () -> Void
     ) {

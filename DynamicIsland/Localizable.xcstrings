@@ -1842,6 +1842,26 @@
         }
       }
     },
+    "Accessibility permission lets Dynamic Island replace the native volume, brightness, and keyboard HUDs." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A permissão de acessibilidade permite que o Dynamic Island substitua o volume nativo, o brilho e os HUDs do teclado."
+          }
+        }
+      }
+    },
+    "Accessibility permission required" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissão de acessibilidade necessária"
+          }
+        }
+      }
+    },
     "Actions" : {
       "localizations" : {
         "fr" : {
@@ -5663,7 +5683,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha qual serviço usar ao compartilhar arquivos da prateleira. Arraste os arquivos para a prateleira ou clique no botão da prateleira para escolher os arquivos."
+            "value" : "Escolha qual serviço usar ao compartilhar arquivos da mesa. Arraste os arquivos para a mesa ou clique no botão da mesa para escolher os arquivos."
           }
         }
       }
@@ -5675,7 +5695,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha quais controles de sistema devem exibir janelas OSD personalizadas."
+            "value" : "Escolha quais controles de sistema devem exibir janelas OSD customizadas."
           }
         }
       }
@@ -5837,6 +5857,9 @@
       }
     },
     "circular" : {
+      "shouldTranslate" : false
+    },
+    "Circular" : {
       "shouldTranslate" : false
     },
     "classic" : {
@@ -7587,7 +7610,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OSD personalizado"
+            "value" : "OSD Customizado"
           }
         }
       }
@@ -7599,7 +7622,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O recurso OSD personalizado requer o macOS 15 ou posterior."
+            "value" : "O recurso OSD customizado requer o macOS 15 ou posterior."
           }
         }
       }
@@ -8849,6 +8872,12 @@
           }
         }
       }
+    },
+    "Dynamic Island" : {
+      "shouldTranslate" : false
+    },
+    "Dynamic Island HUD" : {
+      "shouldTranslate" : false
     },
     "Dynamic Island Progress Bars" : {
       "comment" : "A section header that lists the options for customizing the appearance of the progress bars displayed by Dynamic Island.",
@@ -10526,7 +10555,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os arquivos deixados na prateleira serão compartilhados através deste serviço"
+            "value" : "Os arquivos deixados na mesa serão compartilhados através deste serviço"
           }
         }
       }
@@ -10722,6 +10751,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Acesso Total"
+          }
+        }
+      }
+    },
+    "Full Disk Access required" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acesso Completo ao Disco Necessário"
           }
         }
       }
@@ -11589,6 +11628,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "渐变"
+          }
+        }
+      }
+    },
+    "Grant Full Disk Access so the Shelf can index and move files outside the app sandbox." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conceda Acesso Total ao Disco para que a Mesa possa indexar e mover arquivos para fora da sandbox do aplicativo."
           }
         }
       }
@@ -17816,6 +17865,26 @@
         }
       }
     },
+    "Open Privacy & Security" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Privacidade e Segurança"
+          }
+        }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Ajustes"
+          }
+        }
+      }
+    },
     "Open shelf tab by default if items added" : {
       "localizations" : {
         "pt-BR" : {
@@ -18123,6 +18192,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Itens fixados"
+          }
+        }
+      }
+    },
+    "Play feedback when volume is changed" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduzir feedback quando o volume for alterado"
           }
         }
       }
@@ -19336,7 +19415,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remova da prateleira depois de arrastar"
+            "value" : "Remova da mesa depois de arrastar"
           }
         }
       }
@@ -19362,7 +19441,17 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Requer Acesso"
+            "value" : "Solicitar Acesso"
+          }
+        }
+      }
+    },
+    "Request Full Disk Access" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitar Acesso Completo ao Disco"
           }
         }
       }
@@ -20676,7 +20765,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prateleira"
+            "value" : "Mesa"
           }
         },
         "ru" : {
@@ -24641,6 +24730,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "版本信息"
+          }
+        }
+      }
+    },
+    "Vertical Bar" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barra Vertical"
           }
         }
       }

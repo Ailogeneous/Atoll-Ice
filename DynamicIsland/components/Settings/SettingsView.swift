@@ -1762,19 +1762,19 @@ struct Charge: View {
         Form {
             if BatteryActivityManager.shared.hasBattery() {
                 Section {
-                    Defaults.Toggle("Show battery indicator", key: .showBatteryIndicator)
+                    Defaults.Toggle(String(localized: "Show battery indicator"), key: .showBatteryIndicator)
                         .settingsHighlight(id: highlightID("Show battery indicator"))
-                    Defaults.Toggle("Show power status notifications", key: .showPowerStatusNotifications)
+                    Defaults.Toggle(String(localized: "Show power status notifications"), key: .showPowerStatusNotifications)
                         .settingsHighlight(id: highlightID("Show power status notifications"))
-                    Defaults.Toggle("Play low battery alert sound", key: .playLowBatteryAlertSound)
+                    Defaults.Toggle(String(localized: "Play low battery alert sound"), key: .playLowBatteryAlertSound)
                         .settingsHighlight(id: highlightID("Play low battery alert sound"))
                 } header: {
                     Text("General")
                 }
                 Section {
-                    Defaults.Toggle("Show battery percentage", key: .showBatteryPercentage)
+                    Defaults.Toggle(String(localized: "Show battery percentage"), key: .showBatteryPercentage)
                         .settingsHighlight(id: highlightID("Show battery percentage"))
-                    Defaults.Toggle("Show power status icons", key: .showPowerStatusIcons)
+                    Defaults.Toggle(String(localized: "Show power status icons"), key: .showPowerStatusIcons)
                         .settingsHighlight(id: highlightID("Show power status icons"))
                 } header: {
                     Text("Battery Information")

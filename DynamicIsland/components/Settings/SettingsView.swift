@@ -6106,7 +6106,7 @@ struct ClipboardSettings: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable Clipboard Manager", key: .enableClipboardManager)
+                Defaults.Toggle(String(localized: "Enable Clipboard Manager"), key: .enableClipboardManager)
                     .settingsHighlight(id: highlightID("Enable Clipboard Manager"))
                     .onChange(of: enableClipboardManager) { _, enabled in
                         if enabled {

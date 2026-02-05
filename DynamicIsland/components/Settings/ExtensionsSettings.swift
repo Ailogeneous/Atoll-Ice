@@ -61,32 +61,32 @@ struct ExtensionsSettingsView: View {
     
     private var globalTogglesSection: some View {
         Section {
-            Defaults.Toggle("Enable third-party extensions", key: .enableThirdPartyExtensions)
+            Defaults.Toggle(String(localized:"Enable third-party extensions"), key: .enableThirdPartyExtensions)
                 .settingsHighlight(id: highlightID("Enable third-party extensions"))
             
             if Defaults[.enableThirdPartyExtensions] {
-                Defaults.Toggle("Allow extension live activities", key: .enableExtensionLiveActivities)
+                Defaults.Toggle(String(localized:"Allow extension live activities"), key: .enableExtensionLiveActivities)
                     .settingsHighlight(id: highlightID("Allow extension live activities"))
                 
-                Defaults.Toggle("Allow extension lock screen widgets", key: .enableExtensionLockScreenWidgets)
+                                Defaults.Toggle(String(localized:"Allow extension lock screen widgets"), key: .enableExtensionLockScreenWidgets)
                     .settingsHighlight(id: highlightID("Allow extension lock screen widgets"))
 
-                Defaults.Toggle("Allow extension notch experiences", key: .enableExtensionNotchExperiences)
+                                                Defaults.Toggle(String(localized:"Allow extension notch experiences"), key: .enableExtensionNotchExperiences)
                     .settingsHighlight(id: highlightID("Allow extension notch experiences"))
 
                 if Defaults[.enableExtensionNotchExperiences] {
                     VStack(alignment: .leading, spacing: 8) {
-                        Defaults.Toggle("Show extension tabs", key: .enableExtensionNotchTabs)
+                        Defaults.Toggle(String(localized:"Show extension tabs"), key: .enableExtensionNotchTabs)
                             .tint(.accentColor)
-                        Defaults.Toggle("Allow minimalistic overrides", key: .enableExtensionNotchMinimalisticOverrides)
+                        Defaults.Toggle(String(localized:"Allow minimalistic overrides"), key: .enableExtensionNotchMinimalisticOverrides)
                             .tint(.accentColor)
-                        Defaults.Toggle("Allow interactive web content", key: .enableExtensionNotchInteractiveWebViews)
+                        Defaults.Toggle(String(localized:"Allow interactive web content"), key: .enableExtensionNotchInteractiveWebViews)
                             .tint(.accentColor)
                     }
                     .padding(.leading, 4)
                 }
                 
-                Defaults.Toggle("Enable extension diagnostics logging", key: .extensionDiagnosticsLoggingEnabled)
+                Defaults.Toggle(String(localized:"Enable extension diagnostics logging"), key: .extensionDiagnosticsLoggingEnabled)
                     .settingsHighlight(id: highlightID("Enable extension diagnostics logging"))
             }
         } header: {

@@ -5322,7 +5322,7 @@ struct TimerSettings: View {
     @ViewBuilder
     private var timerFeatureSection: some View {
         Section {
-            Defaults.Toggle("Enable timer feature", key: .enableTimerFeature)
+            Defaults.Toggle(String(localized: "Enable timer feature"), key: .enableTimerFeature)
                 .settingsHighlight(id: highlightID("Enable timer feature"))
 
             if enableTimerFeature {
@@ -5377,11 +5377,11 @@ struct TimerSettings: View {
     @ViewBuilder
     private var lockScreenIntegrationSection: some View {
         Section {
-            Defaults.Toggle("Show lock screen timer widget", key: .enableLockScreenTimerWidget)
+            Defaults.Toggle(String(localized:"Show lock screen timer widget"), key: .enableLockScreenTimerWidget)
                 .settingsHighlight(id: highlightID("Show lock screen timer widget"))
             Picker("Timer surface", selection: timerSurfaceBinding) {
                 ForEach(LockScreenTimerSurfaceMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.localizedName).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
@@ -5392,7 +5392,7 @@ struct TimerSettings: View {
             if timerGlassModeIsGlass {
                 Picker("Timer glass material", selection: $lockScreenTimerGlassStyle) {
                     ForEach(LockScreenGlassStyle.allCases) { style in
-                        Text(style.rawValue).tag(style)
+                        Text(style.localizedName).tag(style)
                     }
                 }
                 .disabled(!enableLockScreenTimerWidget)
@@ -5452,9 +5452,9 @@ struct TimerSettings: View {
                 Text("Default Custom Timer")
                     .font(.headline)
 
-                TimerDurationStepperRow(title: "Hours", value: $customHours, range: 0...23)
-                TimerDurationStepperRow(title: "Minutes", value: $customMinutes, range: 0...59)
-                TimerDurationStepperRow(title: "Seconds", value: $customSeconds, range: 0...59)
+                TimerDurationStepperRow(title: String(localized:"Hours"), value: $customHours, range: 0...23)
+                TimerDurationStepperRow(title: String(localized:"Minutes"), value: $customMinutes, range: 0...59)
+                TimerDurationStepperRow(title: String(localized:"Seconds"), value: $customSeconds, range: 0...59)
 
                 HStack {
                     Text("Current default:")
@@ -5504,7 +5504,7 @@ struct TimerSettings: View {
 
             Picker("Progress style", selection: $progressStyle) {
                 ForEach(TimerProgressStyle.allCases) { style in
-                    Text(style.rawValue).tag(style)
+                    Text(style.localizedName).tag(style)
                 }
             }
             .pickerStyle(.segmented)
@@ -5794,9 +5794,9 @@ private struct TimerPresetEditorRow: View {
             }
             
             HStack(spacing: 16) {
-                TimerPresetComponentControl(title: "Hours", value: hoursBinding, range: 0...23)
-                TimerPresetComponentControl(title: "Minutes", value: minutesBinding, range: 0...59)
-                TimerPresetComponentControl(title: "Seconds", value: secondsBinding, range: 0...59)
+                TimerPresetComponentControl(title: String(localized:"Hours"), value: hoursBinding, range: 0...23)
+                TimerPresetComponentControl(title: String(localized:"Minutes"), value: minutesBinding, range: 0...59)
+                TimerPresetComponentControl(title: String(localized:"Seconds"), value: secondsBinding, range: 0...59)
             }
             
             ColorPicker("Accent colour", selection: colorBinding, supportsOpacity: false)

@@ -462,8 +462,8 @@ enum TimerIconColorMode: String, CaseIterable, Identifiable, Defaults.Serializab
     
     var displayName: String {
         switch self {
-        case .adaptive: return "Adaptive gradient"
-        case .solid: return "Solid colour"
+        case .adaptive: return String(localized:"Adaptive gradient")
+        case .solid: return String(localized:"Solid colour")
         }
     }
 }
@@ -473,6 +473,13 @@ enum TimerProgressStyle: String, CaseIterable, Identifiable, Defaults.Serializab
     case ring = "Ring"
     
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .bar: return String(localized:"Bar")
+        case .ring: return String(localized:"Ring")
+        }
+    }
 }
 
 enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Serializable {

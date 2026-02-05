@@ -717,15 +717,75 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .media, title: "Enable album art parallax effect", keywords: ["parallax", "parallax effect", "album art"], highlightID: SettingsTab.media.highlightID(for: "Enable album art parallax effect")),
 
             // Calendar
-            SettingsSearchEntry(tab: .calendar, title: "Show calendar", keywords: ["calendar", "events"], highlightID: SettingsTab.calendar.highlightID(for: "Show calendar")),
-            SettingsSearchEntry(tab: .calendar, title: "Enable reminder live activity", keywords: ["reminder", "live activity"], highlightID: SettingsTab.calendar.highlightID(for: "Enable reminder live activity")),
-            SettingsSearchEntry(tab: .calendar, title: "Countdown style", keywords: ["reminder countdown"], highlightID: SettingsTab.calendar.highlightID(for: "Countdown style")),
-            SettingsSearchEntry(tab: .calendar, title: "Show lock screen reminder", keywords: ["lock screen", "reminder widget"], highlightID: SettingsTab.calendar.highlightID(for: "Show lock screen reminder")),
-            SettingsSearchEntry(tab: .calendar, title: "Chip color", keywords: ["reminder chip", "color"], highlightID: SettingsTab.calendar.highlightID(for: "Chip color")),
-            SettingsSearchEntry(tab: .calendar, title: "Hide all-day events", keywords: ["calendar", "all-day"], highlightID: SettingsTab.calendar.highlightID(for: "Hide all-day events")),
-            SettingsSearchEntry(tab: .calendar, title: "Hide completed reminders", keywords: ["reminder", "completed"], highlightID: SettingsTab.calendar.highlightID(for: "Hide completed reminders")),
-            SettingsSearchEntry(tab: .calendar, title: "Show full event titles", keywords: ["calendar", "titles"], highlightID: SettingsTab.calendar.highlightID(for: "Show full event titles")),
-            SettingsSearchEntry(tab: .calendar, title: "Auto-scroll to next event", keywords: ["calendar", "scroll"], highlightID: SettingsTab.calendar.highlightID(for: "Auto-scroll to next event")),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Show calendar"),
+                keywords: [String(localized: "calendar"), String(localized: "events")],
+                highlightID: SettingsTab.calendar.highlightID(for: "Show calendar")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Enable reminder live activity"),
+                keywords: [String(localized: "reminder"), String(localized: "live activity")],
+                highlightID: SettingsTab.calendar.highlightID(for: "Enable reminder live activity")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized:"Countdown style"),
+                keywords: [String(localized:"reminder countdown")],
+                highlightID: SettingsTab.calendar.highlightID(for: "Countdown style")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized:"Show lock screen reminder"),
+                keywords: [String(localized:"lock screen"), String(localized:"reminder widget")],
+                highlightID: SettingsTab.calendar.highlightID(for: "Show lock screen reminder")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Chip color"),
+                keywords: [
+                    String(localized: "reminder chip"),
+                    String(localized: "color")
+                ],
+                highlightID: SettingsTab.calendar.highlightID(for: "Chip color")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Hide all-day events"),
+                keywords: [
+                    String(localized: "calendar"),
+                    String(localized: "all-day")
+                ],
+                highlightID: SettingsTab.calendar.highlightID(for: "Hide all-day events")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Hide completed reminders"),
+                keywords: [
+                    String(localized: "reminder"),
+                    String(localized: "completed")
+                ],
+                highlightID: SettingsTab.calendar.highlightID(for: "Hide completed reminders")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Show full event titles"),
+                keywords: [
+                    String(localized: "calendar"),
+                    String(localized: "titles")
+                ],
+                highlightID: SettingsTab.calendar.highlightID(for: "Show full event titles")
+            ),
+            SettingsSearchEntry(
+                tab: .calendar,
+                title: String(localized: "Auto-scroll to next event"),
+                keywords: [
+                    String(localized: "calendar"),
+                    String(localized: "scroll")
+                ],
+                highlightID: SettingsTab.calendar.highlightID(for: "Auto-scroll to next event")
+            ),
 
             // Shelf
             SettingsSearchEntry(tab: .shelf, title: "Enable shelf", keywords: ["shelf", "dock"], highlightID: SettingsTab.shelf.highlightID(for: "Enable shelf")),
@@ -2329,7 +2389,7 @@ struct CalendarSettings: View {
                     Text("Permissions")
                 }
                 
-                Defaults.Toggle("Show calendar", key: .showCalendar)
+                Defaults.Toggle(String(localized:"Show calendar"), key: .showCalendar)
                     .settingsHighlight(id: highlightID("Show calendar"))
 
                 Section(header: Text("Event List")) {
@@ -2353,7 +2413,7 @@ struct CalendarSettings: View {
                 }
                 
                 Section(header: Text("Reminder Live Activity")) {
-                    Defaults.Toggle("Enable reminder live activity", key: .enableReminderLiveActivity)
+                    Defaults.Toggle(String(localized:"Enable reminder live activity"), key: .enableReminderLiveActivity)
                         .settingsHighlight(id: highlightID("Enable reminder live activity"))
 
                     Picker("Countdown style", selection: $reminderPresentationStyle) {
@@ -2396,7 +2456,7 @@ struct CalendarSettings: View {
                 }
 
                 Section(header: Text("Lock Screen Reminder Widget")) {
-                    Defaults.Toggle("Show lock screen reminder", key: .enableLockScreenReminderWidget)
+                    Defaults.Toggle(String(localized:"Show lock screen reminder"), key: .enableLockScreenReminderWidget)
                         .settingsHighlight(id: highlightID("Show lock screen reminder"))
 
                     Picker("Chip color", selection: $lockScreenReminderChipStyle) {

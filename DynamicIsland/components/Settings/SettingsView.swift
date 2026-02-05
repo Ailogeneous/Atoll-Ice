@@ -6766,13 +6766,13 @@ struct NotesSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable Notes", key: .enableNotes)
+                Defaults.Toggle(String(localized: "Enable Notes"), key: .enableNotes)
                 if Defaults[.enableNotes] {
-                    Defaults.Toggle("Enable Note Pinning", key: .enableNotePinning)
-                    Defaults.Toggle("Enable Note Search", key: .enableNoteSearch)
-                    Defaults.Toggle("Enable Color Filtering", key: .enableNoteColorFiltering)
-                    Defaults.Toggle("Enable Create from Clipboard", key: .enableCreateFromClipboard)
-                    Defaults.Toggle("Show Character Count", key: .enableNoteCharCount)
+                    Defaults.Toggle(String(localized: "Enable Note Pinning"), key: .enableNotePinning)
+                    Defaults.Toggle(String(localized: "Enable Note Search"), key: .enableNoteSearch)
+                    Defaults.Toggle(String(localized: "Enable Color Filtering"), key: .enableNoteColorFiltering)
+                    Defaults.Toggle(String(localized: "Enable Create from Clipboard"), key: .enableCreateFromClipboard)
+                    Defaults.Toggle(String(localized: "Show Character Count"), key: .enableNoteCharCount)
                 }
             } header: {
                 Text("General")

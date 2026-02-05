@@ -9189,6 +9189,16 @@
         }
       }
     },
+    "Enable Color Filtering" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilitar Filtragem por Cores"
+          }
+        }
+      }
+    },
     "Enable Color Picker" : {
       "localizations" : {
         "pt-BR" : {
@@ -9221,6 +9231,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ative o ColorPicker em Configurações → ColorPicker"
+          }
+        }
+      }
+    },
+    "Enable Create from Clipboard" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habilitar Criar a partir da Área de Transferência"
           }
         }
       }
@@ -9589,6 +9609,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "启用音乐实时动态"
+          }
+        }
+      }
+    },
+    "Enable Note Pinning" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar Fixação de Notas"
+          }
+        }
+      }
+    },
+    "Enable Note Search" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar Pesquisa de Notas"
+          }
+        }
+      }
+    },
+    "Enable Notes" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar Notas"
           }
         }
       }
@@ -20865,6 +20915,16 @@
         }
       }
     },
+    "Show Character Count" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar Contagem de Caracteres"
+          }
+        }
+      }
+    },
     "Show charging percentage" : {
       "localizations" : {
         "pt-BR" : {
@@ -25081,7 +25141,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quando ativada, a guia Estatísticas exibirá gráficos de desempenho do sistema em tempo real. Esse recurso requer permissões do sistema e pode usar bateria adicional."
+            "value" : "Quando ativado, a guia Estatísticas exibirá gráficos de desempenho do sistema em tempo real. Esse recurso requer permissões do sistema e pode usar bateria adicional."
           }
         }
       }

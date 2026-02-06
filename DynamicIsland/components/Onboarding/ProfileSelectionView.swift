@@ -34,30 +34,30 @@ struct ProfileSelectionView: View {
     let profiles: [UserProfile] = [
         UserProfile(
             id: "developer",
-            name: "Developer",
+            name: String(localized: "Developer"),
             icon: "terminal.fill",
-            description: "Code and debug with color picker, stats monitoring, and screen assistant.",
+            description: String(localized: "Code and debug with color picker, stats monitoring, and screen assistant."),
             gradient: [Color.blue, Color.purple]
         ),
         UserProfile(
             id: "designer",
-            name: "Designer",
+            name: String(localized: "Designer"),
             icon: "paintbrush.fill",
-            description: "Create and design with color picker, mirror, and visual effects.",
+            description: String(localized: "Create and design with color picker, mirror, and visual effects."),
             gradient: [Color.pink, Color.orange]
         ),
         UserProfile(
             id: "lightuse",
-            name: "Light Use",
+            name: String(localized: "Light Use"),
             icon: "sparkles",
-            description: "Simple and minimal interface with just the essentials for everyday tasks.",
+            description: String(localized: "Simple and minimal interface with just the essentials for everyday tasks."),
             gradient: [Color.green, Color.mint]
         ),
         UserProfile(
             id: "student",
-            name: "Student",
+            name: String(localized: "Student"),
             icon: "book.fill",
-            description: "Stay organized with calendar, timer, and battery monitoring.",
+            description: String(localized: "Stay organized with calendar, timer, and battery monitoring."),
             gradient: [Color.indigo, Color.cyan]
         )
     ]

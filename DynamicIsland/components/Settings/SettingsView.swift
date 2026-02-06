@@ -1682,8 +1682,7 @@ struct GeneralSettings: View {
                 if enableHorizontalMusicGestures {
                     Picker("Gesture skip behavior", selection: $musicGestureBehavior) {
                         ForEach(MusicSkipBehavior.allCases) { behavior in
-                            Text(behavior.displayName)
-                                .tag(behavior)
+                            Text(behavior.displayName).tag(behavior)
                         }
                     }
                     .pickerStyle(.segmented)

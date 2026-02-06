@@ -53,9 +53,9 @@ struct OnboardingView: View {
             case .cameraPermission:
                 PermissionRequestView(
                     icon: Image(systemName: "camera.fill"),
-                    title: "Enable Camera Access",
-                    description: "Atoll includes a mirror feature that lets you quickly check your appearance using your camera, right from the notch. Camera access is required only to show this live preview. You can turn the mirror feature on or off at any time in the app.",
-                    privacyNote: "Your camera is never used without your consent, and nothing is recorded or stored.",
+                    title: String(localized: "Enable Camera Access"),
+                    description: String(localized: "Atoll includes a mirror feature that lets you quickly check your appearance using your camera, right from the notch. Camera access is required only to show this live preview. You can turn the mirror feature on or off at any time in the app."),
+                    privacyNote: String(localized: "Your camera is never used without your consent, and nothing is recorded or stored."),
                     onAllow: {
                         Task {
                             await requestCameraPermission()
@@ -75,9 +75,9 @@ struct OnboardingView: View {
             case .calendarPermission:
                 PermissionRequestView(
                     icon: Image(systemName: "calendar"),
-                    title: "Enable Calendar Access",
-                    description: "Atoll can show all your upcoming events in one place. Access to your calendar is needed to display your schedule.",
-                    privacyNote: "Your calendar data is only used to show your events and is never shared.",
+                    title: String(localized: "Enable Calendar Access"),
+                    description: String(localized: "Atoll can show all your upcoming events in one place. Access to your calendar is needed to display your schedule."),
+                    privacyNote: String(localized: "Your calendar data is only used to show your events and is never shared."),
                     onAllow: {
                         Task {
                             await requestCalendarPermission()

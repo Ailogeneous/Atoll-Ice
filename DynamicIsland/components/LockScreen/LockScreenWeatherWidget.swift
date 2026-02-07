@@ -393,6 +393,14 @@ struct LockScreenWeatherWidget: View {
 		lockScreenShowCalendarEvent && nextCalendarEvent != nil
 	}
 
+	private var shouldShowFocusInCalendarSlot: Bool {
+		shouldShowFocusWidget && !shouldShowCalendarRow
+	}
+
+	private var shouldCombineFocusAndCalendar: Bool {
+		shouldShowFocusWidget && shouldShowCalendarRow
+	}
+
 	private enum RowKind {
 		case weather
 		case focus
@@ -422,6 +430,8 @@ struct LockScreenWeatherWidget: View {
 		var enabled: Set<RowKind> = [.weather]
 		if lockScreenShowCalendarEvent { enabled.insert(.calendar) }
 		if shouldShowFocusWidget { enabled.insert(.focus) }
+		if shouldShowFocusInCalendarSlot { enabled.insert(.calendar); enabled.remove(.focus) }
+		if shouldCombineFocusAndCalendar { enabled.remove(.focus) }
 		return orderedRowKinds.filter { enabled.contains($0) }
 	}
 
@@ -462,8 +472,13 @@ struct LockScreenWeatherWidget: View {
 	private var isInline: Bool { snapshot.widgetStyle == .inline }
 	private var stackAlignment: VerticalAlignment { isInline ? .firstTextBaseline : .top }
 	private var stackSpacing: CGFloat { isInline ? 14 : 22 }
-	private var mainRowAlignment: Alignment { isInline ? .leading : .center }
-	private var secondaryRowAlignment: Alignment { isInline ? .leading : .center }
+	private var mainRowAlignment: Alignment {
+		if isInline {
+			return shouldCombineFocusAndCalendar ? .center : .leading
+		}
+		return .center
+	}
+	private var secondaryRowAlignment: Alignment { .center }
 	private var focusRowAlignment: Alignment { .center }
 	private var gaugeDiameter: CGFloat { 64 }
 	private var topPadding: CGFloat { isInline ? 6 : 22 }
@@ -570,13 +585,42 @@ struct LockScreenWeatherWidget: View {
 		case .weather:
 			mainWidgetRow
 		case .calendar:
-			nextEventRow
+			if shouldCombineFocusAndCalendar {
+				combinedFocusCalendarRow
+			} else if shouldShowFocusInCalendarSlot {
+				focusRowInCalendarSlot
+			} else {
+				nextEventRow
+			}
 		case .focus:
-			focusWidget
-				.opacity(shouldShowFocusWidget ? 1 : 0)
-				.accessibilityHidden(!shouldShowFocusWidget)
-				.allowsHitTesting(false)
+			if shouldCombineFocusAndCalendar {
+				EmptyView()
+			} else {
+				focusWidget
+					.opacity(shouldShowFocusWidget ? 1 : 0)
+					.accessibilityHidden(!shouldShowFocusWidget)
+					.allowsHitTesting(false)
+			}
 		}
+	}
+
+	private var focusRowInCalendarSlot: some View {
+		HStack(alignment: .center, spacing: 8) {
+			focusIcon
+				.font(.system(size: 20, weight: .semibold))
+				.frame(width: 26, height: 26)
+
+			Text(focusDisplayName)
+				.font(inlinePrimaryFont)
+				.lineLimit(1)
+				.minimumScaleFactor(0.85)
+				.allowsTightening(true)
+		}
+		.frame(maxWidth: .infinity, alignment: secondaryRowAlignment)
+		.padding(.horizontal, 2)
+		.opacity(shouldShowFocusWidget ? 1 : 0)
+		.accessibilityLabel("Focus active: \(focusDisplayName)")
+		.allowsHitTesting(false)
 	}
 
 	private var mainWidgetRow: some View {
@@ -625,6 +669,77 @@ struct LockScreenWeatherWidget: View {
 			iconRenderingMode: iconConfig.renderingMode,
 			iconColors: iconConfig.colors
 		)
+	}
+
+	private var combinedFocusCalendarRow: some View {
+		let event = nextCalendarEvent
+		let line = shouldShowCalendarRow ? eventLineText(for: event) : lastCalendarLine
+		let iconConfig = calendarRowIconConfig(for: event)
+
+		return HStack(alignment: .center, spacing: 10) {
+			HStack(alignment: .center, spacing: 6) {
+				calendarIconView(iconConfig)
+					.frame(width: 26, height: 26)
+
+				Text(line)
+					.font(inlinePrimaryFont)
+					.lineLimit(1)
+					.minimumScaleFactor(0.85)
+					.allowsTightening(true)
+			}
+			.layoutPriority(2)
+
+			Text("•")
+				.font(inlinePrimaryFont)
+				.foregroundStyle(secondaryLabelColor)
+				.accessibilityHidden(true)
+
+			HStack(alignment: .center, spacing: 8) {
+				focusIcon
+					.font(.system(size: 20, weight: .semibold))
+					.frame(width: 26, height: 26)
+
+				Text(focusDisplayName)
+					.font(inlinePrimaryFont)
+					.lineLimit(1)
+					.minimumScaleFactor(0.85)
+					.allowsTightening(true)
+			}
+			.layoutPriority(1)
+		}
+		.frame(maxWidth: .infinity, alignment: .center)
+		.padding(.horizontal, 2)
+		.id(calendarRowRenderToken)
+		.opacity(shouldShowFocusWidget && shouldShowCalendarRow ? 1 : 0)
+		.accessibilityLabel("\(line). Focus active: \(focusDisplayName)")
+		.allowsHitTesting(false)
+	}
+
+	@ViewBuilder
+	private func calendarIconView(_ iconConfig: (name: String, renderingMode: SymbolRenderingMode, colors: [Color])) -> some View {
+		let image = Image(systemName: iconConfig.name)
+			.font(.system(size: 20, weight: .semibold))
+
+		let isPalette = String(describing: iconConfig.renderingMode)
+			.lowercased()
+			.contains("palette")
+
+		if isPalette, iconConfig.colors.count >= 2 {
+			image
+				.symbolRenderingMode(.palette)
+				.foregroundStyle(iconConfig.colors[0], iconConfig.colors[1])
+		} else if iconConfig.colors.count >= 2 {
+			image
+				.symbolRenderingMode(iconConfig.renderingMode)
+				.foregroundStyle(iconConfig.colors[0], iconConfig.colors[1])
+		} else if iconConfig.colors.count == 1 {
+			image
+				.symbolRenderingMode(iconConfig.renderingMode)
+				.foregroundStyle(iconConfig.colors[0])
+		} else {
+			image
+				.symbolRenderingMode(iconConfig.renderingMode)
+		}
 	}
 
 	private func calendarRowIconConfig(for event: EventModel?) -> (name: String, renderingMode: SymbolRenderingMode, colors: [Color]) {

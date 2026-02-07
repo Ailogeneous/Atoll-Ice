@@ -35,6 +35,9 @@ struct MinimalisticMusicPlayerView: View {
     @ObservedObject private var reminderManager = ReminderLiveActivityManager.shared
     @ObservedObject private var timerManager = TimerManager.shared
     @ObservedObject private var coordinator = DynamicIslandViewCoordinator.shared
+    @State private var hudValue: Double = 0
+    @State private var hudDragging: Bool = false
+    @State private var hudLastDragged: Date = .distantPast
     @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
     @Default(.enableLyrics) private var enableLyrics
     @Default(.timerPresets) private var timerPresets
@@ -85,8 +88,13 @@ struct MinimalisticMusicPlayerView: View {
                 .padding(.top, 6)
             
             // Compact playback controls
-            playbackControls
-                .padding(.top, 4)
+            if shouldShowControlHUDRow {
+                controlHUDRow
+                    .padding(.top, 4)
+            } else {
+                playbackControls
+                    .padding(.top, 4)
+            }
 
             if enableLyrics {
                 lyricsView
@@ -671,6 +679,122 @@ private struct MinimalisticReminderDetailsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.top, 2)
+    }
+
+    private var shouldShowControlHUDRow: Bool {
+        guard vm.notchState == .open else { return false }
+        guard coordinator.sneakPeek.show else { return false }
+        guard Defaults[.enableSystemHUD] else { return false }
+        guard !Defaults[.enableCustomOSD] && !Defaults[.enableVerticalHUD] && !Defaults[.enableCircularHUD] else { return false }
+
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            return Defaults[.enableVolumeHUD]
+        case .brightness:
+            return Defaults[.enableBrightnessHUD]
+        case .backlight:
+            return Defaults[.enableKeyboardBacklightHUD]
+        default:
+            return false
+        }
+    }
+
+    private var controlHUDRow: some View {
+        HStack(alignment: .center, spacing: 10) {
+            if !controlLeftIconName.isEmpty {
+                Image(systemName: controlLeftIconName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22, height: 22, alignment: .center)
+            }
+
+            controlHUDSlider
+
+            if !controlRightIconName.isEmpty {
+                Image(systemName: controlRightIconName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22, height: 22, alignment: .center)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(height: 60, alignment: .center)
+        .onAppear { syncHUDValueIfNeeded(force: true) }
+        .onChange(of: coordinator.sneakPeek.value) { _, _ in
+            syncHUDValueIfNeeded(force: false)
+        }
+    }
+
+    private var controlHUDSlider: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            CustomSlider(
+                value: Binding(
+                    get: { hudValue },
+                    set: { newValue in
+                        hudValue = newValue
+                        updateControlHUDValue(newValue)
+                    }
+                ),
+                range: 0...1,
+                color: .white,
+                dragging: $hudDragging,
+                lastDragged: $hudLastDragged,
+                onValueChange: { newValue in
+                    updateControlHUDValue(newValue)
+                },
+                thumbSize: 10,
+                restingTrackHeight: 4,
+                draggingTrackHeight: 7
+            )
+            .frame(height: 7)
+            Spacer(minLength: 0)
+        }
+        .frame(height: 22)
+    }
+
+    private func syncHUDValueIfNeeded(force: Bool) {
+        guard shouldShowControlHUDRow else { return }
+        guard force || !hudDragging else { return }
+        hudValue = Double(coordinator.sneakPeek.value)
+    }
+
+    private func updateControlHUDValue(_ newValue: Double) {
+        let clamped = max(0, min(1, newValue))
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            SystemVolumeController.shared.setVolume(Float(clamped))
+        case .brightness:
+            SystemBrightnessController.shared.setBrightness(Float(clamped))
+        case .backlight:
+            SystemKeyboardBacklightController.shared.setLevel(Float(clamped))
+        default:
+            break
+        }
+    }
+
+    private var controlLeftIconName: String {
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            return SystemVolumeController.shared.isMuted ? "speaker.slash" : "speaker.wave.1"
+        case .brightness:
+            return "sun.min.fill"
+        case .backlight:
+            return "light.min"
+        default:
+            return ""
+        }
+    }
+
+    private var controlRightIconName: String {
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            return SystemVolumeController.shared.isMuted ? "" : "speaker.wave.3"
+        case .brightness:
+            return "sun.max.fill"
+        case .backlight:
+            return "light.max"
+        default:
+            return ""
+        }
     }
     
     private var playPauseButton: some View {

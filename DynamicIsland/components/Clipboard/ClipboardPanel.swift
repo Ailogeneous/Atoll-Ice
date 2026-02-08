@@ -456,16 +456,16 @@ struct ClipboardPanelItemRow: View {
         let interval = Date().timeIntervalSince(date)
         
         if interval < 60 {
-            return "Just now"
+            return String(localized: "Just now")
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return "\(minutes)m ago"
+            return String(localized: "\(minutes)m ago")
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return "\(hours)h ago"
+            return String(localized: "\(hours)h ago")
         } else {
             let days = Int(interval / 86400)
-            return "\(days)d ago"
+            return String(localized: "\(days)d ago")
         }
     }
 }

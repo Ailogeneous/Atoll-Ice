@@ -82,7 +82,7 @@ struct NotchStatsView: View {
 
         if showCpuGraph {
             graphs.append(SingleGraphData(
-                title: "CPU",
+                title: String(localized: "CPU"),
                 value: statsManager.cpuUsageString,
                 data: statsManager.cpuHistory,
                 color: .blue,
@@ -92,7 +92,7 @@ struct NotchStatsView: View {
 
         if showMemoryGraph {
             graphs.append(SingleGraphData(
-                title: "Memory",
+                title: String(localized: "Memory"),
                 value: statsManager.memoryUsageString,
                 data: statsManager.memoryHistory,
                 color: .green,
@@ -102,7 +102,7 @@ struct NotchStatsView: View {
 
         if showGpuGraph {
             graphs.append(SingleGraphData(
-                title: "GPU",
+                title: String(localized: "GPU"),
                 value: statsManager.gpuUsageString,
                 data: statsManager.gpuHistory,
                 color: .purple,
@@ -112,7 +112,7 @@ struct NotchStatsView: View {
 
         if showNetworkGraph {
             graphs.append(DualGraphData(
-                title: "Network",
+                title: String(localized: "Network"),
                 positiveValue: "↓" + statsManager.networkDownloadString,
                 negativeValue: "↑" + statsManager.networkUploadString,
                 positiveData: statsManager.networkDownloadHistory,
@@ -126,9 +126,9 @@ struct NotchStatsView: View {
 
         if showDiskGraph {
             graphs.append(DualGraphData(
-                title: "Disk",
-                positiveValue: "R " + statsManager.diskReadString,
-                negativeValue: "W " + statsManager.diskWriteString,
+                title: String(localized: "Disk"),
+                positiveValue: String(localized: "R ") + statsManager.diskReadString,
+                negativeValue: String(localized: "W ") + statsManager.diskWriteString,
                 positiveData: statsManager.diskReadHistory,
                 negativeData: statsManager.diskWriteHistory,
                 positiveColor: .cyan,

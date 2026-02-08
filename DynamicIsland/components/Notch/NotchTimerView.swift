@@ -461,7 +461,7 @@ struct NotchTimerView: View {
     private var startButton: some View {
         Button {
             withAnimation(.smooth) {
-                timerManager.startTimer(duration: customDurationInSeconds, name: "Custom Timer")
+                timerManager.startTimer(duration: customDurationInSeconds, name: String(localized: "Custom Timer"))
                 if !enableMinimalisticUI {
                     coordinator.currentView = .timer
                 }

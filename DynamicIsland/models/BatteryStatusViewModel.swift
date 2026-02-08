@@ -81,7 +81,7 @@ class BatteryStatusViewModel: ObservableObject {
             print("🔌 Power source: \(isPluggedIn ? "Connected" : "Disconnected")")
             withAnimation {
                 self.isPluggedIn = isPluggedIn
-                self.statusText = isPluggedIn ? "Plugged In" : "Unplugged"
+                self.statusText = isPluggedIn ? String(localized: "Plugged In") : String(localized: "Unplugged")
                 self.notifyImportanChangeStatus()
             }
 
@@ -98,7 +98,7 @@ class BatteryStatusViewModel: ObservableObject {
             self.notifyImportanChangeStatus()
             withAnimation {
                 self.isInLowPowerMode = isEnabled
-                self.statusText = "Low Power: \(self.isInLowPowerMode ? "On" : "Off")"
+                self.statusText = String(localized: "Low Power: \(self.isInLowPowerMode ? String(localized: "On") : String(localized: "Off"))")
             }
 
         case .isChargingChanged(let isCharging):
@@ -110,8 +110,8 @@ class BatteryStatusViewModel: ObservableObject {
                 self.isCharging = isCharging
                 self.statusText =
                     isCharging
-                    ? "Charging battery"
-                    : (self.levelBattery < self.maxCapacity ? "Not charging" : "Full charge")
+                    ? String(localized: "Charging battery")
+                    : (self.levelBattery < self.maxCapacity ? String(localized: "Not charging") : String(localized: "Full charge"))
             }
 
         case .timeToFullChargeChanged(let time):
@@ -141,7 +141,7 @@ class BatteryStatusViewModel: ObservableObject {
             self.isInLowPowerMode = batteryInfo.isInLowPowerMode
             self.timeToFullCharge = batteryInfo.timeToFullCharge
             self.maxCapacity = batteryInfo.maxCapacity
-            self.statusText = batteryInfo.isPluggedIn ? "Plugged In" : "Unplugged"
+            self.statusText = batteryInfo.isPluggedIn ? String(localized: "Plugged In") : String(localized: "Unplugged")
         }
     }
 
@@ -161,7 +161,7 @@ class BatteryStatusViewModel: ObservableObject {
 
         for threshold in lowBatteryAlertThresholds {
             if previousLevel >= threshold && newLevel < threshold {
-                self.statusText = "Low battery"
+                self.statusText = String(localized: "Low battery")
                 notifyImportanChangeStatus()
                 playLowBatteryAlertSound()
                 break

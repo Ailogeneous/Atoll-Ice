@@ -155,12 +155,12 @@ enum ClipboardItemType: String, CaseIterable, Codable {
     
     var displayName: String {
         switch self {
-        case .text: return "Text"
-        case .url: return "URL"
-        case .file: return "File"
-        case .image: return "Image"
-        case .rtf: return "Rich Text"
-        case .unknown: return "Unknown"
+        case .text: return String(localized: "Text")
+        case .url: return String(localized: "URL")
+        case .file: return String(localized: "File")
+        case .image: return String(localized: "Image")
+        case .rtf: return String(localized: "Rich Text")
+        case .unknown: return String(localized: "Unknown")
         }
     }
 }

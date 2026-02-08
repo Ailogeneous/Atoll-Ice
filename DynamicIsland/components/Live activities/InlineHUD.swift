@@ -497,17 +497,17 @@ struct InlineHUD: View {
     func Type2Name(_ type: SneakContentType) -> String {
         switch(type) {
             case .volume:
-                return "Volume"
+                return String(localized: "Volume")
             case .brightness:
-                return "Brightness"
+                return String(localized: "Brightness")
             case .backlight:
-                return "Backlight"
+                return String(localized: "Backlight")
             case .mic:
-                return "Mic"
+                return String(localized: "Mic")
             case .bluetoothAudio:
                 return BluetoothAudioManager.shared.lastConnectedDevice?.name ?? "Bluetooth"
             case .capsLock:
-                return "Caps Lock"
+                return String(localized: "Caps Lock")
             default:
                 return ""
         }

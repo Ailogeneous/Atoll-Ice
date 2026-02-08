@@ -263,9 +263,9 @@ enum ClipboardDisplayMode: String, CaseIterable, Codable, Defaults.Serializable 
     
     var displayName: String {
         switch self {
-        case .popover: return "Popover"
-        case .panel: return "Panel"
-        case .separateTab: return "Separate Tab"
+        case .popover: return String(localized: "Popover")
+        case .panel: return String(localized: "Panel")
+        case .separateTab: return String(localized: "Separate Tab")
         }
     }
     
@@ -284,15 +284,15 @@ enum ScreenAssistantDisplayMode: String, CaseIterable, Codable, Defaults.Seriali
     
     var displayName: String {
         switch self {
-        case .popover: return "Popover"
-        case .panel: return "Panel"
+        case .popover: return String(localized: "Popover")
+        case .panel: return String(localized: "Panel")
         }
     }
     
     var description: String {
         switch self {
-        case .popover: return "Shows screen assistant as a dropdown attached to the AI button"
-        case .panel: return "Shows screen assistant in a floating panel near the notch"
+        case .popover: return String(localized: "Shows screen assistant as a dropdown attached to the AI button")
+        case .panel: return String(localized: "Shows screen assistant in a floating panel near the notch")
         }
     }
 }
@@ -335,6 +335,15 @@ enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializa
     case youtubeMusic = "Youtube Music"
     
     var id: String { self.rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .nowPlaying: return String(localized: "Now Playing")
+        case .appleMusic: return String(localized: "Apple Music")
+        case .spotify: return String(localized: "Spotify")
+        case .youtubeMusic: return String(localized: "Youtube Music")
+        }
+    }
 }
 
 // Sneak peek styles for selection in settings
@@ -343,6 +352,13 @@ enum SneakPeekStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
     case inline = "Inline"
     
     var id: String { self.rawValue }
+    
+    var LocalizedName : String {
+        switch self {
+        case .standard: return String(localized: "Default")
+        case .inline: return String(localized: "Inline")
+        }
+    }
 }
 
 enum CapsLockIndicatorTintMode: String, CaseIterable, Identifiable, Defaults.Serializable {
@@ -355,11 +371,11 @@ enum CapsLockIndicatorTintMode: String, CaseIterable, Identifiable, Defaults.Ser
     var displayName: String {
         switch self {
         case .green:
-            return "Green"
+            return String(localized: "Green")
         case .accent:
-            return "Accent"
+            return String(localized: "Accent")
         case .white:
-            return "White"
+            return String(localized: "White")
         }
     }
 
@@ -438,18 +454,18 @@ enum MusicSkipBehavior: String, CaseIterable, Identifiable, Defaults.Serializabl
     var displayName: String {
         switch self {
         case .track:
-            return "Track Skip"
+            return String(localized: "Track Skip")
         case .tenSecond:
-            return "±10 Seconds"
+            return String(localized: "±10 Seconds")
         }
     }
 
     var description: String {
         switch self {
         case .track:
-            return "Standard previous/next track controls"
+            return String(localized: "Standard previous/next track controls")
         case .tenSecond:
-            return "Skip forward or backward by ten seconds"
+            return String(localized: "Skip forward or backward by ten seconds")
         }
     }
 }
@@ -462,8 +478,8 @@ enum TimerIconColorMode: String, CaseIterable, Identifiable, Defaults.Serializab
     
     var displayName: String {
         switch self {
-        case .adaptive: return "Adaptive gradient"
-        case .solid: return "Solid colour"
+        case .adaptive: return String(localized:"Adaptive gradient")
+        case .solid: return String(localized:"Solid colour")
         }
     }
 }
@@ -473,6 +489,13 @@ enum TimerProgressStyle: String, CaseIterable, Identifiable, Defaults.Serializab
     case ring = "Ring"
     
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .bar: return String(localized:"Bar")
+        case .ring: return String(localized:"Ring")
+        }
+    }
 }
 
 enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
@@ -484,9 +507,12 @@ enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Ser
 
     var displayName: String {
         switch self {
-        case .ringCountdown: return "Ring"
-        case .digital: return "Digital"
-        case .minutes: return "Minutes"
+            case .ringCountdown:
+                return String(localized: "Ring")
+            case .digital:
+                return String(localized: "Digital")
+            case .minutes:
+                return String(localized: "Minutes")
         }
     }
 }

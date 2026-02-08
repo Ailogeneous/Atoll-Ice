@@ -100,7 +100,7 @@ struct TimerPopover: View {
         let duration = customDurationInSeconds
         guard duration > 0 else { return }
         withAnimation(.smooth) {
-            timerManager.startTimer(duration: duration, name: "Custom Timer")
+            timerManager.startTimer(duration: duration, name: String(localized: "Custom Timer"))
         }
         dismiss()
     }

@@ -28,6 +28,13 @@ enum ClipboardTab: String, CaseIterable {
         case .favorites: return "heart.fill"
         }
     }
+    
+    var localizedName: String {
+        switch self {
+            case .history: return String(localized: "History")
+            case .favorites: return String(localized: "Favorites")
+        }
+    }
 }
 
 struct ClipboardTabButton: View {
@@ -51,7 +58,7 @@ struct ClipboardTabButton: View {
                 Image(systemName: tab.icon)
                     .font(.system(size: 11))
                 
-                Text(tab.rawValue)
+                Text(tab.localizedName)
                     .font(.system(size: 11, weight: .medium))
                 
                 if itemCount > 0 {

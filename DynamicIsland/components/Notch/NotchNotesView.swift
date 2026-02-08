@@ -527,9 +527,9 @@ struct NotchClipboardItemRow: View {
     
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
-        if interval < 60 { return "Just now" }
-        if interval < 3600 { return "\(Int(interval/60))m" }
-        return "\(Int(interval/3600))h"
+        if interval < 60 { return String(localized: "Just now") }
+        if interval < 3600 { return String(localized: "\(Int(interval/60))m") }
+        return String(localized: "\(Int(interval/3600))h")
     }
 }
 
@@ -936,9 +936,9 @@ struct NoteRow: View {
     
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
-        if interval < 60 { return "Just now" }
-        if interval < 3600 { return "\(Int(interval/60))m" }
-        if interval < 86400 { return "\(Int(interval/3600))h" }
+        if interval < 60 { return String(localized: "Just now") }
+        if interval < 3600 { return String(localized: "\(Int(interval/60))m") }
+        if interval < 86400 { return String(localized: "\(Int(interval/3600))h") }
         return date.formatted(.dateTime.day().month())
     }
 }

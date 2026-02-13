@@ -1,7 +1,7 @@
 <p align="center">
   <img src=".github/assets/atoll-logo.png" alt="Atoll logo" width="120">
 </p>
-<h1 align="center">Atoll</h1>
+<h1 align="center">Atoll - DynamicIsland for macOS</h1>
 <p align="center">
 <a href="https://trendshift.io/repositories/15291" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15291" alt="Ebullioscopic%2FAtoll | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </p>
@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/github/downloads/Ebullioscopic/Atoll/total?label=Downloads" alt="GitHub downloads"/>
   </a>
   <a href="https://discord.gg/PaqFkRTDF8">
-    <img src="https://img.shields.io/discord/1429481472942669896?label=Discord&logo=discord&color=7289da" alt="Discord server"/>
+    <img src="https://dcbadge.limes.pink/api/server/https://discord.gg/4Bz2Eegu28?style=flat" alt="Discord server"/>
   </a>
 </p>
 
@@ -39,8 +39,9 @@
 Atoll turns the MacBook notch into a focused command surface for media, system insight, and quick utilities. It stays out of the way until needed, then expands with responsive, native SwiftUI animations.
 
 <p align="center">
-  <img src="https://i.postimg.cc/HkLGn6yH/846F86A4_A2F9_4CD6_BC84_1D720D377728_1_201_a.jpg" alt="Atoll preview" width="920">
+  <img src="https://i.postimg.cc/jjLLH6Gs/3DAB6C3C-FEA1-4C90-ACEE-0BC4469B929C-1-201-a.jpg" alt="Atoll lock screen" width="920">
 </p>
+
 
 
 
@@ -58,7 +59,7 @@ Atoll turns the MacBook notch into a focused command surface for media, system i
 - Lock screen appearance and positioning controls for panels and widgets.
 
 <p align="center">
-  <img src="https://i.postimg.cc/jjLLH6Gs/3DAB6C3C-FEA1-4C90-ACEE-0BC4469B929C-1-201-a.jpg" alt="Atoll lock screen" width="920">
+  <img src="https://i.postimg.cc/HkLGn6yH/846F86A4_A2F9_4CD6_BC84_1D720D377728_1_201_a.jpg" alt="Atoll preview" width="920">
 </p>
 
 ## Requirements

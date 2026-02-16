@@ -126,8 +126,7 @@ struct ContentView: View {
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var lastHapticTime: Date = Date()
-    @State private var clickMonitor: Any?
-    @State private var hostingWindow: NSWindow?
+    @State private var hoverClickMonitor: Any?
 
     @State private var gestureProgress: CGFloat = .zero
     @State private var skipGestureActiveDirection: MusicManager.SkipDirection?
@@ -273,7 +272,7 @@ struct ContentView: View {
                 }
                 .conditionalModifier(interactionsEnabled) { view in
                     view
-                        .contentShape(Rectangle())
+                        .contentShape(currentNotchShape)
                         .onHover { hovering in
                             handleHover(hovering)
                         }
@@ -393,30 +392,6 @@ struct ContentView: View {
 //                    .keyboardShortcut("E", modifiers: .command)
                 }
 
-            if interactionsEnabled && vm.notchState == .closed {
-                Color.clear
-                    .frame(height: 8)
-                    .frame(maxWidth: .infinity, alignment: .top)
-                    .contentShape(Rectangle())
-                    .onHover { hovering in
-                        handleHover(hovering)
-                    }
-                    .onTapGesture {
-                        if Defaults[.enableHaptics] {
-                            triggerHapticIfAllowed()
-                        }
-                        openNotch()
-                    }
-            }
-        }
-        .background(WindowAccessor { window in
-            hostingWindow = window
-        })
-        .onAppear {
-            startGlobalClickMonitor()
-        }
-        .onDisappear {
-            stopGlobalClickMonitor()
         }
         .frame(
             maxWidth: dynamicNotchSize.width,
@@ -452,6 +427,7 @@ struct ContentView: View {
                 releaseMusicControlWindowUpdates(after: musicControlResumeDelay)
                 enqueueMusicControlWindowSync(forceRefresh: true, delay: 0.05)
             }
+
         }
         .onChange(of: musicControlWindowEnabled) { _, enabled in
             if enabled {
@@ -530,6 +506,7 @@ struct ContentView: View {
         }
         .onDisappear {
             hoverTask?.cancel()
+            stopHoverClickMonitor()
             cancelMusicControlWindowSync()
             hideMusicControlWindow()
             cancelMusicControlVisibilityTimer()
@@ -1458,34 +1435,25 @@ struct ContentView: View {
         }
     }
 
-    private func startGlobalClickMonitor() {
-        guard clickMonitor == nil else { return }
-        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { _ in
-            handleGlobalClick()
-        }
-    }
-
-    private func stopGlobalClickMonitor() {
-        if let clickMonitor {
-            NSEvent.removeMonitor(clickMonitor)
-            self.clickMonitor = nil
-        }
-    }
-
-    private func handleGlobalClick() {
-        guard !lockScreenManager.isLocked else { return }
-        guard vm.notchState == .closed else { return }
-        guard let hostingWindow else { return }
-
-        let cursorLocation = NSEvent.mouseLocation
-        let hitFrame = hostingWindow.frame.insetBy(dx: -2, dy: -2)
-        guard hitFrame.contains(cursorLocation) else { return }
-
-        DispatchQueue.main.async {
-            if Defaults[.enableHaptics] {
-                triggerHapticIfAllowed()
+    private func startHoverClickMonitor() {
+        guard hoverClickMonitor == nil else { return }
+        hoverClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { _ in
+            Task { @MainActor in
+                guard !lockScreenManager.isLocked else { return }
+                guard vm.notchState == .closed else { return }
+                guard isHovering else { return }
+                if Defaults[.enableHaptics] {
+                    triggerHapticIfAllowed()
+                }
+                openNotch()
             }
-            openNotch()
+        }
+    }
+
+    private func stopHoverClickMonitor() {
+        if let hoverClickMonitor {
+            NSEvent.removeMonitor(hoverClickMonitor)
+            self.hoverClickMonitor = nil
         }
     }
 
@@ -1494,6 +1462,12 @@ struct ContentView: View {
     /// Handle hover state changes with debouncing
     private func handleHover(_ hovering: Bool) {
         hoverTask?.cancel()
+
+        if hovering {
+            startHoverClickMonitor()
+        } else {
+            stopHoverClickMonitor()
+        }
 
         if hovering {
             withAnimation(.bouncy.speed(1.2)) {
@@ -2048,24 +2022,6 @@ struct ContentView: View {
             return .standard
         }
         return coordinator.sneakPeek.styleOverride ?? Defaults[.sneakPeekStyles]
-    }
-}
-
-private struct WindowAccessor: NSViewRepresentable {
-    let callback: (NSWindow?) -> Void
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView(frame: .zero)
-        DispatchQueue.main.async { [weak view] in
-            callback(view?.window)
-        }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { [weak nsView] in
-            callback(nsView?.window)
-        }
     }
 }
 

@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/github/downloads/Ebullioscopic/Atoll/total?label=Downloads" alt="GitHub downloads"/>
   </a>
   <a href="https://discord.gg/PaqFkRTDF8">
-    <img src="https://dcbadge.limes.pink/api/server/https://discord.gg/4Bz2Eegu28?style=flat" alt="Discord server"/>
+    <img src="https://dcbadge.limes.pink/api/server/https://discord.gg/PaqFkRTDF8?style=flat" alt="Discord server"/>
   </a>
 </p>
 
@@ -146,7 +146,9 @@ A heartfelt thanks to [TheBoredTeam](https://github.com/TheBoredTeam) for being 
 </p>
 
 <p align="center">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="200" />
+  <a href="https://buymeacoffee.com/kryoscopic">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="200" />
+  </a>
 </p>
 
 <p align="center">

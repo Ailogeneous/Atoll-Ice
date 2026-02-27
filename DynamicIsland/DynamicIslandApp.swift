@@ -68,6 +68,9 @@ struct DynamicNotchApp: App {
             }
             .keyboardShortcut(KeyEquivalent("Q"), modifiers: .command)
         }
+        
+        SettingsWindow(appState: AppDelegate.iceAppState)
+        PermissionsWindow(appState: AppDelegate.iceAppState)
     }
 
     var commands: some Commands {
@@ -92,6 +95,7 @@ extension AppDelegate {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static let iceAppState = AppState()
     var statusItem: NSStatusItem?
     var windows: [NSScreen: NSWindow] = [:]
     var viewModels: [NSScreen: DynamicIslandViewModel] = [:]
@@ -119,16 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Debouncing mechanism for window size updates
     private var windowSizeUpdateWorkItem: DispatchWorkItem?
-//    let calendarManager = CalendarManager.shared
-//    let webcamManager = WebcamManager.shared
-//    var closeNotchWorkItem: DispatchWorkItem?
-//    private var previousScreens: [NSScreen]?
-//    private var onboardingWindowController: NSWindowController?
-//    private var cancellables = Set<AnyCancellable>()
-//    
-//    // Debouncing mechanism for window size updates
-//    private var windowSizeUpdateWorkItem: DispatchWorkItem?
-    
+
     private func debouncedUpdateWindowSize() {
         // Cancel any existing work item
         windowSizeUpdateWorkItem?.cancel()
@@ -144,9 +139,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Deactivate and set the policy to accessory when all windows are closed.
+        AppDelegate.iceAppState.deactivate(withPolicy: .accessory)
         return false
     }
     
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSSplitViewItem.swizzle()
+        MigrationManager.migrateAll(appState: AppDelegate.iceAppState)
+        AppDelegate.iceAppState.assignAppDelegate(self)
+        AppDelegate.iceAppState.setsCursorInBackground = true
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         // Cancel any pending window size updates
         windowSizeUpdateWorkItem?.cancel()
@@ -233,6 +237,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: ContentView()
                 .environmentObject(viewModel)
                 .environmentObject(webcamManager)
+                .environmentObject(AppDelegate.iceAppState)
+                .environmentObject(AppDelegate.iceAppState.imageCache)
+                .environmentObject(AppDelegate.iceAppState.itemManager)
                 //.moveToSky()
         )
         
@@ -360,6 +367,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         LockScreenManager.shared.configure(viewModel: vm)
         extensionXPCServiceHost.start()
         
+        // Ice setup
+        AppDelegate.iceAppState.dismissSettingsWindow()
+        AppDelegate.iceAppState.dismissPermissionsWindow()
+        
+        if let mainMenu = NSApp.mainMenu {
+            for item in mainMenu.items {
+                item.isHidden = true
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            switch AppDelegate.iceAppState.permissionsManager.permissionsState {
+            case .hasAllPermissions, .hasRequiredPermissions:
+                AppDelegate.iceAppState.performSetup()
+            case .missingPermissions:
+                AppDelegate.iceAppState.activate(withPolicy: .regular)
+                AppDelegate.iceAppState.openPermissionsWindow()
+            }
+        }
+
         // Migrate legacy progress bar settings
         Defaults.Keys.migrateProgressBarStyle()
         Defaults.Keys.migrateMusicAuxControls()
@@ -845,7 +872,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.terminate(nil)
     }
 
-    
+    /// Opens the settings window and activates the app.
+    @objc func openSettingsWindow() {
+        // Small delay makes this more reliable.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            AppDelegate.iceAppState.activate(withPolicy: .regular)
+            AppDelegate.iceAppState.openSettingsWindow()
+        }
+    }
     
     private func showOnboardingWindow() {
         if onboardingWindowController == nil {

@@ -1,0 +1,206 @@
+/*
+ * Atoll (DynamicIsland)
+ * Copyright (C) 2024-2026 Atoll Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import SwiftUI
+import Combine
+
+struct IceHiddenItemsView: View {
+    @EnvironmentObject var itemManager: MenuBarItemManager
+    @EnvironmentObject var imageCache: MenuBarItemImageCache
+    @EnvironmentObject var vm: DynamicIslandViewModel
+    
+    var items: [MenuBarItem] {
+        itemManager.itemCache.managedItems(for: .hidden)
+    }
+    
+    var body: some View {
+        if items.isEmpty {
+            EmptyView()
+                .onAppear {
+                    Task {
+                        await itemManager.cacheItemsIfNeeded()
+                    }
+                }
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(items, id: \.windowID) { item in
+                        IceHiddenItemView(item: item)
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            .frame(height: 32)
+            .onHover { isHovering in
+                vm.isHoveringIceMenu = isHovering
+            }
+            .onAppear {
+                Task {
+                    await itemManager.cacheItemsIfNeeded()
+                }
+            }
+        }
+    }
+}
+
+struct IceHiddenItemView: View {
+    @EnvironmentObject var imageCache: MenuBarItemImageCache
+    @EnvironmentObject var itemManager: MenuBarItemManager
+    
+    let item: MenuBarItem
+    
+    private var image: NSImage? {
+        guard let image = imageCache.images[item.info],
+              let screen = imageCache.screen else {
+            return nil
+        }
+        let size = CGSize(
+            width: CGFloat(image.width) / screen.backingScaleFactor,
+            height: CGFloat(image.height) / screen.backingScaleFactor
+        )
+        return NSImage(cgImage: image, size: size)
+    }
+    
+    var body: some View {
+        if let image {
+            Image(nsImage: image)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    triggerClick(.left)
+                }
+                .overlay {
+                    IceHiddenItemClickView(item: item) {
+                        triggerClick(.left)
+                    } rightClickAction: {
+                        triggerClick(.right)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .help(item.displayName)
+        }
+    }
+
+    private func triggerClick(_ mouseButton: CGMouseButton) {
+        Task {
+            let buttonName = mouseButton == .left ? "left" : "right"
+            NSLog("🔎 IceHiddenItemsView \(buttonName) click item=\(item.logString) windowID=\(item.windowID)")
+            await itemManager.cacheItemsIfNeeded()
+            if ScreenCapture.cachedCheckPermissions() {
+                await imageCache.updateCacheWithoutChecks(sections: [.hidden])
+            }
+            try? await Task.sleep(for: .milliseconds(25))
+            let resolvedItem = await MainActor.run {
+                let hiddenItems = itemManager.itemCache.managedItems(for: .hidden)
+                return hiddenItems.first {
+                    $0.windowID == item.windowID ||
+                    $0.info == item.info ||
+                    ($0.ownerPID == item.ownerPID && $0.title == item.title)
+                } ?? MenuBarItem(windowID: item.windowID) ?? item
+            }
+            NSLog("🔎 IceHiddenItemsView \(buttonName) click resolved item=\(resolvedItem.logString) windowID=\(resolvedItem.windowID)")
+            if resolvedItem.isOnScreen {
+                do {
+                    NSLog("🔎 IceHiddenItemsView \(buttonName) click direct item click windowID=\(resolvedItem.windowID)")
+                    try await itemManager.click(item: resolvedItem, with: mouseButton)
+                } catch {
+                    NSLog("🔎 IceHiddenItemsView \(buttonName) click direct failed; fallback tempShowItem windowID=\(resolvedItem.windowID)")
+                    itemManager.tempShowItem(resolvedItem, clickWhenFinished: true, mouseButton: mouseButton)
+                }
+            } else {
+                NSLog("🔎 IceHiddenItemsView \(buttonName) click using tempShowItem windowID=\(resolvedItem.windowID)")
+                itemManager.tempShowItem(resolvedItem, clickWhenFinished: true, mouseButton: mouseButton)
+            }
+        }
+    }
+}
+
+private struct IceHiddenItemClickView: NSViewRepresentable {
+    private final class Represented: NSView {
+        let item: MenuBarItem
+        let leftClickAction: () -> Void
+        let rightClickAction: () -> Void
+
+        private var lastLeftMouseDownDate = Date.now
+        private var lastRightMouseDownDate = Date.now
+        private var lastLeftMouseDownLocation = CGPoint.zero
+        private var lastRightMouseDownLocation = CGPoint.zero
+
+        init(item: MenuBarItem, leftClickAction: @escaping () -> Void, rightClickAction: @escaping () -> Void) {
+            self.item = item
+            self.leftClickAction = leftClickAction
+            self.rightClickAction = rightClickAction
+            super.init(frame: .zero)
+            self.toolTip = item.displayName
+            self.wantsLayer = true
+            self.layer?.backgroundColor = NSColor.clear.cgColor
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        private func absoluteDistance(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
+            hypot(p1.x - p2.x, p1.y - p2.y).magnitude
+        }
+
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            self
+        }
+
+        override func mouseDown(with event: NSEvent) {
+            super.mouseDown(with: event)
+            lastLeftMouseDownDate = .now
+            lastLeftMouseDownLocation = NSEvent.mouseLocation
+        }
+
+        override func rightMouseDown(with event: NSEvent) {
+            super.rightMouseDown(with: event)
+            lastRightMouseDownDate = .now
+            lastRightMouseDownLocation = NSEvent.mouseLocation
+        }
+
+        override func mouseUp(with event: NSEvent) {
+            super.mouseUp(with: event)
+            guard Date.now.timeIntervalSince(lastLeftMouseDownDate) < 0.5,
+                  absoluteDistance(lastLeftMouseDownLocation, NSEvent.mouseLocation) < 5 else {
+                return
+            }
+            leftClickAction()
+        }
+
+        override func rightMouseUp(with event: NSEvent) {
+            super.rightMouseUp(with: event)
+            guard Date.now.timeIntervalSince(lastRightMouseDownDate) < 0.5,
+                  absoluteDistance(lastRightMouseDownLocation, NSEvent.mouseLocation) < 5 else {
+                return
+            }
+            rightClickAction()
+        }
+    }
+
+    let item: MenuBarItem
+    let leftClickAction: () -> Void
+    let rightClickAction: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        Represented(item: item, leftClickAction: leftClickAction, rightClickAction: rightClickAction)
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}

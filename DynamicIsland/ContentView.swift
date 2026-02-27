@@ -38,6 +38,8 @@ import UIKit
 struct ContentView: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @EnvironmentObject var webcamManager: WebcamManager
+    @EnvironmentObject var itemManager: MenuBarItemManager
+    @EnvironmentObject var imageCache: MenuBarItemImageCache
 
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
@@ -311,6 +313,15 @@ struct ContentView: View {
                     }
                 })
                 .onChange(of: vm.notchState) { _, newState in
+                    if newState == .open {
+                        Task {
+                            await itemManager.forceRefreshCache(clearExisting: false)
+                            if ScreenCapture.cachedCheckPermissions() {
+                                await imageCache.updateCacheWithoutChecks(sections: [.hidden])
+                            }
+                        }
+                    }
+
                     // Update smart monitoring based on notch state
                     if enableStatsFeature {
                         let currentViewString = coordinator.currentView == .stats ? "stats" : "other"
@@ -1734,6 +1745,7 @@ struct ContentView: View {
             && !lockScreenManager.isLocked
             && !hasAnyActivePopovers()
             && !vm.isHoveringCalendar
+            && !vm.isHoveringIceMenu
             && !vm.isScrollGestureActive
     }
 

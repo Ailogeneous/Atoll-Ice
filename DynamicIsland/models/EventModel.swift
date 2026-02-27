@@ -81,6 +81,14 @@ extension EventType {
 }
 
 extension EventModel {
+    var listStableID: String {
+        let typeTag: String = switch type {
+        case .event(let attendance): "event-\(attendance)"
+        case .birthday: "birthday"
+        case .reminder(let completed): "reminder-\(completed)"
+        }
+        return "\(id)|\(Int(start.timeIntervalSince1970))|\(Int(end.timeIntervalSince1970))|\(title)|\(typeTag)"
+    }
     
     var eventStatus: EventStatus {
         if start > Date() {

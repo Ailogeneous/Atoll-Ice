@@ -35,17 +35,15 @@ class SpotifyController: MediaControllerProtocol {
     }
     
     var isWorking: Bool {
-        return true  // Spotify controller always works
+        return true
     }
     
     private var notificationTask: Task<Void, Never>?
-    
-    // Constant for time between command and update
     private let commandUpdateDelay: Duration = .milliseconds(25)
-
     private var lastArtworkURL: String?
+    private var currentArtworkFetchURL: String?
     private var artworkFetchTask: Task<Void, Never>?
-    
+
     init() {
         setupPlaybackStateChangeObserver()
         Task {
@@ -77,41 +75,30 @@ class SpotifyController: MediaControllerProtocol {
     func pause() async { await executeCommand("pause") }
     func togglePlay() async { await executeCommand("playpause") }
     func nextTrack() async { await executeCommand("next track") }
-    
-    func previousTrack() async {
-        await executeAndRefresh("previous track")
-    }
-    
-    func seek(to time: Double) async {
-        await executeAndRefresh("set player position to \(time)")
-    }
-    
-    func toggleShuffle() async {
-        await executeAndRefresh("set shuffling to not shuffling")
-    }
-    
-    func toggleRepeat() async {
-        await executeAndRefresh("set repeating to not repeating")
-    }
+    func previousTrack() async { await executeAndRefresh("previous track") }
+    func seek(to time: Double) async { await executeAndRefresh("set player position to \(time)") }
+    func toggleShuffle() async { await executeAndRefresh("set shuffling to not shuffling") }
+    func toggleRepeat() async { await executeAndRefresh("set repeating to not repeating") }
     
     func isActive() -> Bool {
-        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == playbackState.bundleIdentifier }
+        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.spotify.client" }
     }
     
     func updatePlaybackInfo() async {
         guard let descriptor = try? await fetchPlaybackInfoAsync() else { return }
         guard descriptor.numberOfItems >= 9 else { return }
-        
+
         let isPlaying = descriptor.atIndex(1)?.booleanValue ?? false
         let currentTrack = descriptor.atIndex(2)?.stringValue ?? "Unknown"
         let currentTrackArtist = descriptor.atIndex(3)?.stringValue ?? "Unknown"
         let currentTrackAlbum = descriptor.atIndex(4)?.stringValue ?? "Unknown"
         let currentTime = descriptor.atIndex(5)?.doubleValue ?? 0
-        let duration = (descriptor.atIndex(6)?.doubleValue ?? 0)/1000
+        let duration = (descriptor.atIndex(6)?.doubleValue ?? 0) / 1000
         let isShuffled = descriptor.atIndex(7)?.booleanValue ?? false
         let isRepeating = descriptor.atIndex(8)?.booleanValue ?? false
         let artworkURL = descriptor.atIndex(9)?.stringValue ?? ""
-        
+        NSLog("🔎 Spotify.update isPlaying=\(isPlaying) title=\(currentTrack) artworkURL=\(artworkURL)")
+
         var state = PlaybackState(
             bundleIdentifier: "com.spotify.client",
             isPlaying: isPlaying,
@@ -126,15 +113,22 @@ class SpotifyController: MediaControllerProtocol {
             lastUpdated: Date()
         )
 
-        if artworkURL == lastArtworkURL, let existingArtwork = self.playbackState.artwork {
-            state.artwork = existingArtwork
+        await MainActor.run {
+            if artworkURL == self.lastArtworkURL, let existingArtwork = self.playbackState.artwork {
+                state.artwork = existingArtwork
+            }
+            self.playbackState = state
         }
-
-    playbackState = state
 
         if !artworkURL.isEmpty, let url = URL(string: artworkURL) {
             guard artworkURL != lastArtworkURL || state.artwork == nil else { return }
+            if currentArtworkFetchURL == artworkURL {
+                NSLog("🔎 Spotify.artwork skip fetch (already in flight) url=\(artworkURL)")
+                return
+            }
             artworkFetchTask?.cancel()
+            NSLog("🔎 Spotify.artwork start fetch url=\(artworkURL)")
+            currentArtworkFetchURL = artworkURL
 
             let currentState = state
 
@@ -143,23 +137,33 @@ class SpotifyController: MediaControllerProtocol {
                     let data = try await ImageService.shared.fetchImageData(from: url)
 
                     await MainActor.run { [weak self] in
-                        guard let self = self else { return }
+                        guard let self else { return }
                         var updatedState = currentState
                         updatedState.artwork = data
                         self.playbackState = updatedState
+                        NSLog("🔎 Spotify.artwork fetched bytes=\(data.count) url=\(artworkURL)")
                         self.lastArtworkURL = artworkURL
+                        self.currentArtworkFetchURL = nil
                         self.artworkFetchTask = nil
                     }
                 } catch {
                     await MainActor.run { [weak self] in
+                        NSLog("🔎 Spotify.artwork fetch failed url=\(artworkURL)")
+                        if self?.currentArtworkFetchURL == artworkURL {
+                            self?.currentArtworkFetchURL = nil
+                        }
                         self?.artworkFetchTask = nil
                     }
                 }
             }
+        } else {
+            await MainActor.run {
+                NSLog("🔎 Spotify.artwork no artwork URL")
+                self.lastArtworkURL = nil
+                self.currentArtworkFetchURL = nil
+            }
         }
     }
-    
-// MARK: - Private Methods
     
     private func executeCommand(_ command: String) async {
         let script = "tell application \"Spotify\" to \(command)"
@@ -171,7 +175,7 @@ class SpotifyController: MediaControllerProtocol {
         try? await Task.sleep(for: commandUpdateDelay)
         await updatePlaybackInfo()
     }
-    
+
     private func fetchPlaybackInfoAsync() async throws -> NSAppleEventDescriptor? {
         let script = """
         tell application "Spotify"
@@ -192,7 +196,6 @@ class SpotifyController: MediaControllerProtocol {
             end try
         end tell
         """
-        
         return try await AppleScriptHelper.execute(script)
     }
 }

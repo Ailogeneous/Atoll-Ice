@@ -256,6 +256,11 @@ final class MediaKeyInterceptor {
 extension MediaKeyInterceptor {
     private func requestAccessibilityPermissionIfNeeded() {
         guard !AXIsProcessTrusted(), !didRequestAccessibilityPrompt else { return }
+        let bundleID = Bundle.main.bundleIdentifier ?? "<nil>"
+        let executable = Bundle.main.executableURL?.path ?? "<nil>"
+        let processName = ProcessInfo.processInfo.processName
+        let localizedName = NSRunningApplication.current.localizedName ?? "<nil>"
+        NSLog("🔎 AX prompt source=MediaKeyInterceptor.requestAccessibilityPermissionIfNeeded bundleID=\(bundleID) processName=\(processName) localizedName=\(localizedName) pid=\(ProcessInfo.processInfo.processIdentifier) executable=\(executable)")
         let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         let options: CFDictionary = [promptKey: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)

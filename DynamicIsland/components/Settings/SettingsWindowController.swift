@@ -72,7 +72,7 @@ class SettingsWindowController: NSWindowController {
         window.identifier = NSUserInterfaceItemIdentifier("DynamicIslandSettingsWindow")
         
         // Create the SwiftUI content
-        let settingsView = SettingsView(updaterController: updaterController)
+        let settingsView = AtollSettingsView(updaterController: updaterController)
         let hostingView = NSHostingView(rootView: settingsView)
         window.contentView = hostingView
         

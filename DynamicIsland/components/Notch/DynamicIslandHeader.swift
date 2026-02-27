@@ -109,7 +109,7 @@ struct DynamicIslandHeader: View {
                         .popover(isPresented: $showClipboardPopover, arrowEdge: .bottom) {
                             ClipboardPopover()
                         }
-                        .onChange(of: showClipboardPopover) { isActive in
+                        .onChange(of: showClipboardPopover) { _, isActive in
                             vm.isClipboardPopoverActive = isActive
                             
                             // If popover was closed, trigger a hover recheck
@@ -150,7 +150,7 @@ struct DynamicIslandHeader: View {
                         .popover(isPresented: $showColorPickerPopover, arrowEdge: .bottom) {
                             ColorPickerPopover()
                         }
-                        .onChange(of: showColorPickerPopover) { isActive in
+                        .onChange(of: showColorPickerPopover) { _, isActive in
                             vm.isColorPickerPopoverActive = isActive
                             
                             // If popover was closed, trigger a hover recheck
@@ -182,7 +182,7 @@ struct DynamicIslandHeader: View {
                         .popover(isPresented: $showTimerPopover, arrowEdge: .bottom) {
                             TimerPopover()
                         }
-                        .onChange(of: showTimerPopover) { isActive in
+                        .onChange(of: showTimerPopover) { _, isActive in
                             vm.isTimerPopoverActive = isActive
                             if !isActive {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -242,6 +242,7 @@ struct DynamicIslandHeader: View {
             }
             .font(.system(.headline, design: .rounded))
             .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 10)
             .opacity(vm.notchState == .closed ? 0 : 1)
             .blur(radius: vm.notchState == .closed ? 20 : 0)
             .animation(.smooth.delay(0.1), value: vm.notchState)
@@ -249,7 +250,7 @@ struct DynamicIslandHeader: View {
         }
         .foregroundColor(.gray)
         .environmentObject(vm)
-        .onChange(of: coordinator.shouldToggleClipboardPopover) { _ in
+        .onChange(of: coordinator.shouldToggleClipboardPopover) { _, _ in
             // Only toggle if clipboard is enabled
             if Defaults[.enableClipboardManager] {
                 switch clipboardDisplayMode {

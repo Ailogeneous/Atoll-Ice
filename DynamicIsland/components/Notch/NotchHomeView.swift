@@ -521,8 +521,10 @@ struct NotchHomeView: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject private var extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
+    @AppStorage(IceDefaultsKey.enableNotchHiddenListMode.rawValue) private var enableNotchHiddenListMode = true
     @Default(.showStandardMediaControls) private var showStandardMediaControls
     let albumArtNamespace: Namespace.ID
+    private let notchHiddenListWidth: CGFloat = 210
     
     var body: some View {
         Group {
@@ -551,12 +553,35 @@ struct NotchHomeView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
-                if Defaults[.showCalendar] {
-                    CalendarView()
+                VStack(spacing: 4) {
+                    IceHiddenItemsView()
+                        .contentShape(Rectangle())
+                        .frame(
+                            width: enableNotchHiddenListMode ? notchHiddenListWidth : nil,
+                            alignment: .center
+                        )
+                        .frame(maxWidth: .infinity)
+                        .offset(y: -10)
+                        .padding(.horizontal, -20)
+                        .zIndex(2)
                         .onHover { isHovering in
-                            vm.isHoveringCalendar = isHovering
+                            let appState = AppDelegate.iceAppState
+                            let isBlocked = appState.isActiveSpaceFullscreen && appState.menuBarManager.isMenuBarHiddenBySystem
+                            vm.isHoveringIceMenu = isBlocked ? false : isHovering
                         }
-                        .environmentObject(vm)
+                        .onTapGesture {
+                            NSLog("🔎 IceHiddenItemsView container tap")
+                        }
+                    if Defaults[.showCalendar] {
+                        CalendarView()
+                            .offset(y: -6)
+                            .onHover { isHovering in
+                                vm.isHoveringCalendar = isHovering
+                            }
+                            .allowsHitTesting(!vm.isHoveringIceMenu)
+                            .zIndex(0)
+                            .environmentObject(vm)
+                    }
                 }
                 
                 if Defaults[.showMirror],
@@ -621,12 +646,12 @@ struct MusicSliderView: View {
                 }
             }
         }
-        .onChange(of: currentDate) { newDate in
+        .onChange(of: currentDate) { _, newDate in
             guard !isLiveStream else { return }
             guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }
             sliderValue = MusicManager.shared.estimatedPlaybackPosition(at: newDate)
         }
-        .onChange(of: isLiveStream) { isLive in
+        .onChange(of: isLiveStream) { _, isLive in
             if isLive {
                 sliderValue = 0
             }

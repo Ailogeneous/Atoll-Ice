@@ -495,11 +495,13 @@ final class SystemBrightnessController {
     func adjust(by delta: Float) {
         // Refresh baseline to avoid jumping if auto-brightness changed the level.
         syncWithSystemBrightnessIfNeeded()
+        NSLog("🔎 Brightness.adjust delta=\(delta) baseline=\(lastEmittedBrightness)")
         setBrightness(lastEmittedBrightness + delta)
     }
 
     func setBrightness(_ value: Float) {
         let clamped = max(0, min(1, value))
+        NSLog("🔎 Brightness.set requested=\(value) clamped=\(clamped)")
         DispatchQueue.main.async {
             self.beginBrightnessAnimation(to: clamped)
         }
@@ -521,6 +523,7 @@ final class SystemBrightnessController {
 
     private func notifyCurrentBrightness() {
         let brightness = currentBrightness
+        NSLog("🔎 Brightness.notifyCurrent value=\(brightness)")
         emitBrightnessChange(value: brightness)
     }
 
@@ -529,6 +532,7 @@ final class SystemBrightnessController {
         // subsequent adjustments apply deltas from the true value (important when
         // auto-brightness has changed the level behind our back).
         let systemLevel = currentBrightness
+        NSLog("🔎 Brightness.sync system=\(systemLevel) cached=\(lastEmittedBrightness)")
         if abs(systemLevel - lastEmittedBrightness) > 0.001 {
             emitBrightnessChange(value: systemLevel)
         }
@@ -541,6 +545,7 @@ final class SystemBrightnessController {
         syncWithSystemBrightnessIfNeeded()
 
         let start = lastEmittedBrightness
+        NSLog("🔎 Brightness.animate start=\(start) target=\(target)")
         if abs(start - target) <= 0.0005 {
             applyBrightness(target)
             emitBrightnessChange(value: target)
@@ -583,6 +588,7 @@ final class SystemBrightnessController {
 
     private func applyBrightness(_ value: Float) {
         let clamped = max(0, min(1, value))
+        NSLog("🔎 Brightness.apply value=\(value) clamped=\(clamped)")
         if setBrightnessViaDisplayServices(clamped) {
             return
         }
@@ -597,6 +603,7 @@ final class SystemBrightnessController {
     private func emitBrightnessChange(value: Float) {
         let clamped = max(0, min(1, value))
         lastEmittedBrightness = clamped
+        NSLog("🔎 Brightness.emit value=\(clamped)")
         let dispatchBlock = {
             self.onBrightnessChange?(clamped)
             self.notificationCenter.post(name: .systemBrightnessDidChange, object: nil, userInfo: ["value": clamped])

@@ -245,7 +245,7 @@ private struct SettingsForm<Content: View>: View {
     }
 }
 
-struct SettingsView: View {
+struct AtollSettingsView: View {
     @State private var selectedTab: SettingsTab = .general
     @State private var searchText: String = ""
     @StateObject private var highlightCoordinator = SettingsHighlightCoordinator()
@@ -905,6 +905,7 @@ struct GeneralSettings: View {
     @Default(.musicGestureBehavior) var musicGestureBehavior
     @Default(.reverseSwipeGestures) var reverseSwipeGestures
     @Default(.reverseScrollGestures) var reverseScrollGestures
+    @AppStorage(IceDefaultsKey.enableNotchHiddenListMode.rawValue) private var iceManagerEnabled = true
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.general.highlightID(for: title)
@@ -912,6 +913,13 @@ struct GeneralSettings: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Ice Manager", isOn: $iceManagerEnabled)
+                    .settingsHighlight(id: highlightID("Ice Manager"))
+            } header: {
+                Text("General")
+            }
+
             Section {
                 Defaults.Toggle("Enable Minimalistic UI", key: .enableMinimalisticUI)
                     .onChange(of: enableMinimalisticUI) { _, newValue in

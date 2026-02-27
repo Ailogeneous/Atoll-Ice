@@ -1,0 +1,130 @@
+/*
+ * Atoll (DynamicIsland)
+ * Copyright (C) 2024-2026 Atoll Contributors
+ *
+ * Originally from boring.notch project
+ * Modified and adapted for Atoll (DynamicIsland)
+ * See NOTICE for details.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+import Foundation
+import Combine
+import SwiftUI
+
+class SpotifyController: MediaControllerProtocol {
+    // MARK: - Properties
+    @Published private var playbackState: PlaybackState = PlaybackState(
+        bundleIdentifier: "com.spotify.client"
+    )
+    
+    var playbackStatePublisher: AnyPublisher<PlaybackState, Never> {
+        $playbackState.eraseToAnyPublisher()
+    }
+    
+    var isWorking: Bool {
+        return true
+    }
+    
+    private var notificationTask: Task<Void, Never>?
+    private let commandUpdateDelay: Duration = .milliseconds(25)
+
+    init() {
+        setupPlaybackStateChangeObserver()
+        Task {
+            if isActive() {
+                await updatePlaybackInfo()
+            }
+        }
+    }
+    
+    private func setupPlaybackStateChangeObserver() {
+        notificationTask = Task { @Sendable [weak self] in
+            let notifications = DistributedNotificationCenter.default().notifications(
+                named: NSNotification.Name("com.spotify.client.PlaybackStateChanged")
+            )
+            
+            for await _ in notifications {
+                await self?.updatePlaybackInfo()
+            }
+        }
+    }
+    
+    deinit {
+        notificationTask?.cancel()
+    }
+    
+    // MARK: - Protocol Implementation
+    func play() async { await executeCommand("play") }
+    func pause() async { await executeCommand("pause") }
+    func togglePlay() async { await executeCommand("playpause") }
+    func nextTrack() async { await executeCommand("next track") }
+    func previousTrack() async { await executeCommand("previous track") }
+    func seek(to time: Double) async { await executeCommand("set player position to \(time)") }
+    func toggleShuffle() async { await executeCommand("set shuffling to not shuffling") }
+    func toggleRepeat() async { await executeCommand("set repeating to not repeating") }
+    
+    func isActive() -> Bool {
+        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.spotify.client" }
+    }
+    
+    func updatePlaybackInfo() async {
+        guard let descriptor = try? await fetchPlaybackInfoAsync() else { return }
+        guard descriptor.numberOfItems >= 7 else { return }
+        
+        await MainActor.run {
+            var state = PlaybackState(
+                bundleIdentifier: "com.spotify.client",
+                isPlaying: descriptor.atIndex(1)?.booleanValue ?? false,
+                title: descriptor.atIndex(2)?.stringValue ?? "",
+                artist: descriptor.atIndex(3)?.stringValue ?? "",
+                album: descriptor.atIndex(4)?.stringValue ?? "",
+                currentTime: descriptor.atIndex(5)?.doubleValue ?? 0,
+                duration: descriptor.atIndex(6)?.doubleValue ?? 0,
+                playbackRate: 1,
+                lastUpdated: Date(),
+                artwork: descriptor.atIndex(7)?.data
+            )
+            self.playbackState = state
+        }
+    }
+    
+    private func executeCommand(_ command: String) async {
+        let script = "tell application \"Spotify\" to \(command)"
+        try? await AppleScriptHelper.executeVoid(script)
+    }
+
+    private func fetchPlaybackInfoAsync() async throws -> NSAppleEventDescriptor? {
+        let script = """
+        tell application "Spotify"
+            if it is running then
+                try
+                    set playerState to player state is playing
+                    set currentTrackName to name of current track
+                    set currentTrackArtist to artist of current track
+                    set currentTrackAlbum to album of current track
+                    set trackPosition to player position
+                    set trackDuration to duration of current track / 1000
+                    set artData to data of artwork 1 of current track
+                    return {playerState, currentTrackName, currentTrackArtist, currentTrackAlbum, trackPosition, trackDuration, artData}
+                on error
+                    return {false, "", "", "", 0, 0, ""}
+                end try
+            end if
+        end tell
+        """
+        return try await AppleScriptHelper.execute(script)
+    }
+}

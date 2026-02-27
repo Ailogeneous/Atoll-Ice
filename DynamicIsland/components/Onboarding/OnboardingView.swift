@@ -22,9 +22,13 @@
 
 import SwiftUI
 import AVFoundation
+import AXSwift
+import ScreenCaptureKit
 
 enum OnboardingStep {
     case welcome
+    case accessibilityPermission
+    case screenRecordingPermission
     case cameraPermission
     case calendarPermission
     case musicPermission
@@ -45,9 +49,53 @@ struct OnboardingView: View {
             case .welcome:
                 WelcomeView {
                     withAnimation(.easeInOut(duration: 0.6)) {
-                        step = .cameraPermission
+                        step = .accessibilityPermission
                     }
                 }
+                .transition(.opacity)
+
+            case .accessibilityPermission:
+                PermissionRequestView(
+                    icon: Image(systemName: "hand.raised.fill"),
+                    title: String(localized: "Enable Accessibility"),
+                    description: String(localized: "Atoll needs accessibility permissions to arrange menu bar items and provide real-time information about the system menu bar. This is required for the Ice menu integration."),
+                    privacyNote: String(localized: "Accessibility is only used to interact with the menu bar."),
+                    onAllow: {
+                        Task {
+                            await requestAccessibilityPermission()
+                            withAnimation(.easeInOut(duration: 0.6)) {
+                                step = .screenRecordingPermission
+                            }
+                        }
+                    },
+                    onSkip: {
+                        withAnimation(.easeInOut(duration: 0.6)) {
+                            step = .screenRecordingPermission
+                        }
+                    }
+                )
+                .transition(.opacity)
+
+            case .screenRecordingPermission:
+                PermissionRequestView(
+                    icon: Image(systemName: "record.circle"),
+                    title: String(localized: "Enable Screen Recording"),
+                    description: String(localized: "Atoll uses screen recording permissions to capture images of your menu bar items and apply custom styles to the menu bar. No actual screen content is ever recorded or stored."),
+                    privacyNote: String(localized: "Only images of the menu bar are used for display purposes."),
+                    onAllow: {
+                        Task {
+                            await requestScreenRecordingPermission()
+                            withAnimation(.easeInOut(duration: 0.6)) {
+                                step = .cameraPermission
+                            }
+                        }
+                    },
+                    onSkip: {
+                        withAnimation(.easeInOut(duration: 0.6)) {
+                            step = .cameraPermission
+                        }
+                    }
+                )
                 .transition(.opacity)
 
             case .cameraPermission:
@@ -131,5 +179,18 @@ struct OnboardingView: View {
     func requestCalendarPermission() async {
         await calendarService.requestAccess()
     }
-}
 
+    func requestAccessibilityPermission() async {
+        await MainActor.run {
+            AccessibilityPermissionStore.shared.requestAuthorizationPrompt()
+        }
+    }
+
+    func requestScreenRecordingPermission() async {
+        if #available(macOS 15.0, *) {
+            SCShareableContent.getWithCompletionHandler { _, _ in }
+        } else {
+            CGRequestScreenCaptureAccess()
+        }
+    }
+}

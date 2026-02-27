@@ -63,7 +63,63 @@ public final class ImageService: ImageServiceProtocol {
         guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
             throw URLError(.unsupportedURL)
         }
-        let (data, _) = try await session.data(from: url)
-        return data
+        do {
+            let (data, _) = try await session.data(from: url)
+            return data
+        } catch {
+            let shouldFallbackToCurl: Bool
+            if let urlError = error as? URLError {
+                shouldFallbackToCurl = [
+                    .cannotFindHost,
+                    .dnsLookupFailed,
+                    .cannotConnectToHost,
+                    .networkConnectionLost,
+                    .timedOut
+                ].contains(urlError.code)
+            } else {
+                shouldFallbackToCurl = false
+            }
+
+            guard shouldFallbackToCurl else {
+                throw error
+            }
+
+            NSLog("🔎 ImageService URLSession fetch failed (\(error.localizedDescription)); retrying with curl for \(url.absoluteString)")
+            return try fetchImageDataWithCurl(from: url)
+        }
+    }
+
+    private func fetchImageDataWithCurl(from url: URL) throws -> Data {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+        process.arguments = [
+            "-fL",
+            "--silent",
+            "--show-error",
+            "--max-time",
+            "12",
+            url.absoluteString
+        ]
+
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = errorPipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        if process.terminationStatus == 0, !outputData.isEmpty {
+            return outputData
+        }
+
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorMessage = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "curl failed"
+        throw NSError(
+            domain: NSURLErrorDomain,
+            code: URLError.cannotFindHost.rawValue,
+            userInfo: [NSLocalizedDescriptionKey: errorMessage]
+        )
     }
 }

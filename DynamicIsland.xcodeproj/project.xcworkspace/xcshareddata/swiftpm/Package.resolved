@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fbfa8cda0c383746edd66361426fdc2bd266fc082867294374a1818f02798f3",
+  "originHash" : "db78c40270482f6bea9f360fe5b22713d59c867a19c107d8c6ea3cc7c64727e3",
   "pins" : [
     {
       "identity" : "atollextensionkit",
@@ -11,12 +11,39 @@
       }
     },
     {
+      "identity" : "axswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tmandry/AXSwift",
+      "state" : {
+        "revision" : "81dcc36aced905d6464cc25e35f8d13184bbf21c",
+        "version" : "0.3.2"
+      }
+    },
+    {
+      "identity" : "compactslider",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/buh/CompactSlider",
+      "state" : {
+        "revision" : "52a01bd09156152881c53ba235c862e3bf5690b1",
+        "version" : "2.1.0"
+      }
+    },
+    {
       "identity" : "defaults",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/Defaults",
       "state" : {
         "revision" : "00c82eff4550c87cf9c547d7e5493a6a97837061",
         "version" : "9.0.3"
+      }
+    },
+    {
+      "identity" : "ifrit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ukushu/Ifrit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e7489909d15bb8b93a227035774ec3c2afbe761d"
       }
     },
     {

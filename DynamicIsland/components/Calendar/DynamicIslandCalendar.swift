@@ -200,6 +200,7 @@ struct CalendarView: View {
                         .fontWeight(.light)
                         .foregroundColor(Color(white: 0.65))
                 }
+                .offset(x: 10)
 
                 ZStack(alignment: .top) {
                     WheelPicker(selectedDate: $selectedDate, config: Config())
@@ -231,6 +232,7 @@ struct CalendarView: View {
         }
         .listRowBackground(Color.clear)
         .frame(height: 120)
+        .clipped()
         .onChange(of: selectedDate) {
             Task {
                 await calendarManager.updateCurrentDate(selectedDate)
@@ -314,7 +316,7 @@ struct EventListView: View {
 
         Task { @MainActor in
             withTransaction(Transaction(animation: nil)) {
-                proxy.scrollTo(target.id, anchor: .top)
+                proxy.scrollTo(target.listStableID, anchor: .top)
             }
         }
     }
@@ -323,7 +325,7 @@ struct EventListView: View {
         ScrollViewReader { proxy in
             ZStack {
                 List {
-                    ForEach(filteredEvents) { event in
+                    ForEach(Array(filteredEvents.enumerated()), id: \.offset) { _, event in
                         Button(action: {
                             if let url = event.calendarAppURL() {
                                 openURL(url)
@@ -331,7 +333,7 @@ struct EventListView: View {
                         }) {
                             eventRow(event)
                         }
-                        .id(event.id)
+                        .id(event.listStableID)
                         .padding(.leading, -5)
                         .buttonStyle(PlainButtonStyle())
                         .listRowSeparator(.automatic)
@@ -363,7 +365,6 @@ struct EventListView: View {
                 scrollToRelevantEvent(proxy: proxy)
             }
         }
-        Spacer(minLength: 0)
     }
 
     private func eventRow(_ event: EventModel) -> some View {

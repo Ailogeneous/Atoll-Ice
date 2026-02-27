@@ -48,7 +48,6 @@ struct LockScreenWeatherWidget: View {
 	@State private var lastCalendarLine: String = ""
 	@State private var calendarRowRenderToken: Int = 0
 	@State private var widgetWidthRemeasureToken: Int = 0
-	@State private var lastBadgeLogKey: String = ""
 	private var currentCalendarEventID: String {
 		nextCalendarEvent?.id ?? "no_event"
 	}
@@ -770,9 +769,6 @@ struct LockScreenWeatherWidget: View {
 	}
 
 	private func logBadgeColor(event: EventModel, reason: String) {
-		let key = "\(event.id)|\(lockScreenReminderChipStyle.rawValue)|\(isReminderCritical(event))|\(reason)"
-		lastBadgeLogKey = key
-
 		let color = reminderChipColor(for: event)
 		let nsColor = NSColor(color).usingColorSpace(.deviceRGB)
 		if let nsColor {
@@ -1508,7 +1504,6 @@ struct LockScreenWeatherWidget: View {
 		}
 	}
 }
-
 
 
 

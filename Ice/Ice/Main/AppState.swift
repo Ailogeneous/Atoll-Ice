@@ -222,8 +222,27 @@ final class AppState: ObservableObject {
 
     /// Opens the settings window.
     func openSettingsWindow() {
+        activate(withPolicy: .regular)
         with(EnvironmentValues()) { environment in
             environment.openWindow(id: IceConstants.settingsWindowID)
+        }
+
+        // Ensure settings is key/front even when the window is created asynchronously.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                return
+            }
+            NSApp.activate(ignoringOtherApps: true)
+            self.settingsWindow?.makeKeyAndOrderFront(nil)
+            self.settingsWindow?.orderFrontRegardless()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self else {
+                return
+            }
+            NSApp.activate(ignoringOtherApps: true)
+            self.settingsWindow?.makeKeyAndOrderFront(nil)
+            self.settingsWindow?.orderFrontRegardless()
         }
     }
 

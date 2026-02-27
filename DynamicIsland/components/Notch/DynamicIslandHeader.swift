@@ -35,6 +35,7 @@ struct DynamicIslandHeader: View {
     @Default(.timerDisplayMode) var timerDisplayMode
     @Default(.showClipboardIcon) var showClipboardIcon
     @Default(.clipboardDisplayMode) var clipboardDisplayMode
+    @AppStorage(IceDefaultsKey.enableNotchHiddenListMode.rawValue) private var enableNotchHiddenListMode = true
     
     var body: some View {
         HStack(spacing: 0) {
@@ -192,6 +193,28 @@ struct DynamicIslandHeader: View {
                         }
                     }
                     
+                    if Defaults[.settingsIconInNotch] && enableNotchHiddenListMode {
+                        Button(action: {
+                            let appState = AppDelegate.iceAppState
+                            appState.navigationState.settingsNavigationIdentifier = .menuBarLayout
+                            appState.openSettingsWindow()
+                        }) {
+                            Capsule()
+                                .fill(.black)
+                                .frame(width: 30, height: 30)
+                                .overlay {
+                                    Image("IceCubeFill")
+                                        .renderingMode(.template)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .foregroundColor(.white)
+                                        .frame(width: 13, height: 13)
+                                }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .help("Open Ice Settings")
+                    }
+
                     if Defaults[.settingsIconInNotch] {
                         Button(action: {
                             SettingsWindowController.shared.showWindow()

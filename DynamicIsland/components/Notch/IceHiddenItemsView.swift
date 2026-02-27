@@ -342,6 +342,8 @@ struct IceHiddenItemView: View {
                 triggerClick(.left)
             } label: {
                 Image(nsImage: image)
+                    .renderingMode(.template)
+                    .foregroundStyle(.white.opacity(0.92))
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())

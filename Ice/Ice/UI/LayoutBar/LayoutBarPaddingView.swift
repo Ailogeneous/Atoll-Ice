@@ -9,6 +9,9 @@ import Combine
 /// A Cocoa view that manages the menu bar layout interface.
 final class LayoutBarPaddingView: NSView {
     private let container: LayoutBarContainer
+    private static var pendingMoveTask: Task<Void, Never>?
+    private static var pendingMoveRevision = 0
+    private static let moveCommitDelay: Duration = .milliseconds(5000)
 
     /// The section whose items are represented.
     var section: MenuBarSection {
@@ -67,7 +70,8 @@ final class LayoutBarPaddingView: NSView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        container.updateArrangedViewsForDrag(with: sender, phase: .entered)
+        invalidatePendingMoveCommit()
+        return container.updateArrangedViewsForDrag(with: sender, phase: .entered)
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
@@ -77,7 +81,7 @@ final class LayoutBarPaddingView: NSView {
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        container.updateArrangedViewsForDrag(with: sender, phase: .updated)
+        return container.updateArrangedViewsForDrag(with: sender, phase: .updated)
     }
 
     override func draggingEnded(_ sender: NSDraggingInfo) {
@@ -128,19 +132,41 @@ final class LayoutBarPaddingView: NSView {
         guard let appState = container.appState else {
             return
         }
-        Task {
-            try await Task.sleep(for: .milliseconds(25))
+
+        Self.pendingMoveRevision += 1
+        let revision = Self.pendingMoveRevision
+        Self.pendingMoveTask?.cancel()
+        Self.pendingMoveTask = Task { @MainActor [appState] in
+            try? await Task.sleep(for: Self.moveCommitDelay)
+            guard
+                !Task.isCancelled,
+                revision == Self.pendingMoveRevision
+            else {
+                return
+            }
             do {
                 try await appState.itemManager.slowMove(item: item, to: destination)
+                guard !Task.isCancelled, revision == Self.pendingMoveRevision else {
+                    return
+                }
                 appState.itemManager.removeTempShownItemFromCache(with: item.info)
                 await appState.itemManager.forceRefreshCache(clearExisting: false)
                 await appState.itemManager.persistExpectedHiddenFromCurrentCache()
             } catch {
+                guard !Task.isCancelled else {
+                    return
+                }
                 Bridging.Logger.layoutBar.error("Error moving menu bar item: \(error)")
                 let alert = NSAlert(error: error)
                 alert.runModal()
             }
         }
+    }
+
+    private func invalidatePendingMoveCommit() {
+        Self.pendingMoveRevision += 1
+        Self.pendingMoveTask?.cancel()
+        Self.pendingMoveTask = nil
     }
 }
 

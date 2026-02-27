@@ -142,6 +142,12 @@ final class MenuBarItemManager: ObservableObject {
     /// A Boolean value that indicates whether expected-hidden recovery is running.
     private var isRecoveringExpectedHiddenItems = false
 
+    /// Cached representation of the most recently persisted expected-hidden set.
+    private var lastPersistedExpectedHiddenData: Data?
+
+    /// A Boolean value that indicates whether startup recovery should still run.
+    private var shouldRunInitialExpectedHiddenRecovery = true
+
     /// Event type mask for tracking mouse events.
     private let mouseTrackingMask: NSEvent.EventTypeMask = [
         .mouseMoved,
@@ -199,6 +205,8 @@ final class MenuBarItemManager: ObservableObject {
                 }
                 Task {
                     await self.cacheItemsIfNeeded()
+                    _ = await self.runInitialExpectedHiddenRecoveryIfNeeded()
+                    self.persistExpectedHiddenFromCurrentCacheIfNeeded()
                 }
             }
             .store(in: &c)
@@ -277,7 +285,8 @@ extension MenuBarItemManager {
     }
 
     /// Saves the expected hidden items to defaults.
-    private func saveExpectedHiddenItemsToDefaults(_ infos: Set<MenuBarItemInfo>) {
+    @discardableResult
+    private func saveExpectedHiddenItemsToDefaults(_ infos: Set<MenuBarItemInfo>) -> Bool {
         let sorted = infos.sorted { lhs, rhs in
             if lhs.namespace.rawValue == rhs.namespace.rawValue {
                 return lhs.title < rhs.title
@@ -286,15 +295,61 @@ extension MenuBarItemManager {
         }
         guard let data = try? JSONEncoder().encode(sorted) else {
             Bridging.Logger.itemManager.error("Failed to encode expected hidden item set")
-            return
+            return false
+        }
+        if data == lastPersistedExpectedHiddenData || data == IceDefaults.data(forKey: .expectedHiddenItems) {
+            lastPersistedExpectedHiddenData = data
+            return false
         }
         IceDefaults.set(data, forKey: .expectedHiddenItems)
+        lastPersistedExpectedHiddenData = data
+        return true
     }
 
     /// Stores the current hidden section as the expected hidden set.
     func persistExpectedHiddenFromCurrentCache() {
         let hiddenInfos = Set(itemCache.managedItems(for: .hidden).map(\.info))
         saveExpectedHiddenItemsToDefaults(hiddenInfos)
+    }
+
+    /// Persists the hidden list after item movement settles.
+    func persistExpectedHiddenFromCurrentCacheIfNeeded() {
+        guard !isMovingItem, !isMouseButtonDown, !mouseHasRecentlyMoved else {
+            return
+        }
+        let hiddenInfos = Set(itemCache.managedItems(for: .hidden).map(\.info))
+        guard !hiddenInfos.isEmpty else {
+            return
+        }
+        saveExpectedHiddenItemsToDefaults(hiddenInfos)
+    }
+
+    /// Runs expected-hidden recovery on launch before periodic persistence.
+    /// Returns `true` after launch recovery is complete (or intentionally skipped).
+    private func runInitialExpectedHiddenRecoveryIfNeeded() async -> Bool {
+        guard shouldRunInitialExpectedHiddenRecovery else {
+            return true
+        }
+        shouldRunInitialExpectedHiddenRecovery = false
+
+        let expectedHidden = expectedHiddenItemsFromDefaults()
+        guard !expectedHidden.isEmpty else {
+            return true
+        }
+
+        let currentHiddenInfos = Set(itemCache.managedItems(for: .hidden).map(\.info))
+        if expectedHidden.isSubset(of: currentHiddenInfos) {
+            return true
+        }
+
+        guard !isMovingItem, !isMouseButtonDown, !mouseHasRecentlyMoved else {
+            return true
+        }
+
+        _ = await recoverExpectedHiddenItemsToPolicy(limit: nil, includeOverflowHiddenItems: false)
+        await cacheItemsIfNeeded()
+
+        return true
     }
 
     /// Returns whether current hidden cache differs from expected hidden policy.
@@ -320,7 +375,7 @@ extension MenuBarItemManager {
 
     /// Recovers hidden items to match expected hidden policy.
     @discardableResult
-    func recoverExpectedHiddenItemsToPolicy(limit: Int? = nil) async -> Bool {
+    func recoverExpectedHiddenItemsToPolicy(limit: Int? = nil, includeOverflowHiddenItems: Bool = true) async -> Bool {
         guard !isRecoveringExpectedHiddenItems else {
             return false
         }
@@ -347,7 +402,11 @@ extension MenuBarItemManager {
         let currentHiddenItems = itemCache.managedItems(for: .hidden)
         let currentHiddenInfos = Set(currentHiddenItems.map(\.info))
         let missingInfos = expectedHidden.subtracting(currentHiddenInfos)
-        let overflowHiddenItems = currentHiddenItems.filter { !expectedHidden.contains($0.info) }
+        let overflowHiddenItems: [MenuBarItem] = if includeOverflowHiddenItems {
+            currentHiddenItems.filter { !expectedHidden.contains($0.info) }
+        } else {
+            []
+        }
         let alwaysHiddenControl = items.first(where: { $0.info == .alwaysHiddenControlItem })
         let missingCandidates = items.filter { missingInfos.contains($0.info) }
         let limitedMissingCandidates: [MenuBarItem] = if let limit {

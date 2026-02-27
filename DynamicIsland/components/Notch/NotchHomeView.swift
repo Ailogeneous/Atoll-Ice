@@ -554,24 +554,23 @@ struct NotchHomeView: View {
                 }
                 
                 VStack(spacing: 4) {
-                    IceHiddenItemsView()
-                        .contentShape(Rectangle())
-                        .frame(
-                            width: enableNotchHiddenListMode ? notchHiddenListWidth : nil,
-                            alignment: .center
-                        )
-                        .frame(maxWidth: .infinity)
-                        .offset(y: -10)
-                        .padding(.horizontal, -20)
-                        .zIndex(2)
-                        .onHover { isHovering in
-                            let appState = AppDelegate.iceAppState
-                            let isBlocked = appState.isActiveSpaceFullscreen && appState.menuBarManager.isMenuBarHiddenBySystem
-                            vm.isHoveringIceMenu = isBlocked ? false : isHovering
-                        }
-                        .onTapGesture {
-                            NSLog("🔎 IceHiddenItemsView container tap")
-                        }
+                    if enableNotchHiddenListMode {
+                        IceHiddenItemsView()
+                            .contentShape(Rectangle())
+                            .frame(width: notchHiddenListWidth, alignment: .center)
+                            .frame(maxWidth: .infinity)
+                            .offset(y: -10)
+                            .padding(.horizontal, -20)
+                            .zIndex(2)
+                            .onHover { isHovering in
+                                let appState = AppDelegate.iceAppState
+                                let isBlocked = appState.isActiveSpaceFullscreen && appState.menuBarManager.isMenuBarHiddenBySystem
+                                vm.isHoveringIceMenu = isBlocked ? false : isHovering
+                            }
+                            .onTapGesture {
+                                NSLog("🔎 IceHiddenItemsView container tap")
+                            }
+                    }
                     if Defaults[.showCalendar] {
                         CalendarView()
                             .offset(y: -6)

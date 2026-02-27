@@ -25,9 +25,12 @@ struct IceHiddenItemsView: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @AppStorage(IceDefaultsKey.enableNotchHiddenListMode.rawValue) private var enableNotchHiddenListMode = true
     @State private var lastKnownItems = [MenuBarItem]()
+    @State private var isRecoveringExpectedHidden = false
     @State private var missingExpectedHiddenCount = 0
     @State private var didInitialCenterScroll = false
+    @State private var lastRecoveryTriggerDate = Date.distantPast
     private let refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+    private let recoveryTriggerInterval: TimeInterval = 1
     private let infiniteRepeatCopies = 15
     private let edgeFadeWidth: CGFloat = 72
     
@@ -85,7 +88,15 @@ struct IceHiddenItemsView: View {
     }
 
     private func recoverExpectedHiddenItems(limit: Int?) {
+        guard !isRecoveringExpectedHidden else {
+            return
+        }
+
         Task {
+            await MainActor.run {
+                isRecoveringExpectedHidden = true
+            }
+
             _ = await itemManager.recoverExpectedHiddenItemsToPolicy(limit: limit)
             await itemManager.cacheItemsIfNeeded()
 
@@ -94,7 +105,45 @@ struct IceHiddenItemsView: View {
             }
 
             await MainActor.run {
+                isRecoveringExpectedHidden = false
                 updateMissingExpectedHiddenCount()
+            }
+        }
+    }
+
+    private func triggerExpectedHiddenRecoveryIfNeeded() {
+        guard !enableNotchHiddenListMode else { return }
+        guard vm.notchState == .open else { return }
+        guard vm.isHoveringIceMenu else { return }
+        guard !isFullscreenBlackMenuBar else { return }
+        guard !isRecoveringExpectedHidden else { return }
+        guard Date.now.timeIntervalSince(lastRecoveryTriggerDate) >= recoveryTriggerInterval else { return }
+
+        lastRecoveryTriggerDate = .now
+
+        Task {
+            guard  itemManager.hasExpectedHiddenMismatch() else {
+                return
+            }
+
+            await MainActor.run {
+                isRecoveringExpectedHidden = true
+            }
+
+            let didRecover = await itemManager.recoverExpectedHiddenItemsToPolicy()
+
+            await itemManager.cacheItemsIfNeeded()
+            if ScreenCapture.cachedCheckPermissions() {
+                await imageCache.updateCacheWithoutChecks(sections: [.hidden])
+            }
+
+            await MainActor.run {
+                isRecoveringExpectedHidden = false
+                if didRecover, vm.notchState == .open {
+                    withAnimation(.smooth) {
+                        vm.close()
+                    }
+                }
             }
         }
     }
@@ -108,6 +157,15 @@ struct IceHiddenItemsView: View {
                             await itemManager.cacheItemsIfNeeded()
                         }
                     }
+            } else if isRecoveringExpectedHidden {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Recovering hidden items…")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.75))
+                }
+                .frame(height: 32)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -203,14 +261,18 @@ struct IceHiddenItemsView: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .allowsHitTesting(!isFullscreenBlackMenuBar)
+        .allowsHitTesting(!isFullscreenBlackMenuBar && !isRecoveringExpectedHidden)
         .onChange(of: isFullscreenBlackMenuBar) { _, isBlocked in
             if isBlocked {
                 vm.isHoveringIceMenu = false
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSScrollView.didLiveScrollNotification)) { _ in
+            triggerExpectedHiddenRecoveryIfNeeded()
+        }
         .onReceive(refreshTimer) { _ in
             guard vm.notchState == .open else { return }
+            guard !isRecoveringExpectedHidden else { return }
             Task {
                 await itemManager.cacheItemsIfNeeded()
                 if ScreenCapture.cachedCheckPermissions() {

@@ -38,6 +38,7 @@ struct IceHiddenItemsView: View {
     @State private var overlayDismissTask: Task<Void, Never>?
     @State private var isNotchTransitioning = false
     @State private var notchTransitionTask: Task<Void, Never>?
+    @State private var shouldForceBlackoutForMenuAutohide = false
     private let reminderTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
@@ -45,6 +46,7 @@ struct IceHiddenItemsView: View {
         return formatter
     }()
     private let refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+    private let fullscreenGuardTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     private let virtualCopyCount = 5
     private let edgeFadeWidth: CGFloat = 72
     
@@ -62,6 +64,14 @@ struct IceHiddenItemsView: View {
 
     private var isFullscreenBlackMenuBar: Bool {
         appState.isActiveSpaceFullscreen && appState.menuBarManager.isMenuBarHiddenBySystem
+    }
+
+    private var shouldBlockItemInteractions: Bool {
+        shouldEnforceBlackout
+    }
+
+    private var shouldEnforceBlackout: Bool {
+        isFullscreenBlackMenuBar || shouldForceBlackoutForMenuAutohide
     }
 
     private var reminderOverlayEntry: ReminderLiveActivityManager.ReminderEntry? {
@@ -213,6 +223,7 @@ struct IceHiddenItemsView: View {
                     .frame(height: 32)
                     .fixedSize(horizontal: false, vertical: true)
                     .clipped()
+                    .opacity(shouldEnforceBlackout ? 0 : 1)
                     .overlay(alignment: .leading) {
                         LinearGradient(
                             colors: [.black.opacity(0.9), .black.opacity(0)],
@@ -299,10 +310,53 @@ struct IceHiddenItemsView: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .allowsHitTesting(!isFullscreenBlackMenuBar)
+        .allowsHitTesting(!shouldBlockItemInteractions)
         .onChange(of: isFullscreenBlackMenuBar) { _, isBlocked in
             if isBlocked {
                 vm.isHoveringIceMenu = false
+            }
+        }
+        .onReceive(fullscreenGuardTimer) { _ in
+            guard vm.notchState == .open else {
+                shouldForceBlackoutForMenuAutohide = false
+                return
+            }
+            let options = NSApp.currentSystemPresentationOptions
+            let usesSystemMenuBarAutohide =
+                options.contains(.autoHideMenuBar) ||
+                options.contains(.hideMenuBar) ||
+                appState.isActiveSpaceFullscreen
+            guard usesSystemMenuBarAutohide else {
+                shouldForceBlackoutForMenuAutohide = false
+                return
+            }
+
+            let shouldBlackout: Bool = {
+                // Once blackout is engaged, keep it latched until the cursor is back in the menu bar.
+                if appState.eventManager.isMouseInsideMenuBar {
+                    return false
+                }
+                if appState.menuBarManager.isMenuBarHiddenBySystem {
+                    return true
+                }
+                guard
+                    let screen = NSScreen.screenWithMouse ?? NSScreen.main,
+                    let mouseLocation = MouseCursor.locationAppKit
+                else {
+                    return true
+                }
+                let distanceFromTopEdge = screen.frame.maxY - mouseLocation.y
+                if distanceFromTopEdge > 160 {
+                    return true
+                }
+                return shouldForceBlackoutForMenuAutohide
+            }()
+
+            if shouldBlackout != shouldForceBlackoutForMenuAutohide {
+                shouldForceBlackoutForMenuAutohide = shouldBlackout
+                if shouldBlackout {
+                    vm.isHoveringIceMenu = false
+                }
             }
         }
         .onReceive(refreshTimer) { _ in

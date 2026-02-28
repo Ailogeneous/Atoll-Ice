@@ -17,16 +17,32 @@
  */
 
 import AppKit
+import Defaults
 import SwiftUI
 
 struct IceHiddenItemsView: View {
     @EnvironmentObject var itemManager: MenuBarItemManager
     @EnvironmentObject var imageCache: MenuBarItemImageCache
     @EnvironmentObject var vm: DynamicIslandViewModel
+    @ObservedObject private var reminderManager = ReminderLiveActivityManager.shared
     @AppStorage(IceDefaultsKey.enableNotchHiddenListMode.rawValue) private var enableNotchHiddenListMode = true
+    @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
+    @Default(.reminderSneakPeekDuration) private var reminderSneakPeekDuration
     @State private var lastKnownItems = [MenuBarItem]()
     @State private var missingExpectedHiddenCount = 0
     @State private var didInitialCenterScroll = false
+    @State private var testReminderOverlayText: String?
+    @State private var isHoveringItemList = false
+    @State private var latchedReminderOverlayText: String?
+    @State private var latchedReminderOverlayAccent: Color = .white
+    @State private var overlayVisibleUntil: Date = .distantPast
+    @State private var overlayDismissTask: Task<Void, Never>?
+    private let reminderTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
     private let refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
     private let infiniteRepeatCopies = 15
     private let edgeFadeWidth: CGFloat = 72
@@ -45,6 +61,65 @@ struct IceHiddenItemsView: View {
 
     private var isFullscreenBlackMenuBar: Bool {
         appState.isActiveSpaceFullscreen && appState.menuBarManager.isMenuBarHiddenBySystem
+    }
+
+    private var reminderOverlayEntry: ReminderLiveActivityManager.ReminderEntry? {
+        guard enableReminderLiveActivity else { return nil }
+        return reminderManager.activeReminder ?? reminderManager.activeWindowReminders.first
+    }
+
+    private var liveReminderOverlayText: String? {
+        if let testReminderOverlayText {
+            return testReminderOverlayText
+        }
+        guard let reminder = reminderOverlayEntry else {
+            return nil
+        }
+        return reminderSneakPeekText(for: reminder, now: reminderManager.currentDate)
+    }
+
+    private var liveReminderOverlayAccent: Color {
+        if testReminderOverlayText != nil {
+            return .orange
+        }
+        guard let reminder = reminderOverlayEntry else {
+            return .white
+        }
+        return reminderColor(for: reminder, now: reminderManager.currentDate)
+    }
+
+    private var reminderOverlayText: String? {
+        if let testReminderOverlayText {
+            return testReminderOverlayText
+        }
+
+        if let liveReminderOverlayText {
+            return liveReminderOverlayText
+        }
+
+        guard overlayVisibleUntil > Date() else {
+            return nil
+        }
+
+        return latchedReminderOverlayText
+    }
+
+    private var reminderOverlayAccent: Color {
+        if testReminderOverlayText != nil {
+            return .orange
+        }
+
+        if liveReminderOverlayText != nil {
+            return liveReminderOverlayAccent
+        }
+
+        return latchedReminderOverlayAccent
+    }
+
+    private var reminderOverlaySignature: String {
+        guard let entry = reminderOverlayEntry else { return "none" }
+        let text = reminderSneakPeekText(for: entry, now: reminderManager.currentDate)
+        return "\(entry.id)|\(text)"
     }
 
     private struct RenderedHiddenItem: Identifiable {
@@ -160,6 +235,43 @@ struct IceHiddenItemsView: View {
                         .frame(width: edgeFadeWidth)
                         .allowsHitTesting(false)
                     }
+                    .overlay {
+                        GeometryReader { geo in
+                            if let overlayText = reminderOverlayText {
+                                let accent = reminderOverlayAccent
+                                let frameWidth = max(0, geo.size.width - 34)
+
+                                HStack(spacing: 6) {
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(accent)
+                                        .frame(width: 8, height: 12)
+
+                                    MarqueeText(
+                                        .constant(overlayText),
+                                        textColor: accent,
+                                        minDuration: 1,
+                                        frameWidth: frameWidth
+                                    )
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(.black.opacity(0.8))
+                                )
+                                .padding(.horizontal, 12)
+                                .offset(x: -20, y: 4)
+                                .opacity(isHoveringItemList ? 0 : 1)
+                                .animation(.easeInOut(duration: 0.3), value: isHoveringItemList)
+                            }
+                        }
+                        // Keep the hidden items list fully interactive under the overlay.
+                        .allowsHitTesting(false)
+                    }
+                    .onHover { hovering in
+                        isHoveringItemList = hovering
+                    }
                     .contextMenu {
                         Button("Open Ice Settings") {
                             AppDelegate.iceAppState.openSettingsWindow()
@@ -177,11 +289,15 @@ struct IceHiddenItemsView: View {
                                 }
                             }
                         }
+                        Button("Test Reminder Sneak Peek Overlay") {
+                            showTestReminderOverlay()
+                        }
                     }
                     .onAppear {
                         Task {
                             await itemManager.cacheItemsIfNeeded()
                             await MainActor.run {
+                                refreshReminderOverlayLatch()
                                 updateMissingExpectedHiddenCount()
                                 if !didInitialCenterScroll, let centerItemID {
                                     didInitialCenterScroll = true
@@ -217,12 +333,19 @@ struct IceHiddenItemsView: View {
                     await imageCache.updateCacheWithoutChecks(sections: [.hidden])
                 }
                 await MainActor.run {
+                    refreshReminderOverlayLatch()
                     if !items.isEmpty {
                         lastKnownItems = items
                     }
                     updateMissingExpectedHiddenCount()
                 }
             }
+        }
+        .onChange(of: reminderOverlaySignature) { _, _ in
+            refreshReminderOverlayLatch()
+        }
+        .onChange(of: testReminderOverlayText) { _, _ in
+            refreshReminderOverlayLatch()
         }
         .onChange(of: items.map(\.windowID)) { _, newWindowIDs in
             guard !newWindowIDs.isEmpty else { return }
@@ -233,7 +356,112 @@ struct IceHiddenItemsView: View {
             didInitialCenterScroll = false
             updateMissingExpectedHiddenCount()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .testReminderSneakPeekOverlay)) { _ in
+            showTestReminderOverlay()
+        }
+        .onDisappear {
+            overlayDismissTask?.cancel()
+            overlayDismissTask = nil
+        }
     }
+
+    private func reminderColor(for reminder: ReminderLiveActivityManager.ReminderEntry, now: Date) -> Color {
+        let window = TimeInterval(reminderSneakPeekDuration)
+        let remaining = reminder.event.start.timeIntervalSince(now)
+        if remaining <= window {
+            return .red
+        }
+        return Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+    }
+
+    private func reminderSneakPeekText(for entry: ReminderLiveActivityManager.ReminderEntry, now: Date) -> String {
+        let fallbackTitle: String = {
+            switch entry.event.type {
+            case .reminder:
+                return "Upcoming Reminder"
+            case .event, .birthday:
+                return "Upcoming Event"
+            }
+        }()
+        let title = entry.event.title.isEmpty ? fallbackTitle : entry.event.title
+        let remaining = max(entry.event.start.timeIntervalSince(now), 0)
+        let window = TimeInterval(reminderSneakPeekDuration)
+
+        if window > 0 && remaining <= window {
+            return "\(title) • now"
+        }
+
+        let minutes = Int(ceil(remaining / 60))
+        let timeString = reminderTimeFormatter.string(from: entry.event.start)
+
+        if minutes <= 0 {
+            return "\(title) • now • \(timeString)"
+        } else if minutes == 1 {
+            return "\(title) • in 1 min • \(timeString)"
+        } else {
+            return "\(title) • in \(minutes) min • \(timeString)"
+        }
+    }
+
+    private func refreshReminderOverlayLatch() {
+        if testReminderOverlayText != nil {
+            overlayDismissTask?.cancel()
+            overlayDismissTask = nil
+            return
+        }
+
+        guard let liveReminderOverlayText else {
+            if overlayVisibleUntil <= Date() {
+                clearReminderOverlayLatch()
+            }
+            return
+        }
+
+        latchedReminderOverlayText = liveReminderOverlayText
+        latchedReminderOverlayAccent = liveReminderOverlayAccent
+        extendOverlayVisibility(for: liveReminderOverlayText)
+    }
+
+    private func extendOverlayVisibility(for text: String) {
+        let hold = overlayHoldDuration(for: text)
+        let target = Date().addingTimeInterval(hold)
+        if target > overlayVisibleUntil {
+            overlayVisibleUntil = target
+        }
+        scheduleOverlayDismiss()
+    }
+
+    private func scheduleOverlayDismiss() {
+        overlayDismissTask?.cancel()
+        let target = overlayVisibleUntil
+        overlayDismissTask = Task { @MainActor in
+            let delay = target.timeIntervalSinceNow
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+            guard Date() >= self.overlayVisibleUntil else { return }
+            self.clearReminderOverlayLatch()
+        }
+    }
+
+    private func clearReminderOverlayLatch() {
+        latchedReminderOverlayText = nil
+        overlayVisibleUntil = .distantPast
+    }
+
+    private func overlayHoldDuration(for text: String) -> TimeInterval {
+        let estimatedReadAndScroll = (Double(text.count) * 0.22) + 5.0
+        return min(30, max(8, estimatedReadAndScroll))
+    }
+
+    private func showTestReminderOverlay() {
+        testReminderOverlayText = "Test reminder overlay • this should scroll if it is wider than the ice list"
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            testReminderOverlayText = nil
+        }
+    }
+
 }
 
 struct IceHiddenItemView: View {
@@ -355,6 +583,10 @@ struct IceHiddenItemView: View {
                     triggerClick(.right)
                 }
                 Divider()
+                Button("Test Reminder Sneak Peek Overlay") {
+                    NotificationCenter.default.post(name: .testReminderSneakPeekOverlay, object: nil)
+                }
+                Divider()
                 Button("Open Ice Settings") {
                     AppDelegate.iceAppState.openSettingsWindow()
                 }
@@ -382,6 +614,10 @@ struct IceHiddenItemView: View {
                 }
                 Button("Right Click Menu Item") {
                     triggerClick(.right)
+                }
+                Divider()
+                Button("Test Reminder Sneak Peek Overlay") {
+                    NotificationCenter.default.post(name: .testReminderSneakPeekOverlay, object: nil)
                 }
                 Divider()
                 Button("Open Ice Settings") {
@@ -432,4 +668,8 @@ struct IceHiddenItemView: View {
             )
         }
     }
+}
+
+private extension Notification.Name {
+    static let testReminderSneakPeekOverlay = Notification.Name("TestReminderSneakPeekOverlay")
 }

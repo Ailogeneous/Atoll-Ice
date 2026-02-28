@@ -682,7 +682,7 @@ struct ContentView: View {
                               }
                           }
                           else if coordinator.sneakPeek.type == .reminder {
-                              if !vm.hideOnClosed && activeSneakPeekStyle == .standard, let reminder = reminderManager.activeReminder {
+                              if vm.notchState == .closed && !vm.hideOnClosed && activeSneakPeekStyle == .standard, let reminder = reminderManager.activeReminder {
                                   GeometryReader { geo in
                                       let chipColor = Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
                                       HStack(spacing: 6) {

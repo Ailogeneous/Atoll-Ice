@@ -140,6 +140,7 @@ struct ContentView: View {
     @State private var hasPendingMusicControlSync = false
     @State private var pendingMusicControlForceRefresh = false
     @State private var musicControlSuppressionTask: Task<Void, Never>?
+    @State private var deferredOpenRefreshTask: Task<Void, Never>?
 
     @State private var haptics: Bool = false
 
@@ -313,8 +314,13 @@ struct ContentView: View {
                     }
                 })
                 .onChange(of: vm.notchState) { _, newState in
+                    deferredOpenRefreshTask?.cancel()
                     if newState == .open {
-                        Task {
+                        deferredOpenRefreshTask = Task {
+                            try? await Task.sleep(for: .milliseconds(350))
+                            guard !Task.isCancelled, vm.notchState == .open else {
+                                return
+                            }
                             await itemManager.forceRefreshCache(clearExisting: false)
                             if ScreenCapture.cachedCheckPermissions() {
                                 await imageCache.updateCacheWithoutChecks(sections: [.hidden])
@@ -439,6 +445,10 @@ struct ContentView: View {
                 enqueueMusicControlWindowSync(forceRefresh: true, delay: 0.05)
             }
 
+        }
+        .onDisappear {
+            deferredOpenRefreshTask?.cancel()
+            deferredOpenRefreshTask = nil
         }
         .onChange(of: musicControlWindowEnabled) { _, enabled in
             if enabled {

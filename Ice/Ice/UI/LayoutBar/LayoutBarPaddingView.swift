@@ -12,6 +12,7 @@ final class LayoutBarPaddingView: NSView {
     private static var pendingMoveTask: Task<Void, Never>?
     private static var pendingMoveRevision = 0
     private static let moveCommitDelay: Duration = .milliseconds(5000)
+    private static let visibleSectionWidthLimit: CGFloat = 660
 
     /// The section whose items are represented.
     var section: MenuBarSection {
@@ -99,6 +100,11 @@ final class LayoutBarPaddingView: NSView {
             return false
         }
 
+        if exceedsVisibleSectionWidthLimit(with: draggingSource) {
+            rejectDragBecauseVisibleSectionIsTooWide(for: draggingSource)
+            return false
+        }
+
         if let index = arrangedViews.firstIndex(of: draggingSource) {
             if arrangedViews.count == 1 {
                 // dragging source is the only view in the layout bar, so we
@@ -126,6 +132,47 @@ final class LayoutBarPaddingView: NSView {
         }
 
         return true
+    }
+
+    private func exceedsVisibleSectionWidthLimit(with draggingSource: LayoutBarItemView) -> Bool {
+        guard section.name == .visible else {
+            return false
+        }
+
+        var candidateViews = arrangedViews
+        if !candidateViews.contains(draggingSource) {
+            candidateViews.append(draggingSource)
+        }
+
+        let totalWidth = candidateViews.reduce(0) { partial, view in
+            partial + view.item.frame.width
+        }
+        return totalWidth > Self.visibleSectionWidthLimit
+    }
+
+    private func rejectDragBecauseVisibleSectionIsTooWide(for draggingSource: LayoutBarItemView) {
+        Bridging.Logger.layoutBar.warning("Rejecting visible-section drop because width exceeds \(Self.visibleSectionWidthLimit)pt")
+
+        if let index = arrangedViews.firstIndex(of: draggingSource) {
+            container.shouldAnimateNextLayoutPass = false
+            arrangedViews.remove(at: index)
+            draggingSource.hasContainer = false
+        }
+
+        if let oldContainerInfo = draggingSource.oldContainerInfo {
+            let oldContainer = oldContainerInfo.container
+            oldContainer.shouldAnimateNextLayoutPass = false
+            if !oldContainer.arrangedViews.contains(draggingSource) {
+                let clampedIndex = max(0, min(oldContainerInfo.index, oldContainer.arrangedViews.count))
+                oldContainer.arrangedViews.insert(draggingSource, at: clampedIndex)
+            }
+            draggingSource.hasContainer = true
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Visible section width limit exceeded"
+        alert.informativeText = "Visible items cannot exceed 660 pt. Move one or more items out of Visible, then try again."
+        alert.runModal()
     }
 
     private func move(item: MenuBarItem, to destination: MenuBarItemManager.MoveDestination) {

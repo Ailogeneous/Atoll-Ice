@@ -31,12 +31,13 @@ struct IceHiddenItemsView: View {
     @State private var lastKnownItems = [MenuBarItem]()
     @State private var missingExpectedHiddenCount = 0
     @State private var didInitialCenterScroll = false
-    @State private var testReminderOverlayText: String?
     @State private var isHoveringItemList = false
     @State private var latchedReminderOverlayText: String?
     @State private var latchedReminderOverlayAccent: Color = .white
     @State private var overlayVisibleUntil: Date = .distantPast
     @State private var overlayDismissTask: Task<Void, Never>?
+    @State private var isNotchTransitioning = false
+    @State private var notchTransitionTask: Task<Void, Never>?
     private let reminderTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
@@ -44,7 +45,7 @@ struct IceHiddenItemsView: View {
         return formatter
     }()
     private let refreshTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
-    private let infiniteRepeatCopies = 15
+    private let virtualCopyCount = 5
     private let edgeFadeWidth: CGFloat = 72
     
     var items: [MenuBarItem] {
@@ -69,9 +70,6 @@ struct IceHiddenItemsView: View {
     }
 
     private var liveReminderOverlayText: String? {
-        if let testReminderOverlayText {
-            return testReminderOverlayText
-        }
         guard let reminder = reminderOverlayEntry else {
             return nil
         }
@@ -79,9 +77,6 @@ struct IceHiddenItemsView: View {
     }
 
     private var liveReminderOverlayAccent: Color {
-        if testReminderOverlayText != nil {
-            return .orange
-        }
         guard let reminder = reminderOverlayEntry else {
             return .white
         }
@@ -89,10 +84,6 @@ struct IceHiddenItemsView: View {
     }
 
     private var reminderOverlayText: String? {
-        if let testReminderOverlayText {
-            return testReminderOverlayText
-        }
-
         if let liveReminderOverlayText {
             return liveReminderOverlayText
         }
@@ -105,10 +96,6 @@ struct IceHiddenItemsView: View {
     }
 
     private var reminderOverlayAccent: Color {
-        if testReminderOverlayText != nil {
-            return .orange
-        }
-
         if liveReminderOverlayText != nil {
             return liveReminderOverlayAccent
         }
@@ -122,37 +109,45 @@ struct IceHiddenItemsView: View {
         return "\(entry.id)|\(text)"
     }
 
-    private struct RenderedHiddenItem: Identifiable {
-        let id: String
-        let item: MenuBarItem
+    private var shouldUseVirtualizedRepeats: Bool {
+        enableNotchHiddenListMode && displayedItems.count > 1
     }
 
-    private var renderedItems: [RenderedHiddenItem] {
-        guard enableNotchHiddenListMode, displayedItems.count > 1 else {
-            return displayedItems.map { item in
-                RenderedHiddenItem(id: "base-\(item.windowID)-\(item.ownerPID)", item: item)
-            }
+    private var virtualItemCount: Int {
+        if shouldUseVirtualizedRepeats {
+            return displayedItems.count * virtualCopyCount
         }
+        return displayedItems.count
+    }
 
-        return (0..<infiniteRepeatCopies).flatMap { copy in
-            displayedItems.enumerated().map { index, item in
-                RenderedHiddenItem(
-                    id: "copy-\(copy)-\(index)-\(item.windowID)-\(item.ownerPID)",
-                    item: item
-                )
-            }
+    private var renderedItemIndices: Range<Int> {
+        0..<virtualItemCount
+    }
+
+    private func renderedItem(for index: Int) -> MenuBarItem {
+        if shouldUseVirtualizedRepeats {
+            let baseIndex = index % displayedItems.count
+            return displayedItems[baseIndex]
         }
+        return displayedItems[index]
+    }
+
+    private func renderedItemID(for index: Int, item: MenuBarItem) -> String {
+        if shouldUseVirtualizedRepeats {
+            return "virtual-\(index)-\(item.windowID)-\(item.ownerPID)"
+        }
+        return "base-\(item.windowID)-\(item.ownerPID)"
     }
 
     private var centerItemID: String? {
-        guard enableNotchHiddenListMode, displayedItems.count > 1 else {
+        guard shouldUseVirtualizedRepeats else {
             return nil
         }
-        let centerCopy = infiniteRepeatCopies / 2
-        guard let first = displayedItems.first else {
-            return nil
-        }
-        return "copy-\(centerCopy)-0-\(first.windowID)-\(first.ownerPID)"
+        let centerCopy = virtualCopyCount / 2
+        let centerIndex = centerCopy * displayedItems.count
+        guard renderedItemIndices.contains(centerIndex) else { return nil }
+        let item = renderedItem(for: centerIndex)
+        return renderedItemID(for: centerIndex, item: item)
     }
 
     private func updateMissingExpectedHiddenCount() {
@@ -186,10 +181,11 @@ struct IceHiddenItemsView: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(renderedItems) { rendered in
-                                IceHiddenItemView(item: rendered.item)
-                                    .id(rendered.id)
+                        LazyHStack(spacing: 8) {
+                            ForEach(renderedItemIndices, id: \.self) { index in
+                                let item = renderedItem(for: index)
+                                IceHiddenItemView(item: item)
+                                    .id(renderedItemID(for: index, item: item))
                             }
 
                             if enableNotchHiddenListMode, missingExpectedHiddenCount > 0 {
@@ -239,7 +235,7 @@ struct IceHiddenItemsView: View {
                         GeometryReader { geo in
                             if let overlayText = reminderOverlayText {
                                 let accent = reminderOverlayAccent
-                                let frameWidth = max(0, geo.size.width - 34)
+                                let frameWidth = max(0, geo.size.width - 20)
 
                                 HStack(spacing: 6) {
                                     RoundedRectangle(cornerRadius: 2)
@@ -253,15 +249,12 @@ struct IceHiddenItemsView: View {
                                         frameWidth: frameWidth
                                     )
                                 }
-                                .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                                         .fill(.black.opacity(0.8))
                                 )
-                                .padding(.horizontal, 12)
-                                .offset(x: -20, y: 4)
                                 .opacity(isHoveringItemList ? 0 : 1)
                                 .animation(.easeInOut(duration: 0.3), value: isHoveringItemList)
                             }
@@ -273,24 +266,17 @@ struct IceHiddenItemsView: View {
                         isHoveringItemList = hovering
                     }
                     .contextMenu {
+                        Button("Copy Section Widths") {
+                            logMenuBarSectionWidths()
+                        }
+                        Divider()
                         Button("Open Ice Settings") {
                             AppDelegate.iceAppState.openSettingsWindow()
                         }
-                        Button("Recover Hidden Items") {
-                            if enableNotchHiddenListMode {
-                                recoverExpectedHiddenItems(limit: nil)
-                            } else {
-                                Task {
-                                    await itemManager.recoverTempShownItemsToHiddenSection()
-                                    await itemManager.cacheItemsIfNeeded()
-                                    if ScreenCapture.cachedCheckPermissions() {
-                                        await imageCache.updateCacheWithoutChecks(sections: [.hidden])
-                                    }
-                                }
+                        Button("Hard Reset Hidden List") {
+                            Task {
+                                await performHardResetHiddenList(itemManager: itemManager, imageCache: imageCache)
                             }
-                        }
-                        Button("Test Reminder Sneak Peek Overlay") {
-                            showTestReminderOverlay()
                         }
                     }
                     .onAppear {
@@ -308,12 +294,6 @@ struct IceHiddenItemsView: View {
                     }
                     .onChange(of: displayedItems.map(\.windowID)) { _, _ in
                         updateMissingExpectedHiddenCount()
-                        guard enableNotchHiddenListMode, let centerItemID else {
-                            return
-                        }
-                        DispatchQueue.main.async {
-                            proxy.scrollTo(centerItemID, anchor: .center)
-                        }
                     }
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -326,7 +306,7 @@ struct IceHiddenItemsView: View {
             }
         }
         .onReceive(refreshTimer) { _ in
-            guard vm.notchState == .open else { return }
+            guard vm.notchState == .open, !isNotchTransitioning else { return }
             Task {
                 await itemManager.cacheItemsIfNeeded()
                 if ScreenCapture.cachedCheckPermissions() {
@@ -344,9 +324,6 @@ struct IceHiddenItemsView: View {
         .onChange(of: reminderOverlaySignature) { _, _ in
             refreshReminderOverlayLatch()
         }
-        .onChange(of: testReminderOverlayText) { _, _ in
-            refreshReminderOverlayLatch()
-        }
         .onChange(of: items.map(\.windowID)) { _, newWindowIDs in
             guard !newWindowIDs.isEmpty else { return }
             lastKnownItems = items
@@ -356,10 +333,18 @@ struct IceHiddenItemsView: View {
             didInitialCenterScroll = false
             updateMissingExpectedHiddenCount()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .testReminderSneakPeekOverlay)) { _ in
-            showTestReminderOverlay()
+        .onChange(of: vm.notchState) { _, _ in
+            notchTransitionTask?.cancel()
+            isNotchTransitioning = true
+            notchTransitionTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(450))
+                guard !Task.isCancelled else { return }
+                isNotchTransitioning = false
+            }
         }
         .onDisappear {
+            notchTransitionTask?.cancel()
+            notchTransitionTask = nil
             overlayDismissTask?.cancel()
             overlayDismissTask = nil
         }
@@ -404,12 +389,6 @@ struct IceHiddenItemsView: View {
     }
 
     private func refreshReminderOverlayLatch() {
-        if testReminderOverlayText != nil {
-            overlayDismissTask?.cancel()
-            overlayDismissTask = nil
-            return
-        }
-
         guard let liveReminderOverlayText else {
             if overlayVisibleUntil <= Date() {
                 clearReminderOverlayLatch()
@@ -454,12 +433,27 @@ struct IceHiddenItemsView: View {
         return min(30, max(8, estimatedReadAndScroll))
     }
 
-    private func showTestReminderOverlay() {
-        testReminderOverlayText = "Test reminder overlay • this should scroll if it is wider than the ice list"
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(5))
-            testReminderOverlayText = nil
-        }
+    private func logMenuBarSectionWidths() {
+        let visibleWidth = sectionWidth(for: .visible)
+        let hiddenWidth = sectionWidth(for: .hidden)
+        let alwaysHiddenWidth = sectionWidth(for: .alwaysHidden)
+        let total = visibleWidth + hiddenWidth + alwaysHiddenWidth
+        let payload = "visible=\(formatWidth(visibleWidth)) hidden=\(formatWidth(hiddenWidth)) alwaysHidden=\(formatWidth(alwaysHiddenWidth)) total=\(formatWidth(total))"
+
+        NSLog("🔎 IceHiddenItemsView section widths \(payload)")
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(payload, forType: .string)
+    }
+
+    private func sectionWidth(for section: MenuBarSection.Name) -> CGFloat {
+        itemManager.itemCache
+            .managedItems(for: section)
+            .reduce(0) { $0 + $1.frame.width }
+    }
+
+    private func formatWidth(_ value: CGFloat) -> String {
+        String(format: "%.1f", value)
     }
 
 }
@@ -583,16 +577,12 @@ struct IceHiddenItemView: View {
                     triggerClick(.right)
                 }
                 Divider()
-                Button("Test Reminder Sneak Peek Overlay") {
-                    NotificationCenter.default.post(name: .testReminderSneakPeekOverlay, object: nil)
-                }
-                Divider()
                 Button("Open Ice Settings") {
                     AppDelegate.iceAppState.openSettingsWindow()
                 }
-                Button("Recover Hidden Items") {
+                Button("Hard Reset Hidden List") {
                     Task {
-                        await itemManager.recoverTempShownItemsToHiddenSection()
+                        await performHardResetHiddenList(itemManager: itemManager, imageCache: imageCache)
                     }
                 }
             }
@@ -616,16 +606,12 @@ struct IceHiddenItemView: View {
                     triggerClick(.right)
                 }
                 Divider()
-                Button("Test Reminder Sneak Peek Overlay") {
-                    NotificationCenter.default.post(name: .testReminderSneakPeekOverlay, object: nil)
-                }
-                Divider()
                 Button("Open Ice Settings") {
                     AppDelegate.iceAppState.openSettingsWindow()
                 }
-                Button("Recover Hidden Items") {
+                Button("Hard Reset Hidden List") {
                     Task {
-                        await itemManager.recoverTempShownItemsToHiddenSection()
+                        await performHardResetHiddenList(itemManager: itemManager, imageCache: imageCache)
                     }
                 }
             }
@@ -668,8 +654,22 @@ struct IceHiddenItemView: View {
             )
         }
     }
+
 }
 
-private extension Notification.Name {
-    static let testReminderSneakPeekOverlay = Notification.Name("TestReminderSneakPeekOverlay")
+private func performHardResetHiddenList(
+    itemManager: MenuBarItemManager,
+    imageCache: MenuBarItemImageCache
+) async {
+    await itemManager.forceRefreshCache(clearExisting: true)
+    await itemManager.recoverTempShownItemsToHiddenSection()
+    _ = await itemManager.recoverExpectedHiddenItemsToPolicy(limit: nil, includeOverflowHiddenItems: true)
+    await itemManager.forceRefreshCache(clearExisting: true)
+    await MainActor.run {
+        itemManager.persistExpectedHiddenFromCurrentCache()
+    }
+
+    if ScreenCapture.cachedCheckPermissions() {
+        await imageCache.updateCacheWithoutChecks(sections: MenuBarSection.Name.allCases)
+    }
 }

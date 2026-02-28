@@ -186,7 +186,7 @@ struct CalendarView: View {
     @State private var selectedDate = Date()
     @Default(.hideAllDayEvents) private var hideAllDayEvents
     @Default(.hideCompletedReminders) private var hideCompletedReminders
-
+    private let eventsListWidth: CGFloat = 226
     var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 8) {
@@ -200,7 +200,7 @@ struct CalendarView: View {
                         .fontWeight(.light)
                         .foregroundColor(Color(white: 0.65))
                 }
-                .offset(x: 10)
+                .offset(x: 4)
 
                 ZStack(alignment: .top) {
                     WheelPicker(selectedDate: $selectedDate, config: Config())
@@ -208,12 +208,12 @@ struct CalendarView: View {
                         LinearGradient(
                             colors: [Color.black, .clear], startPoint: .leading, endPoint: .trailing
                         )
-                        .frame(width: 20)
+                        .frame(width: 30)
                         Spacer()
                         LinearGradient(
                             colors: [.clear, Color.black], startPoint: .leading, endPoint: .trailing
                         )
-                        .frame(width: 20)
+                        .frame(width: 30)
                     }
                 }
             }
@@ -225,14 +225,27 @@ struct CalendarView: View {
             )
             if filteredEvents.isEmpty {
                 EmptyEventsView(selectedDate: selectedDate)
+                    .frame(width: eventsListWidth, alignment: .leading)
+                    .offset(x: -4)
                 Spacer(minLength: 0)
             } else {
                 EventListView(events: calendarManager.events)
+                    .frame(width: eventsListWidth, alignment: .leading)
+                    .offset(x: -4)
             }
         }
         .listRowBackground(Color.clear)
-        .frame(height: 120)
+        .frame(height: 130)
         .clipped()
+        .overlay(alignment: .bottom) {
+            LinearGradient(
+                colors: [Color.black.opacity(0.95), .clear],
+                startPoint: .bottom,
+                endPoint: .top
+            )
+            .frame(height: 28)
+            .allowsHitTesting(false)
+        }
         .onChange(of: selectedDate) {
             Task {
                 await calendarManager.updateCurrentDate(selectedDate)
@@ -268,6 +281,7 @@ struct EmptyEventsView: View {
                 .font(.caption)
                 .foregroundColor(Color(white: 0.65))
         }
+        .padding(.top, -8)
     }
 }
 
@@ -341,6 +355,7 @@ struct EventListView: View {
                         .listRowBackground(Color.clear)
                     }
                 }
+                .padding(.top, -8)
                 .listStyle(.plain)
                 .scrollIndicators(.never)
                 .scrollContentBackground(.hidden)
@@ -351,6 +366,7 @@ struct EventListView: View {
                     .allowsHitTesting(false)
                     .alignmentGuide(.top) { d in d[.top] }
                     .frame(maxHeight: .infinity, alignment: .top)
+                    .offset(y: -10)
 
                 LinearGradient(colors: [.clear, Color.black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
                     .frame(height: 16)

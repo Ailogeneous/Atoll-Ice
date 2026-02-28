@@ -559,7 +559,7 @@ struct NotchHomeView: View {
                             .contentShape(Rectangle())
                             .frame(width: notchHiddenListWidth, alignment: .center)
                             .frame(maxWidth: .infinity)
-                            .offset(y: -10)
+                            .offset(x: 8, y: -10)
                             .padding(.horizontal, -20)
                             .zIndex(2)
                             .onHover { isHovering in
@@ -573,7 +573,8 @@ struct NotchHomeView: View {
                     }
                     if Defaults[.showCalendar] {
                         CalendarView()
-                            .offset(y: -6)
+                            .offset(x: 8, y: -4)
+                            .padding(.bottom, -10)
                             .onHover { isHovering in
                                 vm.isHoveringCalendar = isHovering
                             }

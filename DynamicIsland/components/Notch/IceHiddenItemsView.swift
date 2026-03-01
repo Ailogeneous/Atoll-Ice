@@ -249,7 +249,7 @@ struct IceHiddenItemsView: View {
                         GeometryReader { geo in
                             if let overlayText = reminderOverlayText {
                                 let accent = reminderOverlayAccent
-                                let frameWidth = max(0, geo.size.width - 20)
+                                let frameWidth = max(0, geo.size.width - 16)
 
                                 HStack(spacing: 6) {
                                     RoundedRectangle(cornerRadius: 2)
@@ -264,7 +264,7 @@ struct IceHiddenItemsView: View {
                                     )
                                 }
                                 .padding(.vertical, 4)
-                                .offset(x: -6)
+                                .offset(x: -4)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)

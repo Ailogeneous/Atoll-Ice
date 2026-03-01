@@ -35,9 +35,14 @@ struct ReminderLiveActivity: View {
 
     private let wingPadding: CGFloat = 16
     private let ringStrokeWidth: CGFloat = 3
+    private let ringSizeScale: CGFloat = 0.8
 
     private var notchContentHeight: CGFloat {
         max(0, vm.effectiveClosedNotchHeight)
+    }
+
+    private var closedNotchCenterWidth: CGFloat {
+        max(0, vm.closedNotchSize.width - 10)
     }
 
     var body: some View {
@@ -60,7 +65,7 @@ struct ReminderLiveActivity: View {
 
             Rectangle()
                 .fill(.black)
-                .frame(width: vm.closedNotchSize.width, height: notchContentHeight)
+                .frame(width: closedNotchCenterWidth, height: notchContentHeight)
 
             Color.clear
                 .frame(width: rightWingWidth(for: reminder, now: now), height: notchContentHeight)
@@ -80,6 +85,7 @@ struct ReminderLiveActivity: View {
         return Image(systemName: iconName(for: reminder, now: now))
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(accent)
+            .padding(.leading, -14)
             .frame(width: diameter, height: diameter)
             .frame(width: iconDiameter, height: notchContentHeight, alignment: .center)
     }
@@ -196,7 +202,7 @@ struct ReminderLiveActivity: View {
     }
 
     private var ringDiameter: CGFloat {
-        max(min(notchContentHeight - 12, 22), 16)
+        max(min(notchContentHeight - 12, 22), 16) * ringSizeScale
     }
 
     private func measureTextWidth(_ text: String, font: ReminderFont) -> CGFloat {

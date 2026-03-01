@@ -224,6 +224,7 @@ struct IceHiddenItemsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .clipped()
                     .opacity(shouldEnforceBlackout ? 0 : 1)
+                    .offset(x: -4)
                     .overlay(alignment: .leading) {
                         LinearGradient(
                             colors: [.black.opacity(0.9), .black.opacity(0)],
@@ -231,6 +232,7 @@ struct IceHiddenItemsView: View {
                             endPoint: .trailing
                         )
                         .frame(width: edgeFadeWidth)
+                        .offset(x: -4)
                         .allowsHitTesting(false)
                     }
                     .overlay(alignment: .trailing) {
@@ -240,6 +242,7 @@ struct IceHiddenItemsView: View {
                             endPoint: .trailing
                         )
                         .frame(width: edgeFadeWidth)
+                        .offset(x: -4)
                         .allowsHitTesting(false)
                     }
                     .overlay {
@@ -261,6 +264,7 @@ struct IceHiddenItemsView: View {
                                     )
                                 }
                                 .padding(.vertical, 4)
+                                .offset(x: -6)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8, style: .continuous)

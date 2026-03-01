@@ -56,6 +56,7 @@ struct TimerLiveActivity: View {
 
     private var wingPadding: CGFloat { 22 }
     private var ringStrokeWidth: CGFloat { 3 }
+    private var ringSizeScale: CGFloat { 0.8 }
     private var transientLabelDuration: TimeInterval { 4 }
     private let controlWindowResumeDelay: TimeInterval = 0.22
 
@@ -113,7 +114,7 @@ struct TimerLiveActivity: View {
     }
 
     private var ringWidth: CGFloat {
-        ringOnRight ? 30 : 0
+        ringOnRight ? (30 * ringSizeScale) : 0
     }
 
     private var rightWingWidth: CGFloat {
@@ -370,7 +371,8 @@ struct TimerLiveActivity: View {
     
     private var iconSection: some View {
         let baseDiameter = ringWrapsIcon ? iconWidth : iconWidth
-        let ringDiameter = ringWrapsIcon ? max(min(baseDiameter, notchContentHeight - 2), 22) : iconWidth
+        let baseRingDiameter = ringWrapsIcon ? max(min(baseDiameter, notchContentHeight - 2), 22) : iconWidth
+        let ringDiameter = ringWrapsIcon ? (baseRingDiameter * ringSizeScale) : baseRingDiameter
         let iconSize = ringWrapsIcon ? max(ringDiameter - 12, 16) : max(18, iconWidth - 6)
 
         return ZStack {
@@ -449,7 +451,7 @@ struct TimerLiveActivity: View {
     }
     
     private var ringSection: some View {
-        let diameter = max(min(notchContentHeight - 4, 26), 20)
+        let diameter = max(min(notchContentHeight - 4, 26), 20) * ringSizeScale
         return ZStack {
             Circle()
                 .stroke(Color.white.opacity(0.15), lineWidth: ringStrokeWidth)

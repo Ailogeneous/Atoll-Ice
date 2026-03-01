@@ -2110,7 +2110,7 @@ private struct MusicTimerSupplementView: View {
     }
 
     private var ringDiameter: CGFloat {
-        max(min(notchHeight - 4, 26), 20)
+        max(min(notchHeight - 4, 26), 20) * 0.8
     }
 
     var body: some View {
@@ -2330,7 +2330,7 @@ private enum ReminderSupplementMetrics {
     }
 
     static func ringDiameter(for notchHeight: CGFloat) -> CGFloat {
-        max(min(notchHeight - 12, 22), 16)
+        max(min(notchHeight - 12, 22), 16) * 0.8
     }
 }
 

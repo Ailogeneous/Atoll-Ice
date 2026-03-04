@@ -226,12 +226,12 @@ struct CalendarView: View {
             if filteredEvents.isEmpty {
                 EmptyEventsView(selectedDate: selectedDate)
                     .frame(width: eventsListWidth, alignment: .leading)
-                    .offset(x: -4)
+                    .padding(.leading, -12)
                 Spacer(minLength: 0)
             } else {
                 EventListView(events: calendarManager.events)
                     .frame(width: eventsListWidth, alignment: .leading)
-                    .offset(x: -4)
+                    .padding(.leading, -12)
             }
         }
         .listRowBackground(Color.clear)
